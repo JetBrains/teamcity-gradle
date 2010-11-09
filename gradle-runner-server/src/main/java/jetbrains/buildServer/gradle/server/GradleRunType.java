@@ -22,6 +22,7 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.RunType;
 import jetbrains.buildServer.serverSide.RunTypeRegistry;
+import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class GradleRunType extends RunType {
@@ -69,5 +70,28 @@ public class GradleRunType extends RunType {
       // todo:  setup default properties here
 
       return map;
+  }
+
+  @NotNull
+  @Override
+  public String describeParameters(@NotNull final Map<String, String> parameters) {
+
+    StringBuilder result = new StringBuilder();
+    result.append("Gradle tasks: ");
+    String gradleTasks = parameters.get(GradleRunnerConstants.GRADLE_TASKS);
+    if (StringUtil.isEmpty(gradleTasks)) {
+      result.append("Default");
+    } else {
+      result.append(gradleTasks);
+    }
+    result.append('\n');
+    result.append("Use wrapper script: ");
+    if (Boolean.TRUE.toString().equals(parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))) {
+      result.append("yes");
+    } else {
+      result.append("no");
+    }
+
+    return result.toString();
   }
 }

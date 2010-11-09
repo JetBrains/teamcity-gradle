@@ -60,6 +60,9 @@ subprojects {
 
   dependencies {
     compile 'log4j:log4j:1.2.16'
+
+    testCompile 'org.jmock:jmock:2.5.1'
+    testCompile 'org.testng:testng:5.14'
   }
 
   clean {
@@ -80,9 +83,6 @@ project (':gradle-runner-agent') {
     compile teamCityLib
     compile agentRuntime
     compile gradleLibs
-
-    testCompile 'org.jmock:jmock:2.5.1'
-    testCompile 'org.testng:testng:5.14'
 
     testRuntime gradleApi()
 
