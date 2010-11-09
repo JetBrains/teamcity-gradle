@@ -1,0 +1,12 @@
+
+ To build gradle runner plugin for Teamcity follow these steps:
+
+1. Download Teamcity distribution. Latest EAP will do.
+2. Unpack Teamcity 
+3. In gradle.properties, set path to unpacked Teamcity distribution
+4. In root directory, run following command to build and test plugin:
+
+  gradlew clean integrationTest dist
+
+ Gradle runner plugin distribution will be created in build\distributions
+ 

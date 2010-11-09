@@ -20,6 +20,7 @@ jar {
 }
 
 task jarInitLib(type: Jar) {
+  description = 'Bundle classes for gradle init script.'
   from sourceSets.main.classes
   include 'jetbrains/buildServer/gradle/agent/init/*'
   appendix = 'initlib'
@@ -27,6 +28,7 @@ task jarInitLib(type: Jar) {
 
 
 test {
+  description = 'Run unit tests for Gradle Runner plugin. Fast.'
   useTestNG()
   scanForTestClasses = false
   include '**/jetbrains/buildServer/gradle/test/init/*'
@@ -36,6 +38,7 @@ test {
 }
 
 task integrationTest(type: Test, dependsOn: [assemble, test]) {
+  description = 'Run integration tests for Gradle Runner plugin. Slow.'
   useTestNG()
   scanForTestClasses = false
   exclude '**/jetbrains/buildServer/gradle/test/init/*'
@@ -45,7 +48,9 @@ task integrationTest(type: Test, dependsOn: [assemble, test]) {
   jvmArgs ("-Dgradle.runtime=${gradle.gradleHomeDir}")
 }
 
-task dist(dependsOn: [build,':gradle-runner-common:build']) << {
+task dist(dependsOn: [build,':gradle-runner-common:build']) {
+  description = 'Create Gradle Runner package for TeamCity Build Agent'
+  doLast {
     runnerDir = new File(distsDir,'gradle-runner')
     runnerLib = new File(runnerDir,'lib')
     runnerLib.mkdirs()
@@ -61,4 +66,5 @@ task dist(dependsOn: [build,':gradle-runner-common:build']) << {
         include 'scripts/*.*'
         into runnerDir
     }
+  }
 }
