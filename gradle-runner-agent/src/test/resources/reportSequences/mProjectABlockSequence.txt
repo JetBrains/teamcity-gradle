@@ -1,0 +1,45 @@
+##teamcity[blockOpened name=':clean']
+##teamcity[blockClosed name=':clean']
+##teamcity[blockOpened name=':projectA:clean']
+##teamcity[blockClosed name=':projectA:clean']
+##teamcity[blockOpened name=':projectB:clean']
+##teamcity[blockClosed name=':projectB:clean']
+##teamcity[compilationStarted compiler=':compileJava']
+##teamcity[compilationFinished compiler=':compileJava']
+##teamcity[compilationStarted compiler=':projectA:compileJava']
+##teamcity[compilationFinished compiler=':projectA:compileJava']
+##teamcity[compilationStarted compiler=':projectB:compileJava']
+##teamcity[compilationFinished compiler=':projectB:compileJava']
+##teamcity[blockOpened name=':processResources']
+##teamcity[blockClosed name=':processResources']
+##teamcity[blockOpened name=':classes']
+##teamcity[blockClosed name=':classes']
+##teamcity[compilationStarted compiler=':compileTestJava']
+##teamcity[compilationFinished compiler=':compileTestJava']
+##teamcity[blockOpened name=':projectA:processResources']
+##teamcity[blockClosed name=':projectA:processResources']
+##teamcity[blockOpened name=':projectA:classes']
+##teamcity[blockClosed name=':projectA:classes']
+##teamcity[compilationStarted compiler=':projectA:compileTestJava']
+##teamcity[compilationFinished compiler=':projectA:compileTestJava']
+##teamcity[blockOpened name=':projectB:processResources']
+##teamcity[blockClosed name=':projectB:processResources']
+##teamcity[blockOpened name=':projectB:classes']
+##teamcity[blockClosed name=':projectB:classes']
+##teamcity[compilationStarted compiler=':projectB:compileTestJava']
+##teamcity[compilationFinished compiler=':projectB:compileTestJava']
+##teamcity[blockOpened name=':printProperties']
+##tc-property name='property.bravo' value='value bravo'
+##tc-property name='property_alpha' value='value_alpha'
+##tc-property name='property' value='charlie=value charlie'
+##teamcity[blockClosed name=':printProperties']
+##teamcity[blockOpened name=':projectA:printProperties']
+##tc-property name='property.bravo' value='value bravo'
+##tc-property name='property_alpha' value='value_alpha'
+##tc-property name='property' value='charlie=value charlie'
+##teamcity[blockClosed name=':projectA:printProperties']
+##teamcity[blockOpened name=':projectB:printProperties']
+##tc-property name='property.bravo' value='value bravo'
+##tc-property name='property_alpha' value='value_alpha'
+##tc-property name='property' value='charlie=value charlie'
+##teamcity[blockClosed name=':projectB:printProperties']

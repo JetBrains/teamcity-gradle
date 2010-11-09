@@ -1,0 +1,14 @@
+apply plugin: 'java'
+
+dependencies {
+    testCompile files('../lib/junit-4.8.1.jar')
+    testCompile files('../lib/testng-5.14.1.jar')
+}
+
+task testng(type: Test) {
+  useTestNG() {
+     suites new File('src/test/resources/test.xml')
+  }
+  setTestClassesDir(test.getTestClassesDir())
+  setClasspath(test.getClasspath())
+}

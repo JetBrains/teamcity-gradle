@@ -1,0 +1,149 @@
+/*
+ * Copyright 2000-2010 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+def TCPathVar = "path.variable.teamcitydistribution"
+
+dependencies {
+  if (project.hasProperty(TCPathVar)) {
+    def teamCityDir = project.getProperties()[TCPathVar]
+
+    teamCityLib = fileTree(teamCityDir + "/webapps/ROOT/WEB-INF/lib").matching {
+      include 'annotations.jar'
+      include 'openapi.jar'
+      include 'util.jar'
+      include 'trove4j.jar'
+    }
+
+    devPackage = fileTree(teamCityDir + "/devPackage").matching {
+      include 'agent-api.jar'
+      include 'common-api.jar'
+      include 'server-api.jar'
+    }
+
+    commonApi = fileTree(teamCityDir + "/devPackage").matching {
+      include 'common-api.jar'
+    }
+
+    agentRuntime = zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
+      include 'lib/*.jar'
+    }
+
+  } else {
+    throw new StopExecutionException("""TeamCity distribution not available.
+    Please, set path to valid TeamCity distribution in gradle.properties file.""")
+  }
+}
+
+allprojects {
+  tcVersion="6.0-SNAPSHOT"
+  apply plugin: 'java'
+}
+
+subprojects {
+
+  repositories {
+    mavenRepo(name: "sonatype-public", urls: "https://oss.sonatype.org/content/groups/public/");
+    mavenCentral()
+  }
+
+  dependencies {
+    compile 'log4j:log4j:1.2.16'
+  }
+
+  clean {
+    delete "target"
+  }
+}
+
+project (':gradle-runner-agent') {
+  configurations {
+    integTestClasspath
+  }
+
+  dependencies {
+    gradleLibs = files(["../lib/gradle-core-0.9-rc-1.jar","../lib/gradle-plugins-0.9-rc-1.jar"])
+
+    compile project(':gradle-runner-common')
+    compile devPackage
+    compile teamCityLib
+    compile agentRuntime
+    compile gradleLibs
+
+    testCompile 'org.jmock:jmock:2.5.1'
+    testCompile 'org.testng:testng:5.14'
+
+    testRuntime gradleApi()
+
+    integTestClasspath agentRuntime
+    integTestClasspath 'org.jmock:jmock:2.5.1'
+    integTestClasspath 'org.testng:testng:5.14'
+    integTestClasspath commonApi
+    integTestClasspath gradleLibs
+  }
+}
+
+project (':gradle-runner-server') {
+  dependencies {
+    compile project(':gradle-runner-common')
+    compile devPackage
+    compile teamCityLib
+  }
+}
+
+task dist(dependsOn: [  ':gradle-runner-common:build',
+                        ':gradle-runner-server:build',
+                        ':gradle-runner-agent:dist'  ]) {
+  description = 'Create gradle-runner plugin package for TeamCity'
+  doLast {
+    gradleDir = new File(distsDir, 'gradle-runner')
+    gradleServer = new File(gradleDir, 'server')
+    gradleAgent = new File(gradleDir, 'agent')
+
+    gradleServer.mkdirs()
+    gradleAgent.mkdirs()
+
+    task zipAgent(type: Zip) {
+      from project(':gradle-runner-agent').distsDir
+      include 'gradle-runner/**'
+      archiveName='gradle-runner.zip'
+      destinationDir=gradleAgent
+    }
+    zipAgent.execute()
+
+    copy {
+      from project(':gradle-runner-server').libsDir
+      from project(':gradle-runner-common').libsDir
+      into gradleServer
+    }
+
+    copy {
+      from projectDir
+      include 'teamcity-plugin.xml'
+      into gradleDir
+    }
+
+    task zipPlugin(type: Zip) {
+      from gradleDir
+      archiveName='gradle-runner.zip'
+    }
+
+    zipPlugin.execute()
+  }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '0.9-rc-1'
+    jarPath = 'wrapper'
+}

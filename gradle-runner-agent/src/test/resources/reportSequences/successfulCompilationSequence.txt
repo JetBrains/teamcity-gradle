@@ -1,0 +1,7 @@
+##teamcity[compilationStarted compiler=':compileJava']
+##teamcity[compilationFinished compiler=':compileJava']
+##teamcity[compilationStarted compiler=':compileTestJava']
+##teamcity[compilationFinished compiler=':compileTestJava']
+##tc-property name='property.bravo' value='value bravo'
+##tc-property name='property_alpha' value='value_alpha'
+##tc-property name='property' value='charlie=value charlie'

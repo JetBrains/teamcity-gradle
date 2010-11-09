@@ -1,0 +1,34 @@
+Downloading http://dist.codehaus.org/gradle/gradle-0.9-rc-1-bin.zip
+gradle-0.9-rc-1-bin.zip to
+##teamcity[blockOpened name=':clean']
+##teamcity[blockClosed name=':clean']
+##teamcity[compilationStarted compiler=':compileJava']
+##teamcity[compilationFinished compiler=':compileJava']
+##teamcity[blockOpened name=':processResources']
+##teamcity[blockClosed name=':processResources']
+##teamcity[blockOpened name=':classes']
+##teamcity[blockClosed name=':classes']
+##teamcity[blockOpened name=':jar']
+##teamcity[blockClosed name=':jar']
+##teamcity[blockOpened name=':assemble']
+##teamcity[blockClosed name=':assemble']
+##teamcity[compilationStarted compiler=':compileTestJava']
+##teamcity[compilationFinished compiler=':compileTestJava']
+##teamcity[blockOpened name=':processTestResources']
+##teamcity[blockClosed name=':processTestResources']
+##teamcity[blockOpened name=':testClasses']
+##teamcity[blockClosed name=':testClasses']
+##teamcity[blockOpened name=':test']
+##teamcity[testSuiteStarted name='Gradle Worker 1'
+##teamcity[testSuiteStarted name='test.GradleGreeterTest'
+##teamcity[testStarted name='test.GradleGreeterTest.testGreet' captureStandardOutput='true'
+##teamcity[testFinished name='test.GradleGreeterTest.testGreet'
+##teamcity[testStarted name='test.GradleGreeterTest.testIntro' captureStandardOutput='true'
+##teamcity[testFinished name='test.GradleGreeterTest.testIntro'
+##teamcity[testSuiteFinished name='test.GradleGreeterTest'
+##teamcity[testSuiteFinished name='Gradle Worker 1'
+##teamcity[blockClosed name=':test']
+##teamcity[blockOpened name=':check']
+##teamcity[blockClosed name=':check']
+##teamcity[blockOpened name=':build']
+##teamcity[blockClosed name=':build']

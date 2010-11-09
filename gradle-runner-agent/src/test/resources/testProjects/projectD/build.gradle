@@ -1,0 +1,24 @@
+apply plugin: 'java'
+
+dependencies {
+    testCompile files('../lib/junit-4.8.1.jar')
+    testCompile files('../lib/testng-5.14.1.jar')
+}
+
+test {
+  scanForTestClasses = false
+  include '**/MetaTestSuite.class'
+}
+
+task testParallel(type: Test) {
+  scanForTestClasses = false
+  maxParallelForks = 3
+  include '**/TestSuiteAlpha.class'
+  include '**/TestSuiteBravo.class'
+  include '**/TestSuiteCharlie.class'
+  setTestClassesDir(test.getTestClassesDir())
+  setClasspath(test.getClasspath())
+}
+
+testParallel.dependsOn testClasses
+
