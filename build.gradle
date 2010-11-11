@@ -90,7 +90,6 @@ project (':gradle-runner-agent') {
     integTestClasspath 'org.jmock:jmock:2.5.1'
     integTestClasspath 'org.testng:testng:5.14'
     integTestClasspath commonApi
-    integTestClasspath gradleLibs
   }
 }
 

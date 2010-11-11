@@ -139,7 +139,7 @@ public class BaseGradleRunnerTest {
   }
 
   private void findInitScript(File curDir) {
-    myInitScript = new File(curDir, GradleTestUtil.REL_SCRIPT_DIR + GradleTestUtil.INIT_SCRIPT_NAME);
+    myInitScript = new File(curDir, GradleTestUtil.REL_SCRIPT_DIR + GradleRunnerConstants.INIT_SCRIPT_NAME);
     assertTrue(myInitScript.canRead(), "Path to init script must point to existing and readable file.");
   }
 

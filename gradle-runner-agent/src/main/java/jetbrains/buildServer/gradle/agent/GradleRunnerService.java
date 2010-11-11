@@ -28,7 +28,6 @@ import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.agent.ClasspathUtil;
 import jetbrains.buildServer.agent.runner.*;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.init.TeamcityTaskListener;
 import jetbrains.buildServer.messages.ErrorData;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -157,19 +156,15 @@ public class GradleRunnerService extends BuildServiceAdapter
   private String buildInitScriptClassPath() {
 
     try {
-      File initLib;
       File serviceMessagesLib;
       File runtimeUtil;
 
-      initLib = new File(ClasspathUtil.getClasspathEntry(TeamcityTaskListener.class));
       serviceMessagesLib = new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class));
       runtimeUtil = new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class));
-
-      return initLib.getAbsolutePath() + File.pathSeparator + serviceMessagesLib.getAbsolutePath()
-        + File.pathSeparator + runtimeUtil.getAbsolutePath();
+      return serviceMessagesLib.getAbsolutePath() + File.pathSeparator + runtimeUtil.getAbsolutePath();
 
     } catch (IOException e) {
-      getLogger().internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE,"Failed to load init script classes.",e);
+      getLogger().internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE, "Failed to load init script classes.",e);
     }
     return null;
   }

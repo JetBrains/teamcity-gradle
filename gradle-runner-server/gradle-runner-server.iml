@@ -31,6 +31,16 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="gradle-runner-common" />
     <orderEntry type="module" module-name="server-openapi" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$APPLICATION_HOME_DIR$/plugins/testng/lib/testng-jdk15.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="jmock-2.5.1" level="project" />
   </component>
 </module>
 

@@ -1,6 +1,20 @@
-import jetbrains.buildServer.gradle.agent.init.PropertiesLoadListener
-import jetbrains.buildServer.gradle.agent.init.TeamcityTaskListener
-import jetbrains.buildServer.gradle.agent.init.TeamcityTestListener
+import jetbrains.buildServer.messages.serviceMessages.ServiceMessage
+import jetbrains.buildServer.messages.serviceMessages.BlockOpened
+import jetbrains.buildServer.messages.serviceMessages.CompilationStarted
+import jetbrains.buildServer.messages.serviceMessages.Message
+import jetbrains.buildServer.messages.serviceMessages.CompilationFinished
+import jetbrains.buildServer.messages.serviceMessages.BlockClosed
+import jetbrains.buildServer.messages.serviceMessages.TestSuiteStarted
+import jetbrains.buildServer.messages.serviceMessages.TestSuiteFinished
+import jetbrains.buildServer.messages.serviceMessages.TestStarted
+import jetbrains.buildServer.messages.serviceMessages.TestFailed
+import jetbrains.buildServer.messages.serviceMessages.TestIgnored
+import jetbrains.buildServer.messages.serviceMessages.TestFinished
+import jetbrains.buildServer.messages.Status
+import java.util.concurrent.ConcurrentHashMap
+import jetbrains.buildServer.agent.AgentRuntimeProperties
+
+
 
 /*
 * Copyright 2000-2010 JetBrains s.r.o.
@@ -26,6 +40,224 @@ initscript {
       classpath files(classPathFiles)
     }
 }
+
+public class PropertiesLoadListener implements ProjectEvaluationListener {
+
+  public void beforeEvaluate(Project project) {
+    loadProps(project);
+  }
+
+  public void afterEvaluate(Project project, ProjectState projectState) {
+    // TODO refactor this "multicast"
+    final Map teamcityProperties = (Map)project.getProperties().get("teamcity");
+    if (null != teamcityProperties) {
+      String jvmArgs = (String) teamcityProperties.get("gradle.test.jvmargs");
+      passJvmArgsToTest(project, jvmArgs);
+    }
+  }
+
+
+  private void passJvmArgsToTest(Project project, String jvmArgs) {
+    TaskCollection<Test> testTasks = project.getTasks().withType(Test.class);
+    if (null != jvmArgs && null != testTasks) {
+      for (Test task : testTasks) {
+        final String[] arguments = jvmArgs.split("\n");
+        task.jvmArgs(arguments);
+      }
+    }
+  }
+
+  private void loadProps(Project p) {
+    String propsFilePath = System.getProperty(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_PROP);
+    if (null == propsFilePath) {
+      propsFilePath = System.getenv(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV);
+    }
+    if (null != propsFilePath) {
+      File propsFile = p.file(propsFilePath);
+      Properties props = new Properties();
+      InputStream inStream = null;
+
+      try {
+        inStream = new FileInputStream(propsFile);
+        props.load(inStream);
+      } catch (FileNotFoundException e) {
+        log.error(e.getMessage(), e);
+      } catch (IOException e) {
+        log.error(e.getMessage(), e);
+      } finally {
+        if (null != inStream) {
+          try {
+            inStream.close();
+          } catch (IOException e) {
+            Logger.log(LogLevel.ERROR, "Failed to close file stream!", e);
+          }
+        }
+      }
+
+      p.setProperty("teamcity", props);
+    } else {
+      p.setProperty("teamcity", new HashMap());
+    }
+  }
+}
+
+
+public class TeamcityTaskListener implements TaskExecutionListener {
+
+  Map<Task, TeamCityErrorStore> taskMessages = new HashMap<Task, TeamCityErrorStore>();
+
+  public void beforeExecute(Task task) {
+    ServiceMessage message;
+    if (task instanceof AbstractCompile) {
+      task.getLogging().captureStandardError(LogLevel.WARN);
+      TeamCityErrorStore errorListener = taskMessages.get(task);
+      if (null == errorListener) {
+        errorListener = new TeamCityErrorStore();
+        taskMessages.put(task, errorListener);
+      }
+      errorListener.reset();
+      task.getLogging().addStandardOutputListener(errorListener);
+      message = new CompilationStarted(task.getPath());
+    } else {
+      message = new BlockOpened(task.getPath());
+    }
+    System.out.println(message.asString());
+  }
+
+
+  public void afterExecute(Task task, TaskState taskState) {
+    ServiceMessage message;
+    if (task instanceof AbstractCompile) {
+      Throwable failure = taskState.getFailure();
+      if (null != failure) {
+        final TeamCityErrorStore outputListener = taskMessages.get(task);
+        for(String str : outputListener.getMessages()) {
+          System.out.println(new Message(str, Status.ERROR, null).asString()); // compilation failure
+        }
+      }
+      message = new CompilationFinished(task.getPath());
+    } else {
+      message = new BlockClosed(task.getPath());
+    }
+    System.out.println(message.asString());
+  }
+
+  private class TeamCityErrorStore implements StandardOutputListener {
+
+    private List<String> messages = new LinkedList<String>();
+
+    public void onOutput(CharSequence chars) {
+      String[] strings = chars.toString().split('(\\n|\\r)*$');
+      for(String str : strings) {
+        if (str.trim().length() > 0) {
+          messages.add(str);
+        }
+      }
+    }
+
+    public List<String> getMessages () {
+      return messages;
+    }
+
+    public void reset() {
+      messages.clear();
+    }
+  }
+
+}
+
+public class TeamcityTestListener implements TestListener {
+  ConcurrentHashMap<TestDescriptor, String> workerCodes = new ConcurrentHashMap();
+  TestDescriptor root;
+
+  String findFlowId(TestDescriptor desc) {
+    String code = "";
+    while ((null != desc) && ((code = workerCodes.get(desc)) == null)) {
+      desc = desc.getParent();
+    }
+    return code;
+  }
+
+  /**
+   * Called before a test suite is started.
+   * @param suite The suite whose tests are about to be executed.
+   */
+  public void beforeSuite(TestDescriptor suite) {
+    if (null == suite.getParent()) {
+      root = suite;
+    }
+    String code = "";
+    if (suite.getParent() == root) {
+      // assume, we have worker thread descriptor here
+      code = workerCodes.get(suite);
+      if (null == code) {
+        code = "" + System.identityHashCode(suite);
+        String oldCode = workerCodes.putIfAbsent(suite, code);
+        if (null != oldCode) {
+          code = oldCode;
+        }
+      }
+    }
+
+    if (null != suite.getParent()) { // do not report root empty suite
+      ServiceMessage msg = new TestSuiteStarted(suite.getName());
+      msg.setFlowId(findFlowId(suite));
+      System.out.println(msg.asString());
+    }
+  }
+
+  /**
+   * Called after a test suite is finished.
+   * @param suite The suite whose tests have finished being executed.
+   * @param result The aggregate result for the suite.
+   */
+  public void afterSuite(TestDescriptor suite, TestResult result) {
+    if (null != suite.getParent()) { // do not report root empty suite
+      ServiceMessage msg = new TestSuiteFinished(suite.getName());
+      msg.setFlowId(findFlowId(suite));
+      System.out.println(msg.asString());
+    }
+  }
+
+  /**
+   * Called before a test is started.
+   * @param testDescriptor The test which is about to be executed.
+   */
+  public void beforeTest(TestDescriptor testDescriptor) {
+    String testName = testDescriptor.getClassName() + "." + testDescriptor.getName();
+    ServiceMessage msg = new TestStarted(testName, true, null);
+    msg.setFlowId(findFlowId(testDescriptor));
+    System.out.println(msg.asString());
+  }
+
+  /**
+   * Called after a test is finished.
+   * @param testDescriptor The test which has finished executing.
+   * @param result The test result.
+   */
+  public void afterTest(TestDescriptor testDescriptor, TestResult result) {
+    String testName = testDescriptor.getClassName() + "." + testDescriptor.getName();
+    ServiceMessage msg;
+    switch (result.getResultType()) {
+      case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
+        msg = new TestFailed(testName, result.getException());
+        msg.setFlowId(findFlowId(testDescriptor));
+        System.out.println(msg.asString());
+        break;
+      case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
+        msg = new TestIgnored(testName, "");
+        msg.setFlowId(findFlowId(testDescriptor));
+        System.out.println(msg.asString());
+        break;
+    };
+
+    final int duration = (int) (result.getEndTime() - result.getStartTime());
+    msg = new TestFinished(testName, duration);
+    msg.setFlowId(findFlowId(testDescriptor));
+    System.out.println(msg.asString());
+  }
+}
+
 
 gradle.addListener(new TeamcityTestListener())
 gradle.useLogger(new TeamcityTaskListener())
