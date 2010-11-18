@@ -35,14 +35,14 @@
 
 <l:settingsGroup title="Launching Parameters">
     <tr>
-        <th><label>Debug: </label></th>
+        <th><label>Debug: <bs:help file="Gradle" anchor="LaunchingParameters"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.DEBUG%>"/>
             <label for="ui.gradleRunner.gradle.debug.enabled">Log debug messages</label>
             <br/>
         </td>
     </tr>
     <tr>
-        <th><label>Stacktrace: </label></th>
+        <th><label>Stacktrace: <bs:help file="Gradle" anchor="LaunchingParameters"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.STACKTRACE%>"/>
             <label for="ui.gradleRunner.gradle.stacktrace.enabled">Print stacktrace</label>
             <br/>
