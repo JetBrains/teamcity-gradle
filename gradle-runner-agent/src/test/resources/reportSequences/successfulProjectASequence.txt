@@ -1,4 +1,3 @@
-##teamcity[testSuiteStarted name='Gradle Worker 1'
 ##teamcity[testSuiteStarted name='test.GradleGreeterTest'
 ##teamcity[testStarted name='test.GradleGreeterTest.testGreet' captureStandardOutput='true'
 ##teamcity[testFinished name='test.GradleGreeterTest.testGreet'
@@ -7,4 +6,3 @@
 ##teamcity[testStarted name='test.GradleGreeterTest.testSystemProperty' captureStandardOutput='true'
 ##teamcity[testFinished name='test.GradleGreeterTest.testSystemProperty'
 ##teamcity[testSuiteFinished name='test.GradleGreeterTest'
-##teamcity[testSuiteFinished name='Gradle Worker 1'

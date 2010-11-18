@@ -1,4 +1,3 @@
-##teamcity[testSuiteStarted name='Gradle Worker 1'
 ##teamcity[testSuiteStarted name='test.MetaTestSuite'
 ##teamcity[testStarted name='test.suiteA.TestAlpha.testMethodOne' captureStandardOutput='true'
 ##teamcity[testFinished name='test.suiteA.TestAlpha.testMethodOne'
@@ -49,4 +48,3 @@
 ##teamcity[testStarted name='test.suiteB.TestFoxtrot.testMethodThree' captureStandardOutput='true'
 ##teamcity[testFinished name='test.suiteB.TestFoxtrot.testMethodThree'
 ##teamcity[testSuiteFinished name='test.MetaTestSuite'
-##teamcity[testSuiteFinished name='Gradle Worker 1'

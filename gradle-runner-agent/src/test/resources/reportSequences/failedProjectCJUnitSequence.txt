@@ -1,4 +1,3 @@
-##teamcity[testSuiteStarted name='Gradle Worker 1'
 ##teamcity[testSuiteStarted name='test.GreeterJUnitTest'
 ##teamcity[testStarted name='test.GreeterJUnitTest.testGreet' captureStandardOutput='true'
 ##teamcity[testFinished name='test.GreeterJUnitTest.testGreet'
@@ -8,5 +7,3 @@
 ##teamcity[testFailed name='test.GreeterJUnitTest.failedTest' message='Explicit |'test|' |[failure|] ||' details='java.lang.AssertionError: Explicit |'test|' |[failure|] |||n	at org.junit.Assert.fail(Assert.java:91)|n	at test.GreeterJUnitTest.failedTest(GreeterJUnitTest.java:24)|n
 ##teamcity[testFinished name='test.GreeterJUnitTest.failedTest'
 ##teamcity[testSuiteFinished name='test.GreeterJUnitTest'
-##teamcity[testSuiteFinished name='Gradle Worker 1'
-

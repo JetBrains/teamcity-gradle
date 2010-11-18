@@ -19,14 +19,12 @@ gradle-0.9-rc-1-bin.zip to
 ##teamcity[blockOpened name=':testClasses']
 ##teamcity[blockClosed name=':testClasses']
 ##teamcity[blockOpened name=':test']
-##teamcity[testSuiteStarted name='Gradle Worker 1'
 ##teamcity[testSuiteStarted name='test.GradleGreeterTest'
 ##teamcity[testStarted name='test.GradleGreeterTest.testGreet' captureStandardOutput='true'
 ##teamcity[testFinished name='test.GradleGreeterTest.testGreet'
 ##teamcity[testStarted name='test.GradleGreeterTest.testIntro' captureStandardOutput='true'
 ##teamcity[testFinished name='test.GradleGreeterTest.testIntro'
 ##teamcity[testSuiteFinished name='test.GradleGreeterTest'
-##teamcity[testSuiteFinished name='Gradle Worker 1'
 ##teamcity[blockClosed name=':test']
 ##teamcity[blockOpened name=':check']
 ##teamcity[blockClosed name=':check']

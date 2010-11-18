@@ -1,4 +1,3 @@
-##teamcity[testSuiteStarted name='Gradle Worker 1'
 ##teamcity[testSuiteStarted name='TestAlpha'
 ##teamcity[testStarted name='test.GreeterTestNGTest.testIntro' captureStandardOutput='true'
 ##teamcity[testFinished name='test.GreeterTestNGTest.testIntro'
@@ -8,4 +7,3 @@
 ##teamcity[testStarted name='test.GreeterTestNGTest.testGreet' captureStandardOutput='true'
 ##teamcity[testFinished name='test.GreeterTestNGTest.testGreet'
 ##teamcity[testSuiteFinished name='TestAlpha'
-##teamcity[testSuiteFinished name='Gradle Worker 1'

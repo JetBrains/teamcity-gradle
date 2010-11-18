@@ -197,6 +197,7 @@ public class TeamcityTestListener implements TestListener {
           code = oldCode;
         }
       }
+      return; // do not report service message for workers
     }
 
     if (null != suite.getParent()) { // do not report root empty suite
@@ -212,7 +213,8 @@ public class TeamcityTestListener implements TestListener {
    * @param result The aggregate result for the suite.
    */
   public void afterSuite(TestDescriptor suite, TestResult result) {
-    if (null != suite.getParent()) { // do not report root empty suite
+    if (null != suite.getParent() && // do not report root empty suite
+        null != suite.getParent().getParent()) { // do not report workers
       ServiceMessage msg = new TestSuiteFinished(suite.getName());
       msg.setFlowId(findFlowId(suite));
       System.out.println(msg.asString());
