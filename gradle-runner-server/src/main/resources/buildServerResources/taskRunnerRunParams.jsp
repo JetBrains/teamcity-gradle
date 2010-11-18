@@ -3,6 +3,7 @@
 <%@ taglib prefix="l" tagdir="/WEB-INF/tags/layout" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="forms" tagdir="/WEB-INF/tags/forms" %>
+<%@ taglib prefix="bs" tagdir="/WEB-INF/tags" %>
 
 <l:settingsGroup title="Gradle Parameters">
     <tr>
@@ -12,8 +13,7 @@
         </td>
     </tr>
     <tr>
-        <th><label for="gradle.home">Gradle home path: <bs:help file="Gradle"
-                                                                anchor="gradleParamsOptionDescription"/></label></th>
+        <th><label for="gradle.home">Gradle home path: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_HOME%>" className="longField"/>
             <span class="smallNote">Path to the Gradle home directory (parent of bin directory). Overrides agent GRADLE_HOME environment variable</span>
         </td>
@@ -26,7 +26,7 @@
         </td>
     </tr>
     <tr>
-        <th><label>Gradle Wrapper: </label></th>
+        <th><label>Gradle Wrapper: <bs:help file="Gradle" anchor="GradleParameters"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_FLAG%>"/>
           <label for="ui.gradleRunner.gradle.wrapper.useWrapper">Use gradle wrapper to build project</label>
         </td>
