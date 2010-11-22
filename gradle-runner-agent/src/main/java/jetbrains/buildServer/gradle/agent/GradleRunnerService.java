@@ -103,8 +103,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     return javaHome;
   }
 
-  private File getGradleHome() throws RunBuildException
-  {
+  private File getGradleHome() {
     final String gradlePath = getRunnerContext().getToolPath(GradleToolProvider.GRADLE_TOOL);
     return new File(gradlePath);
   }
@@ -153,8 +152,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     params.add(initScript.getAbsolutePath());
   }
 
-  private String buildInitScriptClassPath() {
-
+  private String buildInitScriptClassPath() throws RunBuildException {
     try {
       File serviceMessagesLib;
       File runtimeUtil;
@@ -164,9 +162,8 @@ public class GradleRunnerService extends BuildServiceAdapter
       return serviceMessagesLib.getAbsolutePath() + File.pathSeparator + runtimeUtil.getAbsolutePath();
 
     } catch (IOException e) {
-      getLogger().internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE, "Failed to load init script classes.",e);
+      throw new RunBuildException("Failed to create init script classpath", e);
     }
-    return null;
   }
 
   @NotNull
