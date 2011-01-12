@@ -48,7 +48,7 @@ public class GradleToolProvider {
           if (gradleDir.exists()) {
             return gradleDir.getAbsolutePath();
           } else {
-            throw new ToolCannotBeFoundException("Unable to find Gradle's home");
+            throw new ToolCannotBeFoundException("Couldn't locate Gradle installation. Please use wrapper script or install Gradle and set environment variable GRADLE_HOME");
           }
         }
       }
