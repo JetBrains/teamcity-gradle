@@ -184,6 +184,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockBuild).getCheckoutDirectory(); will(returnValue(myCoDir));
       allowing(myMockBuild).getBuildTempDirectory(); will(returnValue(myTempDir));
       allowing(myMockBuild).getFailBuildOnExitCode(); will(returnValue(true));
+      allowing(myMockBuild).getSharedConfigParameters(); will(returnValue(myRunnerParams));
 
       allowing(myMockRunner).getRunnerParameters(); will(returnValue(myRunnerParams));
       allowing(myMockRunner).getBuildParameters(); will(returnValue(buildParams));
