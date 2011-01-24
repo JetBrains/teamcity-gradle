@@ -27,6 +27,7 @@ public class GradleRunnerConstants
   public static final String STACKTRACE = "ui.gradleRunner.gradle.stacktrace.enabled";
   public static final String DEBUG = "ui.gradleRunner.gradle.debug.enabled";
   public static final String GRADLE_WRAPPER_FLAG = "ui.gradleRunner.gradle.wrapper.useWrapper";
+  public static final String GRADLE_WRAPPER_PATH = "ui.gradleRunner.gradle.wrapper.path";
 
   // todo: it would be nice to autoconfigure some of the params based on type of build
   public static final String GRADLE_MODE_KEY = "GRADLE_RUNNER_MODE";
@@ -37,4 +38,5 @@ public class GradleRunnerConstants
   public static final String ENV_JAVA_OPTS = "JAVA_OPTS";
   public static final String INIT_SCRIPT_NAME = "init.gradle";
   public static final String INIT_SCRIPT_SUFFIX = "scripts/"+INIT_SCRIPT_NAME;
+
 }

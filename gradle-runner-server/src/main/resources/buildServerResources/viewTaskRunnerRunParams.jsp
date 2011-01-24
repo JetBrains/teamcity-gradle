@@ -19,6 +19,10 @@
 </div>
 
 <div class="parameter">
+    Path to Gradle wrapper: <strong><props:displayValue name="ui.gradleRunner.gradle.wrapper.path" emptyValue="not specified"/></strong>
+</div>
+
+<div class="parameter">
     Launching Parameters:
     <div class="nestedParameter">
       <ul style="list-style: none; padding-left: 0; margin-left: 0; margin-top: 0.1em; margin-bottom: 0.1em;">

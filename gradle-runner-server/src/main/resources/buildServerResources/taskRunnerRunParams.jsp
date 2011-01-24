@@ -31,6 +31,12 @@
           <label for="ui.gradleRunner.gradle.wrapper.useWrapper">Use gradle wrapper to build project</label>
         </td>
     </tr>
+    <tr>
+        <th><label for="ui.gradleRunner.gradle.wrapper.path">Path to Wrapper script: </label></th>
+        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>" className="longField"/>
+            <span class="smallNote">Optional path to the Gradle wrapper script. This path is relative to checkout directory</span>
+        </td>
+    </tr>
 </l:settingsGroup>
 
 <l:settingsGroup title="Launching Parameters">

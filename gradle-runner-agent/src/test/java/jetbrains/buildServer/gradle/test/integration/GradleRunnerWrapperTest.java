@@ -22,6 +22,8 @@ import jetbrains.buildServer.gradle.agent.GradleRunnerService;
 import jetbrains.buildServer.messages.ErrorData;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 /**
@@ -32,9 +34,15 @@ public class
 
   GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
 
+  @BeforeMethod
+  public void setUp() {
+    myRunnerParams.clear();
+  }
+
   @Test
   public void simpleWrapperTest() throws RunBuildException {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
+    myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_PATH, "gradle-runtime");
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectA", "clean build", "wrappedProjASequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
     runAndCheckServiceMessages(config);

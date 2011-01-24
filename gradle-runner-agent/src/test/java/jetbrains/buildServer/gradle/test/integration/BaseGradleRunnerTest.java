@@ -38,6 +38,7 @@ import org.jmock.lib.action.CustomAction;
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 
 import static org.testng.Assert.assertTrue;

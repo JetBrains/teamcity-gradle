@@ -57,4 +57,8 @@ public class ConfigurationParamsUtil
   {
     return t == null ? defaultValue : t;
   }
+
+  public static String getGradleWPath(final Map<String, String> runnerParameters) {
+    return preventNull(runnerParameters.get(GradleRunnerConstants.GRADLE_WRAPPER_PATH), "");
+  }
 }
