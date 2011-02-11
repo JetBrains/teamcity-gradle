@@ -27,11 +27,11 @@
     </tr>
     <tr>
         <th><label>Gradle Wrapper: <bs:help file="Gradle" anchor="GradleParameters"/></label></th>
-        <td><props:checkboxProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_FLAG%>"/>
+        <td><props:checkboxProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_FLAG%>" onclick="updateFieldsVisibility()"/>
           <label for="ui.gradleRunner.gradle.wrapper.useWrapper">Use gradle wrapper to build project</label>
         </td>
     </tr>
-    <tr>
+    <tr id="ui.gradleRunner.gradle.wrapper.path.tr">
         <th><label for="ui.gradleRunner.gradle.wrapper.path">Path to Wrapper script: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>" className="longField"/>
             <span class="smallNote">Optional path to the Gradle wrapper script. This path is relative to checkout directory</span>
@@ -60,3 +60,17 @@
     <props:editJavaHome/>
     <props:editJvmArgs/>
 </l:settingsGroup>
+
+<script type="text/javascript">
+  function updateFieldsVisibility(){
+    var useWrapper = $('ui.gradleRunner.gradle.wrapper.useWrapper').checked;
+    if (useWrapper) {
+      $('ui.gradleRunner.gradle.home').disabled = true;
+      BS.Util.show('ui.gradleRunner.gradle.wrapper.path.tr');
+    } else {
+      $('ui.gradleRunner.gradle.home').disabled = false;
+      BS.Util.hide('ui.gradleRunner.gradle.wrapper.path.tr');
+    }
+  }
+  updateFieldsVisibility();
+</script>
