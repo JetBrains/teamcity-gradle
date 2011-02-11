@@ -16,7 +16,6 @@
 
 package jetbrains.buildServer.gradle.agent;
 
-import java.io.File;
 import jetbrains.buildServer.agent.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +28,8 @@ public class GradleToolProvider {
   public static final String GRADLE_TOOL = "gradle";
   private static final String GRADLE_HOME = "GRADLE_HOME";
 
-  public GradleToolProvider(@NotNull ToolProvidersRegistry toolProvidersRegistry, @NotNull final BuildAgentConfiguration agentConfiguration) {
+  public GradleToolProvider(@NotNull ToolProvidersRegistry toolProvidersRegistry,
+                            @NotNull final BundledToolsRegistry bundled) {
     toolProvidersRegistry.registerToolProvider(new ToolProvider() {
 
       public boolean supports(@NotNull final String toolName) {
@@ -43,13 +43,11 @@ public class GradleToolProvider {
         if (null != gradleHomePath && gradleHomePath.length() > 0) {
           return gradleHomePath;
         } else {
-         // try to get bundled gradle
-          File gradleDir = new File(agentConfiguration.getAgentPluginsDirectory(), "gradle");
-          if (gradleDir.exists()) {
-            return gradleDir.getAbsolutePath();
-          } else {
+          final BundledTool tool = bundled.findTool(GRADLE_TOOL);
+          if (tool == null) {
             throw new ToolCannotBeFoundException("Couldn't locate Gradle installation. Please use wrapper script or install Gradle and set environment variable GRADLE_HOME");
           }
+          return tool.getRootPath().getPath();
         }
       }
 

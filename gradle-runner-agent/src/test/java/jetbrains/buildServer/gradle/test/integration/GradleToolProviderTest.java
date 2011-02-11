@@ -45,9 +45,7 @@ public class GradleToolProviderTest {
   private ToolProvider myToolProvider;
   private Mockery myContext;
 
-  private File myPluginsDir;
   private File myGradlePluginDir;
-  private BuildAgentConfiguration buildAgentConfig;
   private ToolProvidersRegistry tpRegistry;
   private ToolProvider registeredProvider;
   private AgentRunningBuild build;
@@ -80,26 +78,29 @@ public class GradleToolProviderTest {
 
   @BeforeClass
   public void initDirs() throws IOException {
-    myPluginsDir = myTempFiles.createTempDir();
-    myGradlePluginDir = new File(myPluginsDir, "gradle");
+    final File pluginsDir = myTempFiles.createTempDir();
+    myGradlePluginDir = new File(pluginsDir, "gradle");
     myGradlePluginDir.mkdirs();
   }
 
   @BeforeMethod
   public void setUp() {
     myContext = new Mockery();
-    buildAgentConfig = myContext.mock(BuildAgentConfiguration.class);
     tpRegistry = myContext.mock(ToolProvidersRegistry.class);
     build = myContext.mock(AgentRunningBuild.class);
     runner = myContext.mock(BuildRunnerContext.class);
+    final BundledToolsRegistry reg = myContext.mock(BundledToolsRegistry.class);
+    final BundledTool tool = myContext.mock(BundledTool.class);
 
     myContext.checking(new Expectations() {{
       allowing(tpRegistry).registerToolProvider(with(any(ToolProvider.class))); will(registerToolProvider);
       allowing(tpRegistry).findToolProvider(GradleToolProvider.GRADLE_TOOL); will(getRegisteredProvider);
-      allowing(buildAgentConfig).getAgentPluginsDirectory(); will(returnValue(myPluginsDir));
+
+      allowing(reg).findTool("gradle"); will(returnValue(tool));
+      allowing(tool).getRootPath(); will(returnValue(myGradlePluginDir));
     }});
 
-    new GradleToolProvider(tpRegistry, buildAgentConfig);
+    new GradleToolProvider(tpRegistry, reg);
     final ToolProvider toolProvider = tpRegistry.findToolProvider(GradleToolProvider.GRADLE_TOOL);
     assertNotNull(toolProvider);
     myToolProvider = toolProvider;
