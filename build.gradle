@@ -146,9 +146,3 @@ task wrapper(type: Wrapper) {
     gradleVersion = '1.0-milestone-1'
     jarPath = 'wrapper'
 }
-
-  task printProperties << {
-    teamcity.each { key, val ->
-      println "##tc-property name='${key}' value='${val}'"
-    }
-  }
