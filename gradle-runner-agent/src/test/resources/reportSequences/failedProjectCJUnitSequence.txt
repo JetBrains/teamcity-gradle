@@ -6,4 +6,7 @@
 ##teamcity[testStarted name='test.GreeterJUnitTest.failedTest' captureStandardOutput='true'
 ##teamcity[testFailed name='test.GreeterJUnitTest.failedTest' message='Explicit |'test|' |[failure|] ||' details='java.lang.AssertionError: Explicit |'test|' |[failure|] |||n	at org.junit.Assert.fail(Assert.java:91)|n	at test.GreeterJUnitTest.failedTest(GreeterJUnitTest.java:24)|n
 ##teamcity[testFinished name='test.GreeterJUnitTest.failedTest'
+##teamcity[testStarted name='test.GreeterJUnitTest.skippedTest' captureStandardOutput='true'
+##teamcity[testIgnored name='test.GreeterJUnitTest.skippedTest'
+##teamcity[testFinished name='test.GreeterJUnitTest.skippedTest'
 ##teamcity[testSuiteFinished name='test.GreeterJUnitTest'
