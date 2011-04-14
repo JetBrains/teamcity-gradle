@@ -26,6 +26,7 @@ import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.AgentRuntimeProperties;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.agent.ClasspathUtil;
+import jetbrains.buildServer.agent.ToolCannotBeFoundException;
 import jetbrains.buildServer.agent.runner.*;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.messages.ErrorData;
@@ -107,9 +108,13 @@ public class GradleRunnerService extends BuildServiceAdapter
     return javaHome;
   }
 
-  private File getGradleHome() {
-    final String gradlePath = getRunnerContext().getToolPath(GradleToolProvider.GRADLE_TOOL);
-    return new File(gradlePath);
+  private File getGradleHome() throws RunBuildException {
+    try {
+      final String gradlePath = getRunnerContext().getToolPath(GradleToolProvider.GRADLE_TOOL);
+      return new File(gradlePath);
+    } catch (ToolCannotBeFoundException e) {
+      throw new RunBuildException(e);
+    }
   }
 
   private String getJavaArgs()
@@ -185,7 +190,7 @@ public class GradleRunnerService extends BuildServiceAdapter
   public static class GradleVersionErrorsListener implements ProcessListener {
 
     public static final String WRONG_GRADLE_VERSION = "Incompatible Gradle initialization script API.\n" +
-                                                         "Please, make sure you are running correct Gradle versoin. TeamCity requires Gradle ver. 0.9-rc-1 at least.";
+                                                      "Please, make sure you are running correct Gradle versoin. TeamCity requires Gradle ver. 0.9-rc-1 at least.";
     private final Pattern initScriptFailure = Pattern.compile("Could not load compiled classes for initialization script(.*?)init\\.gradle" +
                                                               "|Could not compile initialization script(.*?)init\\.gradle" +
                                                               "|'init-script' is not a recognized option" +
