@@ -113,7 +113,9 @@ public class GradleRunnerService extends BuildServiceAdapter
       final String gradlePath = getRunnerContext().getToolPath(GradleToolProvider.GRADLE_TOOL);
       return new File(gradlePath);
     } catch (ToolCannotBeFoundException e) {
-      throw new RunBuildException(e);
+      RunBuildException ex = new RunBuildException(e.getMessage(), e, ErrorData.BUILD_RUNNER_ERROR_TYPE);
+      ex.setLogStacktrace(false);
+      throw ex;
     }
   }
 
