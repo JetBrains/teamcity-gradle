@@ -8,7 +8,7 @@
 <l:settingsGroup title="Gradle Parameters">
     <tr>
         <th><label for="ui.gradleRunner.gradle.tasks.names">Gradle tasks: </label></th>
-        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_TASKS%>" style="width:30em;" maxlength="256"/>
+        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_TASKS%>"  className="longField" maxlength="256"/>
             <span class="smallNote">Enter tasks names separated by space character, blank to use the 'default' task.<br/>For example: ':myproject:clean :myproject:build' or 'clean build'.</span>
         </td>
     </tr>
@@ -21,7 +21,7 @@
     <tr>
         <th><label for="ui.gradleRunner.additional.gradle.cmd.params">Additional Gradle command line
             parameters: </label></th>
-        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_PARAMS%>" style="width:30em;" maxlength="256"/>
+        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_PARAMS%>"  className="longField" maxlength="256"/>
             <span class="smallNote">Additional parameters will be added to the 'Gradle' command line.</span>
         </td>
     </tr>
