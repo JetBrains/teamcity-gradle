@@ -1,20 +1,7 @@
-import jetbrains.buildServer.messages.serviceMessages.ServiceMessage
-import jetbrains.buildServer.messages.serviceMessages.BlockOpened
-import jetbrains.buildServer.messages.serviceMessages.CompilationStarted
-import jetbrains.buildServer.messages.serviceMessages.Message
-import jetbrains.buildServer.messages.serviceMessages.CompilationFinished
-import jetbrains.buildServer.messages.serviceMessages.BlockClosed
-import jetbrains.buildServer.messages.serviceMessages.TestSuiteStarted
-import jetbrains.buildServer.messages.serviceMessages.TestSuiteFinished
-import jetbrains.buildServer.messages.serviceMessages.TestStarted
-import jetbrains.buildServer.messages.serviceMessages.TestFailed
-import jetbrains.buildServer.messages.serviceMessages.TestIgnored
-import jetbrains.buildServer.messages.serviceMessages.TestFinished
-import jetbrains.buildServer.messages.Status
 import java.util.concurrent.ConcurrentHashMap
 import jetbrains.buildServer.agent.AgentRuntimeProperties
-
-
+import jetbrains.buildServer.messages.Status
+import jetbrains.buildServer.messages.serviceMessages.*
 
 /*
 * Copyright 2000-2011 JetBrains s.r.o.
@@ -49,10 +36,14 @@ public class PropertiesLoadListener implements ProjectEvaluationListener {
 
   public void afterEvaluate(Project project, ProjectState projectState) {
     // TODO refactor this "multicast"
-    final Map teamcityProperties = (Map)project.getProperties().get("teamcity");
+    try {
+    final Map teamcityProperties = (Map)project.property("teamcity");
     if (null != teamcityProperties) {
       String jvmArgs = (String) teamcityProperties.get("gradle.test.jvmargs");
       passJvmArgsToTest(project, jvmArgs);
+    }
+    } catch (MissingPropertyException) {
+    // ignore
     }
   }
 
