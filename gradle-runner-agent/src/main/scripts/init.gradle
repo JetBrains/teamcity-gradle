@@ -35,15 +35,10 @@ public class PropertiesLoadListener implements ProjectEvaluationListener {
   }
 
   public void afterEvaluate(Project project, ProjectState projectState) {
-    // TODO refactor this "multicast"
-    try {
-    final Map teamcityProperties = (Map)project.property("teamcity");
-    if (null != teamcityProperties) {
+    if (project.hasProperty("teamcity")) {
+      final Map teamcityProperties = (Map)project.property("teamcity");
       String jvmArgs = (String) teamcityProperties.get("gradle.test.jvmargs");
       passJvmArgsToTest(project, jvmArgs);
-    }
-    } catch (MissingPropertyException) {
-    // ignore
     }
   }
 
