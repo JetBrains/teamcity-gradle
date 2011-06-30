@@ -1,6 +1,7 @@
 import java.util.concurrent.ConcurrentHashMap
+import jetbrains.buildServer.ComparisonFailureData
+import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
-import jetbrains.buildServer.messages.Status
 import jetbrains.buildServer.messages.serviceMessages.*
 
 /*
@@ -118,7 +119,7 @@ public class TeamcityTaskListener implements TaskExecutionListener {
       if (null != failure) {
         final TeamCityErrorStore outputListener = taskMessages.get(task);
         for(String str : outputListener.getMessages()) {
-          System.out.println(new Message(str, Status.ERROR, null).asString()); // compilation failure
+          System.out.println(new Message(str, "ERROR", null).asString()); // compilation failure
         }
       }
       message = new CompilationFinished(task.getPath());
@@ -228,7 +229,12 @@ public class TeamcityTestListener implements TestListener {
     ServiceMessage msg;
     switch (result.getResultType()) {
       case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
-        msg = new TestFailed(testName, result.getException());
+        ComparisonFailureData cfd = ComparisonFailureUtil.extractComparisonFailure(result.getException());
+        if (cfd != null) {
+          msg = new TestFailed(testName, result.getException(), cfd.getActual(), cfd.getExpected());
+        } else {
+          msg = new TestFailed(testName, result.getException());
+        }
         msg.setFlowId(findFlowId(testDescriptor));
         System.out.println(msg.asString());
         break;
