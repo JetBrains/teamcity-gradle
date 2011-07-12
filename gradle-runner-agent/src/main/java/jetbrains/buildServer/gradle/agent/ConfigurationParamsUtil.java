@@ -16,9 +16,12 @@
 
 package jetbrains.buildServer.gradle.agent;
 
+import java.util.List;
 import java.util.Map;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.runner.CommandLineArgumentsUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
+import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class ConfigurationParamsUtil
@@ -30,7 +33,7 @@ public class ConfigurationParamsUtil
 
   public static @NotNull String getJavaArgs(Map<String, String> runParameters)
   {
-    return preventNull(runParameters.get(JavaRunnerConstants.JVM_ARGS_KEY), "");
+    return StringUtil.newLineToSpaceDelimited(preventNull(runParameters.get(JavaRunnerConstants.JVM_ARGS_KEY), ""));
   }
 
   public static @NotNull String getGradleTasks(Map<String, String> runParameters)
@@ -38,9 +41,9 @@ public class ConfigurationParamsUtil
     return preventNull(runParameters.get(GradleRunnerConstants.GRADLE_TASKS), "");
   }
 
-  public static @NotNull String getGradleParams(Map<String, String> runParameters)
+  public static @NotNull List<String> getGradleParams(Map<String, String> runParameters)
   {
-    return preventNull(runParameters.get(GradleRunnerConstants.GRADLE_PARAMS), "");
+    return CommandLineArgumentsUtil.extractArguments(runParameters.get(GradleRunnerConstants.GRADLE_PARAMS));
   }
 
   public static boolean isParameterEnabled(final Map<String, String> runParameters, final String key)

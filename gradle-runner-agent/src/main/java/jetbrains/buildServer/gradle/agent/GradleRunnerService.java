@@ -129,9 +129,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     List<String> params = new ArrayList<String>();
     insertInitScript(params);
 
-    String gradleParams = ConfigurationParamsUtil.getGradleParams(getRunnerParameters());
-    if (gradleParams.length() > 0)
-      params.addAll(Arrays.asList(gradleParams.split(" ")));
+    params.addAll(ConfigurationParamsUtil.getGradleParams(getRunnerParameters()));
 
     if (ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(), GradleRunnerConstants.DEBUG))
       params.add("-d");
