@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import jetbrains.buildServer.ExtensionHolder;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.TempFiles;
 import jetbrains.buildServer.agent.*;
@@ -38,7 +39,6 @@ import org.jmock.lib.action.CustomAction;
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 
 import static org.testng.Assert.assertTrue;
@@ -97,6 +97,7 @@ public class BaseGradleRunnerTest {
   protected File myTempDir;
   protected File myCoDir;
   protected AgentRunningBuild myMockBuild;
+  protected ExtensionHolder myMockExtensionHolder;
   protected BuildRunnerContext myMockRunner;
   protected FlowLogger myMockLogger;
   protected File myProjectRoot;
@@ -155,7 +156,7 @@ public class BaseGradleRunnerTest {
 
     CommandLineBuildService service = new GradleRunnerServiceFactory().createService();
     service.initialize(myMockBuild, myMockRunner);
-    GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockBuild,service);
+    GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockBuild, service, myMockExtensionHolder);
     proc.start();
     proc.waitFor();
 
@@ -166,6 +167,8 @@ public class BaseGradleRunnerTest {
     Mockery context = new Mockery();
 
     final String flowId = FlowGenerator.generateNewFlow();
+
+    myMockExtensionHolder = context.mock(ExtensionHolder.class);
 
     myMockBuild = context.mock(AgentRunningBuild.class);
     myMockRunner = context.mock(BuildRunnerContext.class);
@@ -199,6 +202,8 @@ public class BaseGradleRunnerTest {
       allowing(myMockLogger).getFlowLogger(with(any(String.class)));will(returnValue(myMockLogger));
       allowing(myMockLogger).startFlow();
       allowing(myMockLogger).disposeFlow();
+
+      allowing(myMockExtensionHolder).findSingletonService(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(null));
     }};
 
     context.checking(initMockingCtx);
