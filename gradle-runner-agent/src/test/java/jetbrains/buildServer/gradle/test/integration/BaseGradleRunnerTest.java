@@ -19,6 +19,7 @@ package jetbrains.buildServer.gradle.test.integration;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jetbrains.buildServer.ExtensionHolder;
@@ -156,7 +157,7 @@ public class BaseGradleRunnerTest {
 
     CommandLineBuildService service = new GradleRunnerServiceFactory().createService();
     service.initialize(myMockBuild, myMockRunner);
-    GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockBuild, service, myMockExtensionHolder);
+    GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, service, myMockExtensionHolder);
     proc.start();
     proc.waitFor();
 
@@ -203,7 +204,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockLogger).startFlow();
       allowing(myMockLogger).disposeFlow();
 
-      allowing(myMockExtensionHolder).findSingletonService(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(null));
+      allowing(myMockExtensionHolder).getExtensions(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(Collections.<Object>emptyList()));
     }};
 
     context.checking(initMockingCtx);
