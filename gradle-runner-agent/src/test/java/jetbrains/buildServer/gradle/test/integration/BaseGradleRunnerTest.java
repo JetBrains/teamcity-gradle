@@ -157,7 +157,7 @@ public class BaseGradleRunnerTest {
 
     CommandLineBuildService service = new GradleRunnerServiceFactory().createService();
     service.initialize(myMockBuild, myMockRunner);
-    GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, service, myMockExtensionHolder);
+    GenericCommandLineBuildProcess proc = GenericCommandLineBuildProcess.createProcessWithOldStyleCLBuildService(myMockRunner, service, myMockExtensionHolder);
     proc.start();
     proc.waitFor();
 
