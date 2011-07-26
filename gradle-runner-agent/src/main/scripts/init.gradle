@@ -2,6 +2,7 @@ import java.util.concurrent.ConcurrentHashMap
 import jetbrains.buildServer.ComparisonFailureData
 import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
+import jetbrains.buildServer.agent.ReduceTestFailureFeedbackParameters
 import jetbrains.buildServer.messages.serviceMessages.*
 
 /*
@@ -21,15 +22,100 @@ import jetbrains.buildServer.messages.serviceMessages.*
 */
 
 initscript {
-    dependencies {
-      def teamCityInitLib = System.getenv("TEAMCITY_BUILD_INIT_PATH")
-      println "Init lib: ${teamCityInitLib}"
-      def classPathFiles = teamCityInitLib.split(File.pathSeparator)
-      classpath files(classPathFiles)
+  dependencies {
+    def teamCityInitLib = System.getenv("TEAMCITY_BUILD_INIT_PATH")
+    println "Init lib: ${teamCityInitLib}"
+    def classPathFiles = teamCityInitLib.split(File.pathSeparator)
+    classpath files(classPathFiles)
+  }
+}
+
+public class DependencyBasedTestRun {
+
+  public def configureGradle(Gradle gradle) {
+    def rootProject = gradle.rootProject
+    if (rootProject.hasProperty("teamcity")) {
+      def riskGroupTestsVal = rootProject.teamcity[ReduceTestFailureFeedbackParameters.RUN_RISK_GROUP_TESTS_FIRST_PARAM];
+      if (riskGroupTestsVal?.contains(ReduceTestFailureFeedbackParameters.AFFECTED_TESTS_DEPS_BASED_VALUE) ?: false) {
+        def modifiedProjects = findAffectedProjects(rootProject);
+        if (modifiedProjects.empty) {
+          def taskName = addReportTaskToProject(rootProject)
+          gradle.startParameter.taskNames = [taskName]
+        } else {
+          gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
+        }
+      }
+    }
+  }
+
+  private def addReportTaskToProject(Project project) {
+    def taskName = "report_nothing_changed"
+    while (null != project.tasks.findByName(taskName)) {
+      taskName = "_" + taskName
+    }
+
+    project.tasks.add(taskName, {
+      doFirst({
+        System.out.println(new Message("No changes detected in this build. Nothing to do.", "NORMAL", null))
+      })
+    })
+
+    return taskName
+  }
+
+  private def findAffectedProjects(Project project) {
+
+      if (project.teamcity.containsKey(AgentRuntimeProperties.CHANGED_FILES_FILE_PARAM)) {
+        def changedFiles = readChangedFiles(project.teamcity);
+        def sourceSetsToProject = readSourceSets(project);
+
+        // TODO remove debug prints
+        println "Modified Files: ${changedFiles}"
+        println "SourceSets to Project: ${sourceSetsToProject}"
+
+        def changedProjects = []
+        changedFiles.each { path ->
+          sourceSetsToProject.findAll({
+            path.startsWith(it.key)
+          }).collect(changedProjects) {it.value}
+        }
+
+        // TODO remove debug prints
+        println "### Touched projects:"
+        println changedProjects
+
+        return changedProjects
+      }
+    }
+
+    private def readSourceSets(Project proj) {
+      def result = [:]
+      proj.allprojects {
+          def collectRelativePath = { File file ->
+            def path = proj.relativePath(file.getAbsolutePath()).replace('\\','/')
+            result[path] = project.getPath()
+          }
+          sourceSets.all*.allSource.srcDirs*.each collectRelativePath
+          sourceSets.all*.resources.srcDirs*.each collectRelativePath
+      }
+      return result
+    }
+
+    private def readChangedFiles(Map TCProps) {
+      def result = []
+      String filename = TCProps["teamcity.build.changedFiles.file"]
+
+      new File(filename).eachLine { line ->
+        def matcher = line =~ /(.*):(.*):(.*)/
+        if (matcher) {
+          result << matcher[0][1]
+        }
+      }
+      return result
     }
 }
 
-public class PropertiesLoadListener implements ProjectEvaluationListener {
+public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
   public void beforeEvaluate(Project project) {
     loadProps(project);
@@ -37,28 +123,28 @@ public class PropertiesLoadListener implements ProjectEvaluationListener {
 
   public void afterEvaluate(Project project, ProjectState projectState) {
     if (project.hasProperty("teamcity")) {
-      final Map teamcityProperties = (Map)project.property("teamcity");
-      String jvmArgs = (String) teamcityProperties.get("gradle.test.jvmargs");
-      passJvmArgsToTest(project, jvmArgs);
+      loadTestJvmArgs(project);
     }
   }
 
-
-  private void passJvmArgsToTest(Project project, String jvmArgs) {
-    TaskCollection<Test> testTasks = project.getTasks().withType(Test.class);
-    if (null != jvmArgs && null != testTasks) {
-      for (Test task : testTasks) {
+  private def loadTestJvmArgs(Project project) {
+    String jvmArgs = (String) project.teamcity["gradle.test.jvmargs"]
+    TaskCollection<Test> testTasks = project.getTasks().withType(Test.class)
+    if (jvmArgs != null && testTasks != null) {
+      for (Test task: testTasks) {
         final String[] arguments = jvmArgs.split("\n");
         task.jvmArgs(arguments);
       }
     }
   }
 
+
   private void loadProps(Project p) {
     String propsFilePath = System.getProperty(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_PROP);
     if (null == propsFilePath) {
       propsFilePath = System.getenv(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV);
     }
+
     if (null != propsFilePath) {
       File propsFile = p.file(propsFilePath);
       Properties props = new Properties();
@@ -87,7 +173,6 @@ public class PropertiesLoadListener implements ProjectEvaluationListener {
     }
   }
 }
-
 
 public class TeamcityTaskListener implements TaskExecutionListener {
 
@@ -200,8 +285,7 @@ public class TeamcityTestListener implements TestListener {
    * @param result The aggregate result for the suite.
    */
   public void afterSuite(TestDescriptor suite, TestResult result) {
-    if (null != suite.getParent() && // do not report root empty suite
-        null != suite.getParent().getParent()) { // do not report workers
+    if (null != suite?.getParent()?.getParent()) { // do not report root empty suite and workers
       ServiceMessage msg = new TestSuiteFinished(suite.getName());
       msg.setFlowId(findFlowId(suite));
       System.out.println(msg.asString());
@@ -254,5 +338,7 @@ public class TeamcityTestListener implements TestListener {
 
 
 gradle.addListener(new TeamcityTestListener())
+gradle.addListener(new TeamcityPropertiesListener())
 gradle.useLogger(new TeamcityTaskListener())
-gradle.addListener(new PropertiesLoadListener())
+
+gradle.projectsEvaluated { new DependencyBasedTestRun().configureGradle(it) }
