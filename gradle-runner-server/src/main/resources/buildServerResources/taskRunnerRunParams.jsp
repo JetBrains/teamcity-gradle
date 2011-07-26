@@ -61,6 +61,12 @@
     <props:editJvmArgs/>
 </l:settingsGroup>
 
+<l:settingsGroup title="Test Parameters">
+  <props:reduceTestFailureFeedback showRecentlyFailed="false"
+                                   showRunNewAndModified="false"
+                                   showDepsBasedTestRun="true"/>
+</l:settingsGroup>
+
 <script type="text/javascript">
   function updateFieldsVisibility(){
     var useWrapper = $('ui.gradleRunner.gradle.wrapper.useWrapper').checked;
