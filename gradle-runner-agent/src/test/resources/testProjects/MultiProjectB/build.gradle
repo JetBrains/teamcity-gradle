@@ -1,0 +1,48 @@
+apply plugin: "java"
+dependencies {
+  testCompile files('../lib/junit-4.8.1.jar');
+}
+
+
+
+subprojects {
+  apply plugin: "java"
+  dependencies {
+    testCompile files('../../lib/junit-4.8.1.jar')
+  }
+
+  task printProperties << {
+    teamcity.each { key, val ->
+      println "##tc-property name='${key}' value='${val}'"
+    }
+  }
+}
+
+project (':projectB') {
+    dependencies {
+      compile project(':projectA')
+    }
+}
+
+project (':projectD') {
+    dependencies {
+      compile project(':projectC')
+    }
+}
+
+project(':projectA') {
+    dependencies {
+      compile project(':')
+    }
+}
+
+project(':projectC') {
+    dependencies {
+      compile project(':')
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.0-milestone-3'
+}
+

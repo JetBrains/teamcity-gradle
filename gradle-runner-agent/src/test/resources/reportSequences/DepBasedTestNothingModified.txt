@@ -1,0 +1,3 @@
+##teamcity[blockOpened name=':report_nothing_changed']
+##teamcity[message text='No changes detected in this build. Nothing to do.' status='NORMAL']
+##teamcity[blockClosed name=':report_nothing_changed']

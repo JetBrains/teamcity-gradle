@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import jetbrains.buildServer.ExtensionHolder;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.TempFiles;
+import jetbrains.buildServer.TestLogger;
 import jetbrains.buildServer.agent.*;
 import jetbrains.buildServer.agent.runner.CommandLineBuildService;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
@@ -38,9 +39,7 @@ import org.jmock.api.Action;
 import org.jmock.api.Invocation;
 import org.jmock.lib.action.CustomAction;
 import org.testng.Reporter;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
+import org.testng.annotations.*;
 
 import static org.testng.Assert.assertTrue;
 
@@ -58,6 +57,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_C_NAME = "projectC";
   public static final String PROJECT_D_NAME = "projectD";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
+  protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
 
   protected final TempFiles myTempFiles = new TempFiles();
 
@@ -65,7 +65,8 @@ public class BaseGradleRunnerTest {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
-          Reporter.log("[MSG]" + param.toString());
+          final String output = param == null ? "" : param.toString() ;
+          Reporter.log("[MSG]" + output);
         }
       }
       return null;
@@ -76,7 +77,8 @@ public class BaseGradleRunnerTest {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
-          Reporter.log("[WRN]" + param.toString());
+          final String output = param == null ? "" : param.toString() ;
+          Reporter.log("[WRN]" + output);
         }
       }
       return null;
@@ -87,7 +89,8 @@ public class BaseGradleRunnerTest {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
-          Reporter.log("[ERR]" + param.toString());
+          final String output = param == null ? "" : param.toString() ;
+          Reporter.log("[ERR]" + output);
         }
       }
       return null;
@@ -104,6 +107,7 @@ public class BaseGradleRunnerTest {
   protected File myProjectRoot;
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
+  private TestLogger myTestLogger = new TestLogger();
 
 
   @DataProvider(name = "gradle-path-provider")
@@ -131,6 +135,7 @@ public class BaseGradleRunnerTest {
     myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     findInitScript(myProjectRoot);
     createProjectsWorkingCopy(myProjectRoot);
+    myTestLogger.onSuiteStart();
   }
 
 
@@ -147,7 +152,7 @@ public class BaseGradleRunnerTest {
   }
 
   @AfterClass
-  public void tearDown() {
+  public void tearDownClass() {
     myTempFiles.cleanup();
   }
 
@@ -162,6 +167,16 @@ public class BaseGradleRunnerTest {
     proc.waitFor();
 
     context.assertIsSatisfied();
+  }
+
+  @BeforeMethod
+  public void setUp() throws Exception {
+    myTestLogger.onTestStart();
+  }
+
+  @AfterMethod
+  public void tearDown() throws Exception {
+    myTestLogger.onTestFinish(false);
   }
 
   protected Mockery initContext(final String projectName, final String gradleParams, final String gradleHomePath) {
@@ -195,6 +210,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockRunner).getBuildParameters(); will(returnValue(buildParams));
       allowing(myMockRunner).getWorkingDirectory(); will(returnValue(workingDir));
       allowing(myMockRunner).getToolPath("gradle"); will(returnValue(gradleHomePath));
+      allowing(myMockRunner).getBuild(); will(returnValue(myMockBuild));
 
       allowing(buildParams).getAllParameters(); will(returnValue(myBuildEnvVars));
       allowing(buildParams).getEnvironmentVariables(); will(returnValue(myBuildEnvVars));

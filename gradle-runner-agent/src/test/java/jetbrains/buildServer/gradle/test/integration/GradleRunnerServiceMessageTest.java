@@ -85,6 +85,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
       allowing(myMockLogger).warning(with(any(String.class))); will(reportWarning);
       allowing(myMockLogger).error(with(any(String.class))); will(reportError);
+      allowing(myMockLogger).internalError(with(any(String.class)), with(any(String.class)), with(any(Throwable.class)));
+      will(reportError);
     }};
 
     runTest(gatherServiceMessage, ctx);
@@ -107,6 +109,10 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     final Expectations gatherServiceMessage = new Expectations() {{
       allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
       allowing(myMockLogger).warning(with(any(String.class))); will(gatherMessage);
+      allowing(myMockLogger).error(with(any(String.class))); will(gatherMessage);
+      allowing(myMockLogger).internalError(with(any(String.class)),
+                                           with(any(String.class)),
+                                           with(any(Throwable.class))); will(gatherMessage);
     }};
 
     runTest(gatherServiceMessage, ctx);
@@ -179,7 +185,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       reportMessage.invoke(invocation);
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
-          final Matcher matcher = myPattern.matcher(param.toString());
+          final String line = param == null ? "" : param.toString();
+          final Matcher matcher = myPattern.matcher(line);
           while(matcher.find()) {
             // convert to unix line ending
             String escapedMessage = matcher.group(0).replaceAll("\\|r\\|n","|n");
