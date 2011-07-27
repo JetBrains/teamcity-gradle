@@ -39,7 +39,9 @@ import org.jmock.api.Action;
 import org.jmock.api.Invocation;
 import org.jmock.lib.action.CustomAction;
 import org.testng.Reporter;
-import org.testng.annotations.*;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 
 import static org.testng.Assert.assertTrue;
 
@@ -130,7 +132,7 @@ public class BaseGradleRunnerTest {
     return result;
   }
 
-  @BeforeClass
+  @BeforeMethod
   public void checkEnvironment() throws IOException {
     myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     findInitScript(myProjectRoot);
@@ -151,7 +153,7 @@ public class BaseGradleRunnerTest {
     assertTrue(myInitScript.canRead(), "Path to init script must point to existing and readable file.");
   }
 
-  @AfterClass
+  @AfterMethod
   public void tearDownClass() {
     myTempFiles.cleanup();
   }

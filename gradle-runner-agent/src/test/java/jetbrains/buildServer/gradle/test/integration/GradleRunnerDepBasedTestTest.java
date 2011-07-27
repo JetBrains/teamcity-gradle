@@ -18,9 +18,9 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testSingleDependency(String gradleHome) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1");
-    final File runtimePropsFile = new File(myCoDir, "testDepsBasedTestRun.properties");
+    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
 
-    addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsFile);
+    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
 
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      runtimePropsFile.getAbsolutePath());
@@ -37,9 +37,9 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testDoubleDependency(String gradleHome) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("src/main/java/my/module/GreeterRoot.java:ADD:1");
-    final File runtimePropsFile = new File(myCoDir, "testDepsBasedTestRun.properties");
+    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
 
-    addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsFile);
+    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
 
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      runtimePropsFile.getAbsolutePath());
@@ -55,9 +55,9 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testNoDependency(String gradleHome) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectD/src/main/java/my/module/GreeterD.java:ADD:1");
-    final File runtimePropsFile = new File(myCoDir, "testDepsBasedTestRun.properties");
+    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
 
-    addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsFile);
+    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
 
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      runtimePropsFile.getAbsolutePath());
@@ -72,9 +72,9 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   @Test(dataProvider = "gradle-path-provider")
   public void testNothingTouched(String gradleHome) throws Exception {
     final String changedFilesPath = createFileWithChanges("");
-    final File runtimePropsFile = new File(myCoDir, "testDepsBasedTestRun.properties");
+    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
 
-    addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsFile);
+    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
 
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      runtimePropsFile.getAbsolutePath());
@@ -92,7 +92,8 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     return changedFilesFile.getAbsolutePath().replaceAll("\\\\", "/");
   }
 
-  private void addChangedFilesToRuntimeProps(final String changedFilesPath, final File runtimePropsFile) throws IOException {
+  private File addChangedFilesToRuntimeProps(final String changedFilesPath, final File runtimePropsFile) throws IOException {
+
     final List<String> properties = FileUtil.readFile(runtimePropsFile);
     for (int i = 0; i < properties.size(); i++) {
       String property = properties.get(i);
@@ -102,6 +103,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
         properties.set(i, changedFilesProperty);
       }
     }
-    FileUtil.writeFile(runtimePropsFile, StringUtil.join("\n", properties));
+    final File resultFile = myTempFiles.createTempFile(StringUtil.join("\n", properties));
+    return resultFile;
   }
 }
