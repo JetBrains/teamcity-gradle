@@ -32,17 +32,29 @@ initscript {
 
 public class DependencyBasedTestRun {
 
+  def logger
+
+  public DependencyBasedTestRun(Logger logger) {
+    this.logger = logger
+  }
+
   public def configureGradle(Gradle gradle) {
     def rootProject = gradle.rootProject
     if (rootProject.hasProperty("teamcity")) {
       def riskGroupTestsVal = rootProject.teamcity[ReduceTestFailureFeedbackParameters.RUN_RISK_GROUP_TESTS_FIRST_PARAM];
+      logger.debug("Recieved following risk group settings: ${riskGroupTestsVal}")
+
       if (riskGroupTestsVal?.contains(ReduceTestFailureFeedbackParameters.AFFECTED_TESTS_DEPS_BASED_VALUE) ?: false) {
+        logger.debug("Will look for affected projects")
         def modifiedProjects = findAffectedProjects(rootProject);
+
         if (modifiedProjects.empty) {
+          logger.debug("No affected projects found. Reporting.")
           def taskName = addReportTaskToProject(rootProject)
           gradle.startParameter.taskNames = [taskName]
         } else {
           gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
+          logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
         }
       }
     }
@@ -69,9 +81,8 @@ public class DependencyBasedTestRun {
         def changedFiles = readChangedFiles(project.teamcity);
         def sourceSetsToProject = readSourceSets(project);
 
-        // TODO remove debug prints
-        println "Modified Files: ${changedFiles}"
-        println "SourceSets to Project: ${sourceSetsToProject}"
+        logger.debug("Modified Files: ${changedFiles}")
+        logger.debug("SourceSets to Project: ${sourceSetsToProject}")
 
         def changedProjects = []
         changedFiles.each { path ->
@@ -80,9 +91,8 @@ public class DependencyBasedTestRun {
           }).collect(changedProjects) {it.value}
         }
 
-        // TODO remove debug prints
-        println "### Touched projects:"
-        println changedProjects
+        logger.debug("Changes detected in following projects:")
+        logger.debug("${changedProjects}")
 
         return changedProjects
       }
@@ -340,5 +350,4 @@ public class TeamcityTestListener implements TestListener {
 gradle.addListener(new TeamcityTestListener())
 gradle.addListener(new TeamcityPropertiesListener())
 gradle.useLogger(new TeamcityTaskListener())
-
-gradle.projectsEvaluated { new DependencyBasedTestRun().configureGradle(it) }
+gradle.projectsEvaluated { new DependencyBasedTestRun(logger).configureGradle(it) }
