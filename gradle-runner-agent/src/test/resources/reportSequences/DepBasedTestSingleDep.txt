@@ -64,5 +64,7 @@
 ##teamcity[blockClosed name=':projectD:check']
 ##teamcity[blockOpened name=':projectD:build']
 ##teamcity[blockClosed name=':projectD:build']
+##teamcity[blockOpened name=':projectD:buildDependents']
+##teamcity[blockClosed name=':projectD:buildDependents']
 ##teamcity[blockOpened name=':projectC:buildDependents']
 ##teamcity[blockClosed name=':projectC:buildDependents']
