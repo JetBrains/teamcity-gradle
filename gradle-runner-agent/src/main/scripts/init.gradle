@@ -112,16 +112,21 @@ public class DependencyBasedTestRun {
     }
 
     private def readChangedFiles(Map TCProps) {
-      def result = []
       String filename = TCProps["teamcity.build.changedFiles.file"]
 
-      new File(filename).eachLine { line ->
-        def matcher = line =~ /(.*):(.*):(.*)/
-        if (matcher) {
-          result << matcher[0][1]
+      def lines = new File(filename).readLines()
+      def personalMatch = /(.*):(.*):<personal>/
+      def allMatch = /(.*):(.*):(.*)/
+
+      if (lines.any { it ==~ personalMatch }) {
+        return lines.grep(~personalMatch).collect {
+          (it =~ personalMatch)[0][1]
+        }
+      } else {
+        return lines.collect {
+          (it =~ allMatch)[0][1]
         }
       }
-      return result
     }
 }
 

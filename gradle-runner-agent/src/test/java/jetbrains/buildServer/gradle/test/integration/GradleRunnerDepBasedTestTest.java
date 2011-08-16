@@ -87,6 +87,24 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
+  @Test(dataProvider = "gradle-path-provider")
+  public void testPersonalChange(String gradleHome) throws Exception {
+    final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1\n" +
+                                                          "projectA/src/main/java/my/module/GreeterA.java:ADD:<personal>");
+    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
+
+    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
+
+    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
+                     runtimePropsFile.getAbsolutePath());
+
+    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
+                                                                                     "clean",
+                                                                                     "DepBasedTestPersonalChange.txt");
+    gradleRunConfiguration.setGradleHome(gradleHome);
+    runAndCheckServiceMessages(gradleRunConfiguration);
+  }
+
   private String createFileWithChanges(final String changesList) throws IOException {
     File changedFilesFile = myTempFiles.createTempFile(changesList);
     return changedFilesFile.getAbsolutePath().replaceAll("\\\\", "/");
