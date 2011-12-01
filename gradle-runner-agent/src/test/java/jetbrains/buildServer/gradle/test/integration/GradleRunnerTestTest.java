@@ -47,6 +47,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
     gradleRunConfiguration.setGradleHome(gradleHomePath);
     runAndCheckServiceMessages(gradleRunConfiguration);
+    //runAndWriteServiceMessages(gradleRunConfiguration, true);
   }
 
   @Test(dataProvider = "gradle-path-provider")
@@ -57,6 +58,11 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   @Test(dataProvider = "gradle-path-provider")
   public void failedAndSkippedTestNGTest(final String gradleHomePath) throws RunBuildException {
     testTest(PROJECT_C_NAME, "clean testng", "failedProjectCTestNGSequence.txt", gradleHomePath);
+  }
+
+  @Test(dataProvider = "gradle-path-provider")
+  public void testOutputReportingTest(final String gradleHomePath) throws RunBuildException {
+    testTest(PROJECT_E_NAME, "clean test", "testOutputSequence.txt", gradleHomePath);
   }
 
   @Test(dataProvider = "gradle-path-provider")

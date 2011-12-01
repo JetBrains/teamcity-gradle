@@ -58,6 +58,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_B_NAME = "projectB";
   public static final String PROJECT_C_NAME = "projectC";
   public static final String PROJECT_D_NAME = "projectD";
+  public static final String PROJECT_E_NAME = "projectE";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
 
@@ -115,6 +116,9 @@ public class BaseGradleRunnerTest {
   @DataProvider(name = "gradle-path-provider")
   public Object[][] getGradlePaths(Method m) {
     Object[][] result;
+    if (myProjectRoot == null) {
+      myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
+    }
     File gradleDir = new File(myProjectRoot, "../../../tools/gradle");
     Reporter.log(gradleDir.getAbsolutePath());
     if (gradleDir.exists()) {
@@ -134,7 +138,9 @@ public class BaseGradleRunnerTest {
 
   @BeforeMethod
   public void checkEnvironment() throws IOException {
-    myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
+    if (myProjectRoot == null) {
+      myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
+    }
     findInitScript(myProjectRoot);
     createProjectsWorkingCopy(myProjectRoot);
     myTestLogger.onSuiteStart();

@@ -77,57 +77,57 @@ public class DependencyBasedTestRun {
 
   private def findAffectedProjects(Project project) {
 
-      if (project.teamcity.containsKey(AgentRuntimeProperties.CHANGED_FILES_FILE_PARAM)) {
-        def changedFiles = readChangedFiles(project.teamcity);
-        def sourceSetsToProject = readSourceSets(project);
+    if (project.teamcity.containsKey(AgentRuntimeProperties.CHANGED_FILES_FILE_PARAM)) {
+      def changedFiles = readChangedFiles(project.teamcity);
+      def sourceSetsToProject = readSourceSets(project);
 
-        logger.debug("Modified Files: ${changedFiles}")
-        logger.debug("SourceSets to Project: ${sourceSetsToProject}")
+      logger.debug("Modified Files: ${changedFiles}")
+      logger.debug("SourceSets to Project: ${sourceSetsToProject}")
 
-        def changedProjects = []
-        changedFiles.each { path ->
-          sourceSetsToProject.findAll({
-            path.startsWith(it.key)
-          }).collect(changedProjects) {it.value}
-        }
+      def changedProjects = []
+      changedFiles.each { path ->
+        sourceSetsToProject.findAll({
+          path.startsWith(it.key)
+        }).collect(changedProjects) {it.value}
+      }
 
-        logger.debug("Changes detected in following projects:")
-        logger.debug("${changedProjects}")
+      logger.debug("Changes detected in following projects:")
+      logger.debug("${changedProjects}")
 
-        return changedProjects
+      return changedProjects
+    }
+  }
+
+  private def readSourceSets(Project proj) {
+    def result = [:]
+    proj.allprojects {
+      def collectRelativePath = { File file ->
+        def path = proj.relativePath(file.getAbsolutePath()).replace('\\','/')
+        result[path] = project.getPath()
+      }
+      sourceSets.all*.allSource.srcDirs*.each collectRelativePath
+      sourceSets.all*.resources.srcDirs*.each collectRelativePath
+    }
+    return result
+  }
+
+  private def readChangedFiles(Map TCProps) {
+    String filename = TCProps["teamcity.build.changedFiles.file"]
+
+    def lines = new File(filename).readLines()
+    def personalMatch = /(.*):(.*):<personal>/
+    def allMatch = /(.*):(.*):(.*)/
+
+    if (lines.any { it ==~ personalMatch }) {
+      return lines.grep(~personalMatch).collect {
+        (it =~ personalMatch)[0][1]
+      }
+    } else {
+      return lines.collect {
+        (it =~ allMatch)[0][1]
       }
     }
-
-    private def readSourceSets(Project proj) {
-      def result = [:]
-      proj.allprojects {
-          def collectRelativePath = { File file ->
-            def path = proj.relativePath(file.getAbsolutePath()).replace('\\','/')
-            result[path] = project.getPath()
-          }
-          sourceSets.all*.allSource.srcDirs*.each collectRelativePath
-          sourceSets.all*.resources.srcDirs*.each collectRelativePath
-      }
-      return result
-    }
-
-    private def readChangedFiles(Map TCProps) {
-      String filename = TCProps["teamcity.build.changedFiles.file"]
-
-      def lines = new File(filename).readLines()
-      def personalMatch = /(.*):(.*):<personal>/
-      def allMatch = /(.*):(.*):(.*)/
-
-      if (lines.any { it ==~ personalMatch }) {
-        return lines.grep(~personalMatch).collect {
-          (it =~ personalMatch)[0][1]
-        }
-      } else {
-        return lines.collect {
-          (it =~ allMatch)[0][1]
-        }
-      }
-    }
+  }
 }
 
 public class TeamcityPropertiesListener implements ProjectEvaluationListener {
@@ -253,9 +253,10 @@ public class TeamcityTaskListener implements TaskExecutionListener {
 
 }
 
-public class TeamcityTestListener implements TestListener {
-  ConcurrentHashMap<TestDescriptor, String> workerCodes = new ConcurrentHashMap();
-  TestDescriptor root;
+
+public class TeamcityTestListener {
+  def workerCodes = new ConcurrentHashMap();
+  def root;
 
   String findFlowId(TestDescriptor desc) {
     String code = "";
@@ -312,7 +313,7 @@ public class TeamcityTestListener implements TestListener {
    * @param testDescriptor The test which is about to be executed.
    */
   public void beforeTest(TestDescriptor testDescriptor) {
-    String testName = testDescriptor.getClassName() + "." + testDescriptor.getName();
+    String testName = getTestName(testDescriptor)
     ServiceMessage msg = new TestStarted(testName, true, null);
     msg.setFlowId(findFlowId(testDescriptor));
     System.out.println(msg.asString());
@@ -324,7 +325,7 @@ public class TeamcityTestListener implements TestListener {
    * @param result The test result.
    */
   public void afterTest(TestDescriptor testDescriptor, TestResult result) {
-    String testName = testDescriptor.getClassName() + "." + testDescriptor.getName();
+    String testName = getTestName(testDescriptor);
     ServiceMessage msg;
     switch (result.getResultType()) {
       case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
@@ -349,10 +350,65 @@ public class TeamcityTestListener implements TestListener {
     msg.setFlowId(findFlowId(testDescriptor));
     System.out.println(msg.asString());
   }
+
+  public void onOutput(testDescriptor, outputEvent) {
+    def testName = getTestName(testDescriptor)
+    def msg
+    switch (outputEvent.getDestination()) {
+      case TestOutputEvent.Destination.StdErr:
+        msg = new TestStdErr(testName, outputEvent.getMessage())
+        break
+      case TestOutputEvent.Destination.StdOut:
+        msg = new TestStdOut(testName, outputEvent.getMessage())
+        break
+    }
+    msg.setFlowId(findFlowId(testDescriptor))
+    System.out.println(msg.asString())
+  }
+
+  private String getTestName(TestDescriptor testDescriptor) {
+    return testDescriptor.getClassName() + "." + testDescriptor.getName()
+  }
+
+  def testListenerDelegate = [
+          beforeSuite :  { suite ->
+            this.beforeSuite(suite)
+          },
+
+          afterSuite : { suite, result ->
+            this.afterSuite(suite, result)
+          },
+
+          beforeTest : { testDescriptor ->
+            this.beforeTest(testDescriptor)
+          },
+
+          afterTest : { testDescriptor, result ->
+            this.afterTest(testDescriptor, result)
+          }]
+
+  def testOutputDelegate = [
+          onOutput : { testDescriptor, outputEvent ->
+            this.onOutput(testDescriptor, outputEvent)
+          }]
+
 }
 
 
-gradle.addListener(new TeamcityTestListener())
+
+
+def teamcityTestListener = new TeamcityTestListener()
+gradle.addListener(teamcityTestListener.testListenerDelegate as TestListener)
+
+try {
+  def testOutputListenerClass = Class.forName("org.gradle.api.tasks.testing.TestOutputListener",false, getClass().getClassLoader());
+  gradle.addListener(teamcityTestListener.testOutputDelegate.asType(testOutputListenerClass));
+  logger.debug("added teamCityListener as ${testOutputListenerClass.getName()}")
+
+} catch (ClassNotFoundException e) {
+  logger.debug("Could not load TestOutputListener class. Test out will not be available")
+}
+
 gradle.addListener(new TeamcityPropertiesListener())
 gradle.useLogger(new TeamcityTaskListener())
 gradle.projectsEvaluated { new DependencyBasedTestRun(logger).configureGradle(it) }

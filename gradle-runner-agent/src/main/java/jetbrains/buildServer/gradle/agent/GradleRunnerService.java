@@ -68,10 +68,7 @@ public class GradleRunnerService extends BuildServiceAdapter
       if(!gradleExe.exists())
         throw new RunBuildException("Gradle home path ("+gradleHome+") does not contain a Gradle installation.  Cannot find "+
                                     this.exePath +".");
-//      if(!gradleExe.canExecute())   // todo: this is a 1.6 method that is not available in TeamCity 4.5.6, maybe in later versions?
-//         throw new RunBuildException("Cannot execute Gradle located at \""+gradleExe+"\".  Check file permissions.");
       env.put("GRADLE_HOME", gradleHome.getAbsolutePath());
-
     } else {
 
       String relativeGradleWPath = ConfigurationParamsUtil.getGradleWPath(getRunnerParameters());
