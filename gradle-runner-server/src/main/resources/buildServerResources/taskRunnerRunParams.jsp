@@ -13,6 +13,9 @@
         </td>
     </tr>
     <tr>
+      <forms:workingDirectory />
+    </tr>
+    <tr>
         <th><label for="gradle.home">Gradle home path: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_HOME%>" className="longField"/>
             <span class="smallNote">Path to the Gradle home directory (parent of bin directory). Overrides agent GRADLE_HOME environment variable</span>
@@ -34,7 +37,7 @@
     <tr id="ui.gradleRunner.gradle.wrapper.path.tr">
         <th><label for="ui.gradleRunner.gradle.wrapper.path">Path to Wrapper script: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>" className="longField"/>
-            <span class="smallNote">Optional path to the Gradle wrapper script. This path is relative to checkout directory</span>
+            <span class="smallNote">Optional path to the Gradle wrapper script. This path is relative to working directory</span>
         </td>
     </tr>
 </l:settingsGroup>
