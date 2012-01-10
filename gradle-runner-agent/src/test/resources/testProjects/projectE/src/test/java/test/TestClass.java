@@ -6,7 +6,7 @@ public class TestClass {
 
     @Test
     public void testA() throws Exception {
-      System.out.println("StdOut message");
+      System.out.println("StdOut message Could not compile initialization script /som/path/init.gradle");
     }
 
     @Test

@@ -1,6 +1,6 @@
 ##teamcity[testSuiteStarted name='test.TestClass' flowId='
 ##teamcity[testStarted name='test.TestClass.testA' captureStandardOutput='true' flowId='
-##teamcity[testStdOut name='test.TestClass.testA' out='StdOut message|n' flowId='
+##teamcity[testStdOut name='test.TestClass.testA' out='StdOut message Could not compile initialization script /som/path/init.gradle|n' flowId='
 ##teamcity[testFinished name='test.TestClass.testA' duration='
 ##teamcity[testStarted name='test.TestClass.testB' captureStandardOutput='true' flowId='
 ##teamcity[testStdErr name='test.TestClass.testB' out='StdErr message|n' flowId='

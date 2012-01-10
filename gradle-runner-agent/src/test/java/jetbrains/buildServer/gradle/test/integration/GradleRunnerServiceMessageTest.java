@@ -85,8 +85,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
       allowing(myMockLogger).warning(with(any(String.class))); will(reportWarning);
       allowing(myMockLogger).error(with(any(String.class))); will(reportError);
-      allowing(myMockLogger).internalError(with(any(String.class)), with(any(String.class)), with(any(Throwable.class)));
-      will(reportError);
     }};
 
     runTest(gatherServiceMessage, ctx);
