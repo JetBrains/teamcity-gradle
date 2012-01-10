@@ -207,8 +207,9 @@ public class GradleRunnerService extends BuildServiceAdapter
       parseAndLog(text);
     }
 
-    private void parseAndLog(final String text) {
-      if (initScriptFailure.matcher(text).find()) {
+    private void parseAndLog(@NotNull final String text) {
+      if (!text.startsWith("##teamcity[") &&
+        initScriptFailure.matcher(text).find()) {
         myLogger.internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE,WRONG_GRADLE_VERSION,null);
       }
     }
