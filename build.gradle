@@ -101,10 +101,10 @@ project (':gradle-runner-server') {
   }
 }
 
+def gradlePluginDist = new File(distsDir, 'gradle-runner')
 
 task initDistrDestinations << {
-  gradleDir = new File(distsDir, 'gradle-runner')
-  gradleServer = new File(gradleDir, 'server')
+  gradleServer = new File(gradlePluginDist, 'server')
   gradleServer.mkdirs()
 
   copy {
@@ -116,7 +116,7 @@ task initDistrDestinations << {
   copy {
     from projectDir
     include 'teamcity-plugin.xml'
-    into gradleDir
+    into gradlePluginDist
   }
 }
 
@@ -124,13 +124,13 @@ task zipAgent(type: Zip, dependsOn: ['initDistrDestinations',
                                      ':gradle-runner-agent:dist']) {
   from project(':gradle-runner-agent').distsDir
   include 'gradle-runner/**'
-  archiveName='gradle-runner.zip'
-  destinationDir= new File(distsDir, 'gradle-runner/agent')
+  archiveName ='gradle-runner.zip'
+  destinationDir = new File(gradlePluginDist, 'agent')
 }
 
 task zipPlugin(type: Zip, dependsOn: ['initDistrDestinations',
                                       'zipAgent']) {
-  from new File(distsDir, 'gradle-runner')
+  from gradlePluginDist
   archiveName='gradle-runner.zip'
 }
 
