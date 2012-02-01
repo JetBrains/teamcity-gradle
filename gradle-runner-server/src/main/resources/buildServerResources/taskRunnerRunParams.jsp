@@ -30,7 +30,7 @@
     </tr>
     <tr>
         <th><label>Gradle Wrapper: <bs:help file="Gradle" anchor="GradleParameters"/></label></th>
-        <td><props:checkboxProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_FLAG%>" onclick="updateFieldsVisibility()"/>
+        <td><props:checkboxProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_FLAG%>"/>
           <label for="ui.gradleRunner.gradle.wrapper.useWrapper">Use gradle wrapper to build project</label>
         </td>
     </tr>
@@ -71,7 +71,7 @@
 </l:settingsGroup>
 
 <script type="text/javascript">
-  function updateFieldsVisibility(){
+  var updateFieldsVisibility = function () {
     var useWrapper = $('ui.gradleRunner.gradle.wrapper.useWrapper').checked;
     if (useWrapper) {
       $('ui.gradleRunner.gradle.home').disabled = true;
@@ -80,6 +80,8 @@
       $('ui.gradleRunner.gradle.home').disabled = false;
       BS.Util.hide('ui.gradleRunner.gradle.wrapper.path.tr');
     }
-  }
+    BS.VisibilityHandlers.updateVisibility($('ui.gradleRunner.gradle.wrapper.path'));
+  };
+  $j("#ui\\.gradleRunner\\.gradle\\.wrapper\\.useWrapper").click(updateFieldsVisibility);
   updateFieldsVisibility();
 </script>
