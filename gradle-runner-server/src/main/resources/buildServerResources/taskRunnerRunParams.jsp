@@ -9,7 +9,7 @@
     <tr>
         <th><label for="ui.gradleRunner.gradle.tasks.names">Gradle tasks: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_TASKS%>"  className="longField" maxlength="256"/>
-            <span class="smallNote">Enter tasks names separated by space character, blank to use the 'default' task.<br/>For example: ':myproject:clean :myproject:build' or 'clean build'.</span>
+            <span class="smallNote">Enter task names separated by space character, leave blank to use the 'default' task.<br/>For example: ':myproject:clean :myproject:build' or 'clean build'.</span>
         </td>
     </tr>
     <tr>
