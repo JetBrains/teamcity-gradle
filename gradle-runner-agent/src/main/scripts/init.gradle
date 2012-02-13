@@ -68,7 +68,7 @@ public class DependencyBasedTestRun {
 
     project.tasks.add(taskName, {
       doFirst({
-        System.out.println(new Message("No changes detected in this build. Nothing to do.", "NORMAL", null))
+        System.out.println(new Message("TeamCity runs build in incremental mode and no changes are detected. Nothing to do.", "NORMAL", null))
       })
     })
 
