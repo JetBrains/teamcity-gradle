@@ -64,10 +64,15 @@
     <props:editJvmArgs/>
 </l:settingsGroup>
 
-<l:settingsGroup title="Test Parameters">
-  <props:reduceTestFailureFeedback showRecentlyFailed="false"
-                                   showRunNewAndModified="false"
-                                   showDepsBasedTestRun="true"/>
+<l:settingsGroup title="Incremental Building">
+  <tr>
+      <th><label>Enable incremental building:</label></th>
+      <td>
+        <props:checkboxProperty name="<%=GradleRunnerConstants.IS_INCREMENTAL%>"/>
+        <label for="ui.gradleRunner.gradle.incremental">Build only projects affected by changes</label>
+        <span class="smallNote">:buildDependents task will be run on affected projects</span>
+      </td>
+  </tr>
 </l:settingsGroup>
 
 <script type="text/javascript">

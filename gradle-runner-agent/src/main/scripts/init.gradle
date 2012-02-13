@@ -2,7 +2,6 @@ import java.util.concurrent.ConcurrentHashMap
 import jetbrains.buildServer.ComparisonFailureData
 import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
-import jetbrains.buildServer.agent.ReduceTestFailureFeedbackParameters
 import jetbrains.buildServer.messages.serviceMessages.*
 
 /*
@@ -40,22 +39,20 @@ public class DependencyBasedTestRun {
 
   public def configureGradle(Gradle gradle) {
     def rootProject = gradle.rootProject
-    if (rootProject.hasProperty("teamcity")) {
-      def riskGroupTestsVal = rootProject.teamcity[ReduceTestFailureFeedbackParameters.RUN_RISK_GROUP_TESTS_FIRST_PARAM];
-      logger.debug("Recieved following risk group settings: ${riskGroupTestsVal}")
+    def isIncremental = System.getenv("ui.gradleRunner.gradle.incremental");
+    logger.debug("Recieved following incremental setting: ${isIncremental}")
 
-      if (riskGroupTestsVal?.contains(ReduceTestFailureFeedbackParameters.AFFECTED_TESTS_DEPS_BASED_VALUE) ?: false) {
-        logger.debug("Will look for affected projects")
-        def modifiedProjects = findAffectedProjects(rootProject);
+    if (isIncremental != null && isIncremental.toBoolean()) {
+      logger.debug("Will look for affected projects")
+      def modifiedProjects = findAffectedProjects(rootProject);
 
-        if (modifiedProjects.empty) {
-          logger.debug("No affected projects found. Reporting.")
-          def taskName = addReportTaskToProject(rootProject)
-          gradle.startParameter.taskNames = [taskName]
-        } else {
-          gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
-          logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
-        }
+      if (modifiedProjects.empty) {
+        logger.debug("No affected projects found. Reporting.")
+        def taskName = addReportTaskToProject(rootProject)
+        gradle.startParameter.taskNames = [taskName]
+      } else {
+        gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
+        logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
       }
     }
   }
@@ -105,7 +102,7 @@ public class DependencyBasedTestRun {
         def path = proj.relativePath(file.getAbsolutePath()).replace('\\','/')
         result[path] = project.getPath()
       }
-      if (hasProperty("sourceSets")) {
+      if (delegate.hasProperty("sourceSets")) {
         sourceSets.all*.allSource.srcDirs*.each collectRelativePath
         sourceSets.all*.resources.srcDirs*.each collectRelativePath
       }

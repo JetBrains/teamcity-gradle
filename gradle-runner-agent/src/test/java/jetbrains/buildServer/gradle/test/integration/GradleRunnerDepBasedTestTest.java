@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import jetbrains.buildServer.agent.AgentRuntimeProperties;
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -13,6 +15,13 @@ import org.testng.annotations.Test;
  * Date: 7/25/11, 2:36 PM
  */
 public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest {
+
+  @Override
+  @BeforeMethod
+  public void setUp() throws Exception {
+    super.setUp();
+    myRunnerParams.put(GradleRunnerConstants.IS_INCREMENTAL, "true");
+  }
 
   @Test(dataProvider = "gradle-path-provider")
   public void testSingleDependency(String gradleHome) throws Exception {

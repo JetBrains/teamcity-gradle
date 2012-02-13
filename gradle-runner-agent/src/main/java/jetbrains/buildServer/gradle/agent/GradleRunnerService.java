@@ -92,8 +92,13 @@ public class GradleRunnerService extends BuildServiceAdapter
     env.put(JavaRunnerConstants.JAVA_HOME, getJavaHome());
     env.put(GradleRunnerConstants.ENV_JAVA_OPTS, getJavaArgs());
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
+    env.put(GradleRunnerConstants.IS_INCREMENTAL, isIncrementalBuildRun());
 
     return new SimpleProgramCommandLine(env, getWorkingDirectory().getPath(), exePath, params);
+  }
+
+  private String isIncrementalBuildRun() {
+    return Boolean.valueOf(getRunnerParameters().get(GradleRunnerConstants.IS_INCREMENTAL)).toString();
   }
 
   private String getJavaHome() throws RunBuildException {
@@ -116,8 +121,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
   }
 
-  private String getJavaArgs()
-  {
+  private String getJavaArgs() {
     return ConfigurationParamsUtil.getJavaArgs(getRunnerParameters());
   }
 
