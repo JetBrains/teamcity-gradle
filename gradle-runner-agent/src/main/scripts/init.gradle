@@ -105,8 +105,10 @@ public class DependencyBasedTestRun {
         def path = proj.relativePath(file.getAbsolutePath()).replace('\\','/')
         result[path] = project.getPath()
       }
-      sourceSets.all*.allSource.srcDirs*.each collectRelativePath
-      sourceSets.all*.resources.srcDirs*.each collectRelativePath
+      if (hasProperty("sourceSets")) {
+        sourceSets.all*.allSource.srcDirs*.each collectRelativePath
+        sourceSets.all*.resources.srcDirs*.each collectRelativePath
+      }
     }
     return result
   }
