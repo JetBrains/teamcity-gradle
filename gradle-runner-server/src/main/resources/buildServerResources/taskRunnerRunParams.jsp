@@ -76,7 +76,7 @@
 </l:settingsGroup>
 
 <script type="text/javascript">
-  var updateFieldsVisibility = function () {
+  var updateGradleHomeVisibility = function () {
     var useWrapper = $('ui.gradleRunner.gradle.wrapper.useWrapper').checked;
     if (useWrapper) {
       $('ui.gradleRunner.gradle.home').disabled = true;
@@ -87,6 +87,15 @@
     }
     BS.VisibilityHandlers.updateVisibility($('ui.gradleRunner.gradle.wrapper.path'));
   };
-  $j("#ui\\.gradleRunner\\.gradle\\.wrapper\\.useWrapper").click(updateFieldsVisibility);
-  updateFieldsVisibility();
+
+  var updateGradleTasksVisibility = function () {
+    var useBuildDependents = $('ui.gradleRunner.gradle.incremental').checked;
+    $('ui.gradleRunner.gradle.tasks.names').disabled = useBuildDependents;
+  };
+
+  $j("#ui\\.gradleRunner\\.gradle\\.wrapper\\.useWrapper").click(updateGradleHomeVisibility);
+  $j("#ui\\.gradleRunner\\.gradle\\.incremental").click(updateGradleTasksVisibility);
+
+  updateGradleTasksVisibility();
+  updateGradleHomeVisibility();
 </script>

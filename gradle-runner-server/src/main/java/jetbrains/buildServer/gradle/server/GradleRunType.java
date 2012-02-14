@@ -31,45 +31,45 @@ public class GradleRunType extends RunType {
     runTypeRegistry.registerRunType(this);
   }
 
-   @NotNull
-   @Override
-   public String getType() {
-      return GradleRunnerConstants.RUNNER_TYPE;
-   }
+  @NotNull
+  @Override
+  public String getType() {
+    return GradleRunnerConstants.RUNNER_TYPE;
+  }
 
-   @Override
-   public String getDisplayName() {
-      return "Gradle";
-   }
+  @Override
+  public String getDisplayName() {
+    return "Gradle";
+  }
 
-   @Override
-   public String getDescription() {
-      return "Runner for Gradle projects";
-   }
+  @Override
+  public String getDescription() {
+    return "Runner for Gradle projects";
+  }
 
-   @Override
-   public PropertiesProcessor getRunnerPropertiesProcessor() {
-      // verify user settings and indicate which of them are invalid
-      return null;
-   }
+  @Override
+  public PropertiesProcessor getRunnerPropertiesProcessor() {
+    // verify user settings and indicate which of them are invalid
+    return null;
+  }
 
-   @Override
-   public String getEditRunnerParamsJspFilePath() {
-      return "taskRunnerRunParams.jsp";
-   }
+  @Override
+  public String getEditRunnerParamsJspFilePath() {
+    return "taskRunnerRunParams.jsp";
+  }
 
-   @Override
-   public String getViewRunnerParamsJspFilePath() {
-      return "viewTaskRunnerRunParams.jsp";      
-   }
+  @Override
+  public String getViewRunnerParamsJspFilePath() {
+    return "viewTaskRunnerRunParams.jsp";
+  }
 
-   @Override
-   public Map<String, String> getDefaultRunnerProperties() {
-      final Map<String, String> map = new HashMap<String, String>();
+  @Override
+  public Map<String, String> getDefaultRunnerProperties() {
+    final Map<String, String> map = new HashMap<String, String>();
 
-      // todo:  setup default properties here
+    // todo:  setup default properties here
 
-      return map;
+    return map;
   }
 
   @NotNull
@@ -77,16 +77,21 @@ public class GradleRunType extends RunType {
   public String describeParameters(@NotNull final Map<String, String> parameters) {
 
     StringBuilder result = new StringBuilder();
-    result.append("Gradle tasks: ");
-    String gradleTasks = parameters.get(GradleRunnerConstants.GRADLE_TASKS);
-    if (StringUtil.isEmpty(gradleTasks)) {
-      result.append("Default");
+
+    if (Boolean.valueOf(parameters.get(GradleRunnerConstants.IS_INCREMENTAL))) {
+      result.append("Run incremental builds using :buildDependents");
     } else {
-      result.append(gradleTasks);
+      result.append("Gradle tasks: ");
+      String gradleTasks = parameters.get(GradleRunnerConstants.GRADLE_TASKS);
+      if (StringUtil.isEmpty(gradleTasks)) {
+        result.append("Default");
+      } else {
+        result.append(gradleTasks);
+      }
     }
     result.append('\n');
     result.append("Use wrapper script: ");
-    if (Boolean.TRUE.toString().equals(parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))) {
+    if (Boolean.valueOf(parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))) {
       result.append("yes");
     } else {
       result.append("no");

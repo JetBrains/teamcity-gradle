@@ -33,11 +33,17 @@ import static org.testng.Assert.assertEquals;
  * Date: 11/9/10
  */
 public class GradleRunTypeTest {
+
+  protected Mockery myContext;
   GradleRunType myRunType;
+
   private static final String DEFAULT_DESCRIPTION = "Gradle tasks: Default\n" +
                                                     "Use wrapper script: no";
-  protected Mockery myContext;
+
   private static final String NON_DEFAULT_DESCRIPTION = "Gradle tasks: clean build\n" +
+                                                        "Use wrapper script: yes";
+
+  private static final String INCREMENTAL_DESCRIPTION = "Run incremental builds using :buildDependents\n" +
                                                         "Use wrapper script: yes";
 
   @BeforeMethod
@@ -52,19 +58,28 @@ public class GradleRunTypeTest {
 
   @Test
   public void testDefaultDescribeParameters() throws Exception {
-    setUp();
     String description = myRunType.describeParameters(new HashMap<String, String>());
     assertEquals(description, DEFAULT_DESCRIPTION, "Wrong description received.");
   }
 
   @Test
   public void testNonDefaultDescribeParameters() throws Exception {
-    setUp();
     Map<String,  String> params = new HashMap<String, String>();
     params.put(GradleRunnerConstants.GRADLE_TASKS, "clean build");
     params.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
 
     String description = myRunType.describeParameters(params);
     assertEquals(description, NON_DEFAULT_DESCRIPTION, "Wrong description received");
+  }
+
+  @Test
+  public void testIncrementalSetting() throws Exception {
+    Map<String,  String> params = new HashMap<String, String>();
+    params.put(GradleRunnerConstants.IS_INCREMENTAL, Boolean.TRUE.toString());
+    params.put(GradleRunnerConstants.GRADLE_TASKS, "clean build");
+    params.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
+
+    String description = myRunType.describeParameters(params);
+    assertEquals(description, INCREMENTAL_DESCRIPTION, "Wrong description received");
   }
 }
