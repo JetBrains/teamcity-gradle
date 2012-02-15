@@ -1,7 +1,10 @@
-import java.util.concurrent.ConcurrentHashMap
 import jetbrains.buildServer.ComparisonFailureData
 import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
+import jetbrains.buildServer.gradle.GradleRunnerConstants
+
+import java.util.concurrent.ConcurrentHashMap
+
 import jetbrains.buildServer.messages.serviceMessages.*
 
 /*
@@ -39,38 +42,32 @@ public class DependencyBasedTestRun {
 
   public def configureGradle(Gradle gradle) {
     def rootProject = gradle.rootProject
-    def isIncremental = System.getenv("ui.gradleRunner.gradle.incremental");
-    logger.debug("Recieved following incremental setting: ${isIncremental}")
+    def incrementalOption = System.getenv(GradleRunnerConstants.ENV_INCREMENTAL_PARAM);
+    logger.debug("Recieved following incremental setting: ${incrementalOption}")
 
-    if (isIncremental != null && isIncremental.toBoolean()) {
-      logger.debug("Will look for affected projects")
-      def modifiedProjects = findAffectedProjects(rootProject);
+    switch(incrementalOption) {
+      case GradleRunnerConstants.ENV_INCREMENTAL_VALUE_SKIP:
+        logger.debug("Incremental building is enabled, but full rebuild is forced");
+        gradle.startParameter.taskNames = ["build"];
+        break;
 
-      if (modifiedProjects.empty) {
-        logger.debug("No affected projects found. Reporting.")
-        def taskName = addReportTaskToProject(rootProject)
-        gradle.startParameter.taskNames = [taskName]
-      } else {
-        gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
-        logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
-      }
+      case GradleRunnerConstants.ENV_INCREMENTAL_VALUE_PROCEED:
+        logger.debug("Will look for affected projects")
+        def modifiedProjects = findAffectedProjects(rootProject);
+        if (modifiedProjects.empty) {
+          logger.debug("No affected projects found. Running full build.")
+          gradle.startParameter.taskNames = ["build"]
+        } else {
+          gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
+          logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
+        }
+        break;
+
+      default:
+        logger.debug("Incremental building is not enabled");
     }
   }
 
-  private def addReportTaskToProject(Project project) {
-    def taskName = "report_nothing_changed"
-    while (null != project.tasks.findByName(taskName)) {
-      taskName = "_" + taskName
-    }
-
-    project.tasks.add(taskName, {
-      doFirst({
-        System.out.println(new Message("TeamCity runs build in incremental mode and no changes are detected. Nothing to do.", "NORMAL", null))
-      })
-    })
-
-    return taskName
-  }
 
   private def findAffectedProjects(Project project) {
 

@@ -13,6 +13,14 @@
         </td>
     </tr>
     <tr>
+        <th><label>Special task Options:</label></th>
+        <td>
+          <props:checkboxProperty name="<%=GradleRunnerConstants.IS_INCREMENTAL%>"/>
+          <label for="ui.gradleRunner.gradle.incremental">Enable incremental building</label>
+          <span class="smallNote">:buildDependents task will be run on projects, affected by changes</span>
+        </td>
+    </tr>
+    <tr>
       <forms:workingDirectory />
     </tr>
     <tr>
@@ -65,14 +73,7 @@
 </l:settingsGroup>
 
 <l:settingsGroup title="Incremental Building">
-  <tr>
-      <th><label>Enable incremental building:</label></th>
-      <td>
-        <props:checkboxProperty name="<%=GradleRunnerConstants.IS_INCREMENTAL%>"/>
-        <label for="ui.gradleRunner.gradle.incremental">Build only projects affected by changes</label>
-        <span class="smallNote">:buildDependents task will be run on affected projects</span>
-      </td>
-  </tr>
+
 </l:settingsGroup>
 
 <script type="text/javascript">
@@ -88,9 +89,22 @@
     BS.VisibilityHandlers.updateVisibility($('ui.gradleRunner.gradle.wrapper.path'));
   };
 
+  var userTaskNames;
+
   var updateGradleTasksVisibility = function () {
     var useBuildDependents = $('ui.gradleRunner.gradle.incremental').checked;
-    $('ui.gradleRunner.gradle.tasks.names').disabled = useBuildDependents;
+    var taskNames = $('ui.gradleRunner.gradle.tasks.names');
+    taskNames.disabled = useBuildDependents;
+    if (useBuildDependents) {
+      userTaskNames = taskNames.value;
+      taskNames.value = "buildDependents";
+      taskNames.title = "Tasks are ignored when incremental building is enabled.";
+    } else {
+      if (userTaskNames != undefined) {
+        taskNames.value = userTaskNames;
+      }
+      taskNames.title = "";
+    }
   };
 
   $j("#ui\\.gradleRunner\\.gradle\\.wrapper\\.useWrapper").click(updateGradleHomeVisibility);

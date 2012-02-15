@@ -23,10 +23,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.RunBuildException;
-import jetbrains.buildServer.agent.AgentRuntimeProperties;
-import jetbrains.buildServer.agent.BuildProgressLogger;
-import jetbrains.buildServer.agent.ClasspathUtil;
-import jetbrains.buildServer.agent.ToolCannotBeFoundException;
+import jetbrains.buildServer.agent.*;
 import jetbrains.buildServer.agent.runner.*;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.messages.ErrorData;
@@ -92,13 +89,23 @@ public class GradleRunnerService extends BuildServiceAdapter
     env.put(JavaRunnerConstants.JAVA_HOME, getJavaHome());
     env.put(GradleRunnerConstants.ENV_JAVA_OPTS, getJavaArgs());
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
-    env.put(GradleRunnerConstants.IS_INCREMENTAL, isIncrementalBuildRun());
+    env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
 
     return new SimpleProgramCommandLine(env, getWorkingDirectory().getPath(), exePath, params);
   }
 
-  private String isIncrementalBuildRun() {
-    return Boolean.valueOf(getRunnerParameters().get(GradleRunnerConstants.IS_INCREMENTAL)).toString();
+  private String getIncrementalMode() {
+    boolean incrementalOptionEnabled = Boolean.valueOf(getRunnerParameters().get(GradleRunnerConstants.IS_INCREMENTAL));
+    boolean internalFullBuildOverride = !IncrementalBuild.isEnabled();
+    if (incrementalOptionEnabled) {
+      if (internalFullBuildOverride) {
+        return GradleRunnerConstants.ENV_INCREMENTAL_VALUE_SKIP;
+      } else {
+        return GradleRunnerConstants.ENV_INCREMENTAL_VALUE_PROCEED;
+      }
+    } else {
+      return  Boolean.FALSE.toString();
+    }
   }
 
   private String getJavaHome() throws RunBuildException {
@@ -164,12 +171,13 @@ public class GradleRunnerService extends BuildServiceAdapter
 
   private String buildInitScriptClassPath() throws RunBuildException {
     try {
-      File serviceMessagesLib;
-      File runtimeUtil;
+      final File serviceMessagesLib = new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class));
+      final File runtimeUtil = new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class));
+      final File gradleRunnerConstants = new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class));
 
-      serviceMessagesLib = new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class));
-      runtimeUtil = new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class));
-      return serviceMessagesLib.getAbsolutePath() + File.pathSeparator + runtimeUtil.getAbsolutePath();
+      return serviceMessagesLib.getAbsolutePath() +
+                       File.pathSeparator + runtimeUtil.getAbsolutePath() +
+                       File.pathSeparator + gradleRunnerConstants.getAbsolutePath();
 
     } catch (IOException e) {
       throw new RunBuildException("Failed to create init script classpath", e);

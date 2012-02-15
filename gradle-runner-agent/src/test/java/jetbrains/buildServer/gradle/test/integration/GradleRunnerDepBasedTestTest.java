@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import jetbrains.buildServer.agent.AgentRuntimeProperties;
+import jetbrains.buildServer.agent.IncrementalBuild;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
@@ -20,7 +21,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   @BeforeMethod
   public void setUp() throws Exception {
     super.setUp();
-    myRunnerParams.put(GradleRunnerConstants.IS_INCREMENTAL, "true");
+    myRunnerParams.put(GradleRunnerConstants.IS_INCREMENTAL, Boolean.TRUE.toString());
   }
 
   @Test(dataProvider = "gradle-path-provider")
@@ -90,7 +91,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestNothingModified.txt");
+                                                                                     "DepBasedTestFullBuild.txt");
     gradleRunConfiguration.setGradleHome(gradleHome);
 
     runAndCheckServiceMessages(gradleRunConfiguration);
@@ -113,6 +114,47 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     gradleRunConfiguration.setGradleHome(gradleHome);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
+
+  @Test(dataProvider = "gradle-path-provider")
+  public void testSkipOption(String gradleHome) throws Exception {
+
+    System.setProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM, "false");
+
+    final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1");
+    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
+
+    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
+
+    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
+                     runtimePropsFile.getAbsolutePath());
+
+    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
+                                                                                     "clean",
+                                                                                     "DepBasedTestFullBuild.txt");
+    gradleRunConfiguration.setGradleHome(gradleHome);
+    runAndCheckServiceMessages(gradleRunConfiguration);
+  }
+
+
+  @Test(dataProvider = "gradle-path-provider")
+  public void testChangeNotInSourceSet(String gradleHome) throws Exception {
+
+    final String changedFilesPath = createFileWithChanges("projectA/build.gradle:ADD:1");
+    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
+
+    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
+
+    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
+                       runtimePropsFile.getAbsolutePath());
+
+    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
+                                                                                     "clean",
+                                                                                     "DepBasedTestFullBuild.txt");
+    gradleRunConfiguration.setGradleHome(gradleHome);
+    runAndCheckServiceMessages(gradleRunConfiguration);
+  }
+
+
 
   private String createFileWithChanges(final String changesList) throws IOException {
     File changedFilesFile = myTempFiles.createTempFile(changesList);

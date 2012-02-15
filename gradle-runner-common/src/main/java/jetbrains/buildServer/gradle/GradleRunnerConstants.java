@@ -30,13 +30,18 @@ public class GradleRunnerConstants
   public static final String GRADLE_WRAPPER_PATH = "ui.gradleRunner.gradle.wrapper.path";
   public static final String IS_INCREMENTAL = "ui.gradleRunner.gradle.incremental";
 
+  // incremental options run
+  public static final String ENV_INCREMENTAL_PARAM = "TEAMCITY_GRADLE_INCREMENTAL_MODE";
+  public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
+  public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";
+
   // todo: it would be nice to autoconfigure some of the params based on type of build
   public static final String GRADLE_MODE_KEY = "GRADLE_RUNNER_MODE";
   public static final String GRADLE_CI_MODE = "continuous-integration";
   public static final String GRADLE_CD_MODE = "create-cd";
 
   public static final String ENV_TEAMCITY_BUILD_INIT_PATH = "TEAMCITY_BUILD_INIT_PATH";
-  public static final String ENV_JAVA_OPTS = "JAVA_OPTS";
+  public static final String ENV_JAVA_OPTS = "TEAMCITY_JAVA_OPTS";
   public static final String INIT_SCRIPT_NAME = "init.gradle";
   public static final String INIT_SCRIPT_SUFFIX = "scripts/"+INIT_SCRIPT_NAME;
 
