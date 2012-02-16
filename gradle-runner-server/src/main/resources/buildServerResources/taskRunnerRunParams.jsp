@@ -13,7 +13,7 @@
         </td>
     </tr>
     <tr>
-        <th><label>Special task Options:</label></th>
+        <th><label>Incremental building:</label></th>
         <td>
           <props:checkboxProperty name="<%=GradleRunnerConstants.IS_INCREMENTAL%>"/>
           <label for="ui.gradleRunner.gradle.incremental">Enable incremental building</label>
@@ -72,9 +72,6 @@
     <props:editJvmArgs/>
 </l:settingsGroup>
 
-<l:settingsGroup title="Incremental Building">
-
-</l:settingsGroup>
 
 <script type="text/javascript">
   var updateGradleHomeVisibility = function () {
