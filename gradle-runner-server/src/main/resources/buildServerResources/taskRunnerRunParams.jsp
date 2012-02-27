@@ -9,7 +9,7 @@
     <tr>
         <th><label for="ui.gradleRunner.gradle.tasks.names">Gradle tasks: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_TASKS%>"  className="longField" maxlength="256"/>
-            <span class="smallNote">Enter task names separated by space character, leave blank to use the 'default' task.<br/>For example: ':myproject:clean :myproject:build' or 'clean build'.</span>
+            <span class="smallNote">Enter task names separated by spaces, leave blank to use the 'default' task.<br/>Example: ':myproject:clean :myproject:build' or 'clean build'.</span>
         </td>
     </tr>
     <tr>
@@ -17,7 +17,7 @@
         <td>
           <props:checkboxProperty name="<%=GradleRunnerConstants.IS_INCREMENTAL%>"/>
           <label for="ui.gradleRunner.gradle.incremental">Enable incremental building</label>
-          <span class="smallNote">:buildDependents task will be run on projects, affected by changes</span>
+          <span class="smallNote">:buildDependents task will be run on projects affected by changes</span>
         </td>
     </tr>
     <tr>
@@ -26,7 +26,7 @@
     <tr>
         <th><label for="gradle.home">Gradle home path: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_HOME%>" className="longField"/>
-            <span class="smallNote">Path to the Gradle home directory (parent of bin directory). Overrides agent GRADLE_HOME environment variable</span>
+            <span class="smallNote">Path to the Gradle home directory (parent of 'bin' directory). Overrides agent GRADLE_HOME environment variable</span>
         </td>
     </tr>
     <tr>
@@ -45,12 +45,12 @@
     <tr id="ui.gradleRunner.gradle.wrapper.path.tr">
         <th><label for="ui.gradleRunner.gradle.wrapper.path">Path to Wrapper script: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>" className="longField"/>
-            <span class="smallNote">Optional path to the Gradle wrapper script. This path is relative to working directory</span>
+            <span class="smallNote">Optional path to the Gradle wrapper script., relative to the working directory</span>
         </td>
     </tr>
 </l:settingsGroup>
 
-<l:settingsGroup title="Launching Parameters">
+<l:settingsGroup title="Run Parameters">
     <tr>
         <th><label>Debug: <bs:help file="Gradle" anchor="LaunchingParameters"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.DEBUG%>"/>
@@ -104,8 +104,8 @@
     }
   };
 
-  $j("#ui\\.gradleRunner\\.gradle\\.wrapper\\.useWrapper").click(updateGradleHomeVisibility);
-  $j("#ui\\.gradleRunner\\.gradle\\.incremental").click(updateGradleTasksVisibility);
+  $j(BS.Util.escapeId("ui.gradleRunner.gradle.wrapper.useWrapper").click(updateGradleHomeVisibility);
+  $j(BS.Util.escapeId("ui.gradleRunner.gradle.incremental").click(updateGradleTasksVisibility);
 
   updateGradleTasksVisibility();
   updateGradleHomeVisibility();

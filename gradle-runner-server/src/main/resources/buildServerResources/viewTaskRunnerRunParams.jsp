@@ -23,11 +23,11 @@
 </div>
 
 <div class="parameter">
-    Incremental build enabled: <strong><props:displayCheckboxValue name="ui.gradleRunner.gradle.incremental"/></strong>
+    Incremental building enabled: <strong><props:displayCheckboxValue name="ui.gradleRunner.gradle.incremental"/></strong>
 </div>
 
 <div class="parameter">
-    Launching Parameters:
+    Run Parameters:
     <div class="nestedParameter">
       <ul style="list-style: none; padding-left: 0; margin-left: 0; margin-top: 0.1em; margin-bottom: 0.1em;">
           <li>Print stacktrace<strong><props:displayCheckboxValue name="ui.gradleRunner.gradle.stacktrace.enabled"/></strong></li>
@@ -39,7 +39,7 @@
 <div class="parameter">
     Java Parameters:
     <div class="parameter">
-        JDK home path: <strong><props:displayValue name="ui.gradleRunner.gradleJdk.home" emptyValue="not specified"/></strong>
+        JDK home: <strong><props:displayValue name="ui.gradleRunner.gradleJdk.home" emptyValue="not specified"/></strong>
     </div>
     <props:viewJvmArgs/>
 </div>
