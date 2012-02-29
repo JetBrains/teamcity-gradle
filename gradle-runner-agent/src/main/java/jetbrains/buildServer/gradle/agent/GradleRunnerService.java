@@ -30,6 +30,7 @@ import jetbrains.buildServer.messages.ErrorData;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
+import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class GradleRunnerService extends BuildServiceAdapter
@@ -87,11 +88,25 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     env.put("GRADLE_EXIT_CONSOLE", "true");
     env.put(JavaRunnerConstants.JAVA_HOME, getJavaHome());
-    env.put(GradleRunnerConstants.ENV_GRADLE_OPTS, getJavaArgs());
+    env.put(GradleRunnerConstants.ENV_GRADLE_OPTS, buildGradleOpts());
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
 
     return new SimpleProgramCommandLine(env, getWorkingDirectory().getPath(), exePath, params);
+  }
+
+  private String buildGradleOpts() {
+    final String envGradleOpts = getEnvironmentVariables().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
+    final String runnerGradleOpts = getRunnerParameters().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
+    final String runnerJavaArguments = getJavaArgs();
+
+    if (!StringUtil.isEmpty(runnerJavaArguments)) {
+      return runnerJavaArguments;
+    } else if (!StringUtil.isEmpty(runnerGradleOpts)) {
+      return runnerGradleOpts;
+    } else {
+      return envGradleOpts;
+    }
   }
 
   private String getIncrementalMode() {

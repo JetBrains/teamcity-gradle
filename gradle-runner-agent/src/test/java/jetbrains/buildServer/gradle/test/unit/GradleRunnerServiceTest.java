@@ -117,9 +117,11 @@ public class GradleRunnerServiceTest {
   }
 
   @Test
-  public void generateCLwithJavaArguments() throws Exception {
-    final String exepcetedArgs = "-DtestArgAlpha=testValueAlpha -DtestArgBravo=testValueBravo";
-    myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, exepcetedArgs);
+  public void testCLGradleOpts() throws Exception {
+    final String runnerGradleOpts = "-DrunnerGradleOpt";
+    final String runnerJavaArgs = "-DrunnerJavaArg";
+
+    myRunnerParams.put(GradleRunnerConstants.ENV_GRADLE_OPTS, runnerGradleOpts);
 
     prepareGradleRequiredFiles();
     myService.initialize(myBuild,myRunnerContext);
@@ -127,7 +129,17 @@ public class GradleRunnerServiceTest {
     validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
 
     String gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
-    assertEquals(gradleOptsValue, exepcetedArgs, "Wrong Java arguments." );
+    assertEquals(gradleOptsValue, runnerGradleOpts, "Wrong Java arguments." );
+
+    myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, runnerJavaArgs);
+
+    myService.initialize(myBuild,myRunnerContext);
+    cmdLine = myService.makeProgramCommandLine();
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
+
+    gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
+    assertEquals(gradleOptsValue, runnerJavaArgs, "Wrong Java arguments." );
+
   }
 
   @Test
