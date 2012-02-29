@@ -126,8 +126,8 @@ public class GradleRunnerServiceTest {
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
     validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
 
-    String actualJavaArgs = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_JAVA_OPTS);
-    assertEquals(actualJavaArgs, exepcetedArgs, "Wrong Java arguments." );
+    String gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
+    assertEquals(gradleOptsValue, exepcetedArgs, "Wrong Java arguments." );
   }
 
   @Test

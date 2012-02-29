@@ -40,8 +40,8 @@ public class GradleRunnerConstants
   public static final String GRADLE_CI_MODE = "continuous-integration";
   public static final String GRADLE_CD_MODE = "create-cd";
 
+  public static final String ENV_GRADLE_OPTS = "GRADLE_OPTS";
   public static final String ENV_TEAMCITY_BUILD_INIT_PATH = "TEAMCITY_BUILD_INIT_PATH";
-  public static final String ENV_JAVA_OPTS = "TEAMCITY_JAVA_OPTS";
   public static final String INIT_SCRIPT_NAME = "init.gradle";
   public static final String INIT_SCRIPT_SUFFIX = "scripts/"+INIT_SCRIPT_NAME;
 
