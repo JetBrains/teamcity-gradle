@@ -95,6 +95,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     return new SimpleProgramCommandLine(env, getWorkingDirectory().getPath(), exePath, params);
   }
 
+  @NotNull
   private String buildGradleOpts() {
     final String envGradleOpts = getEnvironmentVariables().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
     final String runnerGradleOpts = getRunnerParameters().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
@@ -105,7 +106,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     } else if (!StringUtil.isEmpty(runnerGradleOpts)) {
       return runnerGradleOpts;
     } else {
-      return envGradleOpts;
+      return StringUtil.emptyIfNull(envGradleOpts);
     }
   }
 
