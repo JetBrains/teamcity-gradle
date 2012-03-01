@@ -30,6 +30,7 @@ dependencies {
       include 'agent-api.jar'
       include 'common-api.jar'
       include 'server-api.jar'
+      include 'tests/tests-support.jar'
     }
 
     commonApi = fileTree(teamCityDir + "/devPackage").matching {
