@@ -100,8 +100,8 @@ public class DependencyBasedTestRun {
         result[path] = project.getPath()
       }
       if (delegate.hasProperty("sourceSets")) {
-        sourceSets.all*.allSource.srcDirs*.each collectRelativePath
-        sourceSets.all*.resources.srcDirs*.each collectRelativePath
+        sourceSets*.allSource.srcDirs*.each collectRelativePath
+        sourceSets*.resources.srcDirs*.each collectRelativePath
       }
     }
     return result
@@ -178,9 +178,17 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
         }
       }
 
-      p.setProperty("teamcity", props);
+      addCustomProperties(p, props)
     } else {
-      p.setProperty("teamcity", new HashMap());
+      addCustomProperties(p, new HashMap())
+    }
+  }
+
+  private void addCustomProperties(Project p, Map props) {
+    if (p.hasProperty("ext")) {
+      p.ext.teamcity = props
+    } else {
+      p.setProperty("teamcity", props)
     }
   }
 }
