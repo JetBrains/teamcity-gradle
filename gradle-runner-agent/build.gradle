@@ -26,8 +26,6 @@ test {
   scanForTestClasses = false
   include '**/jetbrains/buildServer/gradle/test/init/*'
   include '**/jetbrains/buildServer/gradle/test/unit/*'
-  setTestClassesDir sourceSets.test.classesDir
-  setClasspath sourceSets.test.runtimeClasspath
 }
 
 task integrationTest(type: Test, dependsOn: [assemble, test]) {
@@ -36,8 +34,7 @@ task integrationTest(type: Test, dependsOn: [assemble, test]) {
   scanForTestClasses = false
   exclude '**/jetbrains/buildServer/gradle/test/init/*'
   exclude '**/jetbrains/buildServer/gradle/test/unit/*'
-  setTestClassesDir sourceSets.test.classesDir
-  setClasspath configurations.integTestClasspath + files([jar.archivePath, sourceSets.test.classesDir])
+  setClasspath configurations.integTestClasspath + files([jar.archivePath, sourceSets.test.output.classesDir])
   jvmArgs ("-Dgradle.runtime=${gradle.gradleHomeDir}")
 }
 
