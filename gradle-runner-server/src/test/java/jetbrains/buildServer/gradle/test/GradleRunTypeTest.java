@@ -34,8 +34,7 @@ import static org.testng.Assert.assertEquals;
  */
 public class GradleRunTypeTest {
 
-  protected Mockery myContext;
-  GradleRunType myRunType;
+  private GradleRunType myRunType;
 
   private static final String DEFAULT_DESCRIPTION = "Gradle tasks: Default\n" +
                                                     "Use wrapper script: no";
@@ -48,9 +47,9 @@ public class GradleRunTypeTest {
 
   @BeforeMethod
   public void setUp() {
-    myContext = new Mockery();
-    final RunTypeRegistry runTypeRegistry = myContext.mock(RunTypeRegistry.class);
-    myContext.checking(new Expectations() {{
+    final Mockery context = new Mockery();
+    final RunTypeRegistry runTypeRegistry = context.mock(RunTypeRegistry.class);
+    context.checking(new Expectations() {{
       allowing(runTypeRegistry).registerRunType(with(any(GradleRunType.class)));
     }});
     myRunType = new GradleRunType(runTypeRegistry);

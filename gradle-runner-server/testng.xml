@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Gradle server-side">
+  <test name="Gradle server-side">
+    <classes>
+      <class name="jetbrains.buildServer.gradle.test.GradleRunTypeTest"/>
+    </classes>
+  </test>
+</suite>
