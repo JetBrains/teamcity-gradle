@@ -104,8 +104,8 @@
     }
   };
 
-  $j(BS.Util.escapeId("ui.gradleRunner.gradle.wrapper.useWrapper").click(updateGradleHomeVisibility);
-  $j(BS.Util.escapeId("ui.gradleRunner.gradle.incremental").click(updateGradleTasksVisibility);
+  $j(BS.Util.escapeId("ui.gradleRunner.gradle.wrapper.useWrapper")).click(updateGradleHomeVisibility);
+  $j(BS.Util.escapeId("ui.gradleRunner.gradle.incremental")).click(updateGradleTasksVisibility);
 
   updateGradleTasksVisibility();
   updateGradleHomeVisibility();
