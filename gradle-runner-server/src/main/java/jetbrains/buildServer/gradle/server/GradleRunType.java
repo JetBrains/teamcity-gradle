@@ -55,12 +55,12 @@ public class GradleRunType extends RunType {
 
   @Override
   public String getEditRunnerParamsJspFilePath() {
-    return "taskRunnerRunParams.jsp";
+    return "editGradleRunnerRunParams.jsp";
   }
 
   @Override
   public String getViewRunnerParamsJspFilePath() {
-    return "viewTaskRunnerRunParams.jsp";
+    return "viewGradleRunnerRunParams.jsp";
   }
 
   @Override
