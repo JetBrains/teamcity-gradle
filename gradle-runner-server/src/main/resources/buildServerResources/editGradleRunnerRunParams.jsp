@@ -32,7 +32,7 @@
     <tr>
         <th><label for="ui.gradleRunner.additional.gradle.cmd.params">Additional Gradle command line
             parameters: </label></th>
-        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_PARAMS%>"  className="longField" maxlength="256"/>
+        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_PARAMS%>"  className="longField" expandable="true"/>
             <span class="smallNote">Additional parameters will be added to the 'Gradle' command line.</span>
         </td>
     </tr>
