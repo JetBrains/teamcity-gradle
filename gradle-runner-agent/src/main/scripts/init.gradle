@@ -193,17 +193,23 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   }
 }
 
-public class TeamcityTaskListener implements TaskExecutionListener {
+public class TeamcityTaskListener implements TaskExecutionListener, TaskActionListener {
 
-  Map<Task, TeamCityErrorStore> taskMessages = new HashMap<Task, TeamCityErrorStore>();
+  def taskMessages = new HashMap<Task, TeamCityOutputListener>()
+  def blockOpenMessagesCache = new HashMap<Task, ServiceMessage>()
+  def logger
+
+  public TeamcityTaskListener(Logger logger) {
+    this.logger = logger
+  }
 
   public void beforeExecute(Task task) {
     ServiceMessage message;
     if (task instanceof AbstractCompile) {
       task.getLogging().captureStandardError(LogLevel.WARN);
-      TeamCityErrorStore errorListener = taskMessages.get(task);
+      TeamCityOutputListener errorListener = taskMessages.get(task);
       if (null == errorListener) {
-        errorListener = new TeamCityErrorStore();
+        errorListener = new TeamCityOutputListener();
         taskMessages.put(task, errorListener);
       }
       errorListener.reset();
@@ -212,28 +218,95 @@ public class TeamcityTaskListener implements TaskExecutionListener {
     } else {
       message = new BlockOpened(task.getPath());
     }
-    System.out.println(message.asString());
+
+    def oldMessage = popFromBlockOpenCache(task)
+    if (oldMessage != null) {
+      logger.debug("Unexpected BlockOpen message cache content: key=[${task.getPath()}] value=[${oldMessage}]");
+      System.out.println(message.asString());
+    }
+    blockOpenMessagesCache.put(task, message);
   }
 
 
   public void afterExecute(Task task, TaskState taskState) {
-    ServiceMessage message;
+
+    if (handleTaskSkippedState(task, taskState)) {
+      return;
+    }
+
+    handleTaskFinishedState(task, taskState)
+  }
+
+  private void handleTaskFinishedState(Task task, TaskState taskState) {
+    ServiceMessage blockCloseMessage;
     if (task instanceof AbstractCompile) {
       Throwable failure = taskState.getFailure();
       if (null != failure) {
-        final TeamCityErrorStore outputListener = taskMessages.get(task);
-        for(String str : outputListener.getMessages()) {
+        final TeamCityOutputListener outputListener = taskMessages.get(task);
+        for (String str : outputListener.getMessages()) {
           System.out.println(new Message(str, "ERROR", null).asString()); // compilation failure
         }
       }
-      message = new CompilationFinished(task.getPath());
+      blockCloseMessage = new CompilationFinished(task.getPath());
     } else {
-      message = new BlockClosed(task.getPath());
+      blockCloseMessage = new BlockClosed(task.getPath());
     }
+    System.out.println(blockCloseMessage.asString());
+  }
+
+  /**
+   * Handle possible task up-to-date skip.
+   * Checks if task was skipped. If so, reposts sequence of BlockOpened-BlockClosed messages with proper text
+   * Otherwise, prints BlockOpened message, if it was not printed yet.
+   * @param task
+   * @param taskState
+   * @return true if task was skipped.
+   */
+  private boolean handleTaskSkippedState(Task task, TaskState taskState) {
+    def message = popFromBlockOpenCache(task);
+    def skipped = false;
+    if (message != null) {
+      if (taskState.getSkipped()) {
+        logger.debug("No actions were executed for task [${task}]. Task was skipped because [${taskState.getSkipMessage()}].")
+        def text;
+
+        if (message instanceof CompilationStarted) {
+          text = ((CompilationStarted)message).getCompilerName();
+        } else {
+          text = ((BlockOpened)message).getBlockName();
+        }
+
+        text += " ${taskState.getSkipMessage()}";
+
+        System.out.println(new BlockOpened(text));
+        System.out.println(new BlockClosed(text));
+
+        skipped = true;
+      } else {
+        logger.debug("No actions were executed for task [${task}]. But task was not skipped. Sending blockOpen.")
+        System.out.println(message.asString())
+      }
+    }
+    skipped
+  }
+
+  private ServiceMessage popFromBlockOpenCache(Task task) {
+    ServiceMessage message = blockOpenMessagesCache.get(task);
+    blockOpenMessagesCache.remove(task);
+    return message
+  }
+
+  void beforeActions(final Task task) {
+    ServiceMessage message = popFromBlockOpenCache(task);
+    logger.debug("BeforeActions called for task [${task}]. Sending blockOpen message [${message}]")
     System.out.println(message.asString());
   }
 
-  private class TeamCityErrorStore implements StandardOutputListener {
+  void afterActions(final Task task) {
+    // do nothing
+  }
+
+  private class TeamCityOutputListener implements StandardOutputListener {
 
     private List<String> messages = new LinkedList<String>();
 
@@ -414,5 +487,5 @@ try {
 }
 
 gradle.addListener(new TeamcityPropertiesListener())
-gradle.useLogger(new TeamcityTaskListener())
+gradle.useLogger(new TeamcityTaskListener(logger))
 gradle.projectsEvaluated { new DependencyBasedTestRun(logger).configureGradle(it) }
