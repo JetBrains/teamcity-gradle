@@ -278,8 +278,13 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 
         text += " ${taskState.getSkipMessage()}";
 
-        System.out.println(new BlockOpened(text));
-        System.out.println(new BlockClosed(text));
+        if (message instanceof CompilationStarted) {
+          System.out.println(new CompilationStarted(text));
+          System.out.println(new CompilationFinished(text));
+        } else {
+          System.out.println(new BlockOpened(text));
+          System.out.println(new BlockClosed(text));
+        }
 
         skipped = true;
       } else {
