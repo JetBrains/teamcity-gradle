@@ -224,6 +224,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       logger.debug("Unexpected BlockOpen message cache content: key=[${task.getPath()}] value=[${oldMessage}]");
       System.out.println(message.asString());
     }
+    logger.debug("BeforeExecute: storing message: key=[${task.getPath()}] value=[${message.asString().substring(2)}]");
     blockOpenMessagesCache.put(task, message);
   }
 
@@ -288,7 +289,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 
         skipped = true;
       } else {
-        logger.debug("No actions were executed for task [${task}]. But task was not skipped. Sending blockOpen.")
+        logger.debug("No actions were executed for task [${task}]. But task was not skipped, sending blockOpenmessage [${message.asString().substring(2)}]")
         System.out.println(message.asString())
       }
     }
@@ -303,8 +304,12 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 
   void beforeActions(final Task task) {
     ServiceMessage message = popFromBlockOpenCache(task);
-    logger.debug("BeforeActions called for task [${task}]. Sending blockOpen message [${message}]")
-    System.out.println(message.asString());
+    if (message != null) {
+      logger.debug("BeforeActions: task [${task}]. Sending blockOpen message [${message.asString().substring(2)}]")
+      System.out.println(message.asString());
+    } else {
+      logger.debug("BeforeActions: null message for task [${task}]. Will not send service message")
+    }
   }
 
   void afterActions(final Task task) {
