@@ -18,7 +18,7 @@ package jetbrains.buildServer.gradle.test.integration;
 
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.GradleRunnerService;
+import jetbrains.buildServer.gradle.agent.GradleVersionErrorsListener;
 import jetbrains.buildServer.messages.ErrorData;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -72,7 +72,7 @@ public class
 
     final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
     gatherMessage.setPattern(config.getPatternStr());
-    final String wrongVersionStr = GradleRunnerService.GradleVersionErrorsListener .WRONG_GRADLE_VERSION;
+    final String wrongVersionStr = GradleVersionErrorsListener.WRONG_GRADLE_VERSION;
 
     final Expectations gatherServiceMessage = new Expectations() {{
       allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
