@@ -1,15 +1,15 @@
 ##teamcity[compilationStarted compiler=':compileJava']
 ##teamcity[compilationFinished compiler=':compileJava']
-##teamcity[blockOpened name=':processResources
-##teamcity[blockClosed name=':processResources
+##teamcity[blockOpened name=':processResources']
+##teamcity[blockClosed name=':processResources']
 ##teamcity[blockOpened name=':classes']
 ##teamcity[blockClosed name=':classes']
 ##teamcity[blockOpened name=':jar']
 ##teamcity[blockClosed name=':jar']
 ##teamcity[compilationStarted compiler=':projectA:compileJava']
 ##teamcity[compilationFinished compiler=':projectA:compileJava']
-##teamcity[blockOpened name=':projectA:processResources
-##teamcity[blockClosed name=':projectA:processResources
+##teamcity[blockOpened name=':projectA:processResources']
+##teamcity[blockClosed name=':projectA:processResources']
 ##teamcity[blockOpened name=':projectA:classes']
 ##teamcity[blockClosed name=':projectA:classes']
 ##teamcity[blockOpened name=':projectA:jar']
@@ -18,17 +18,17 @@
 ##teamcity[blockClosed name=':projectA:assemble']
 ##teamcity[compilationStarted compiler=':projectA:compileTestJava']
 ##teamcity[compilationFinished compiler=':projectA:compileTestJava']
-##teamcity[blockOpened name=':projectA:processTestResources
-##teamcity[blockClosed name=':projectA:processTestResources
+##teamcity[blockOpened name=':projectA:processTestResources']
+##teamcity[blockClosed name=':projectA:processTestResources']
 ##teamcity[blockOpened name=':projectA:testClasses']
 ##teamcity[blockClosed name=':projectA:testClasses']
 ##teamcity[blockOpened name=':projectA:test']
-##teamcity[testSuiteStarted name='test.GradleGreeterATest' flowId
-##teamcity[testStarted name='test.GradleGreeterATest.testGreet' captureStandardOutput='true' flowId
-##teamcity[testFinished name='test.GradleGreeterATest.testGreet'
-##teamcity[testStarted name='test.GradleGreeterATest.testIntro' captureStandardOutput='true' flowId
-##teamcity[testFinished name='test.GradleGreeterATest.testIntro'
-##teamcity[testSuiteFinished name='test.GradleGreeterATest' flowId
+##teamcity[testSuiteStarted name='test.GradleGreeterATest' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GradleGreeterATest.testGreet' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GradleGreeterATest.testGreet' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GradleGreeterATest.testIntro' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GradleGreeterATest.testIntro' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='test.GradleGreeterATest' flowId='##Flow_ID##']
 ##teamcity[blockClosed name=':projectA:test']
 ##teamcity[blockOpened name=':projectA:check']
 ##teamcity[blockClosed name=':projectA:check']
@@ -36,8 +36,8 @@
 ##teamcity[blockClosed name=':projectA:build']
 ##teamcity[compilationStarted compiler=':projectB:compileJava']
 ##teamcity[compilationFinished compiler=':projectB:compileJava']
-##teamcity[blockOpened name=':projectB:processResources
-##teamcity[blockClosed name=':projectB:processResources
+##teamcity[blockOpened name=':projectB:processResources']
+##teamcity[blockClosed name=':projectB:processResources']
 ##teamcity[blockOpened name=':projectB:classes']
 ##teamcity[blockClosed name=':projectB:classes']
 ##teamcity[blockOpened name=':projectB:jar']
@@ -46,18 +46,18 @@
 ##teamcity[blockClosed name=':projectB:assemble']
 ##teamcity[compilationStarted compiler=':projectB:compileTestJava']
 ##teamcity[compilationFinished compiler=':projectB:compileTestJava']
-##teamcity[blockOpened name=':projectB:processTestResources
-##teamcity[blockClosed name=':projectB:processTestResources
+##teamcity[blockOpened name=':projectB:processTestResources']
+##teamcity[blockClosed name=':projectB:processTestResources']
 ##teamcity[blockOpened name=':projectB:testClasses']
 ##teamcity[blockClosed name=':projectB:testClasses']
 ##teamcity[blockOpened name=':projectB:test']
-##teamcity[testSuiteStarted name='test.GradleGreeterBTest' flowId
-##teamcity[testStarted name='test.GradleGreeterBTest.testGreet' captureStandardOutput='true' flowId
-##teamcity[testFinished name='test.GradleGreeterBTest.testGreet'
-##teamcity[testStarted name='test.GradleGreeterBTest.testIntro' captureStandardOutput='true' flowId
-##teamcity[testIgnored name='test.GradleGreeterBTest.testIntro' message='' flowId
-##teamcity[testFinished name='test.GradleGreeterBTest.testIntro'
-##teamcity[testSuiteFinished name='test.GradleGreeterBTest' flowId
+##teamcity[testSuiteStarted name='test.GradleGreeterBTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GradleGreeterBTest.testGreet' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GradleGreeterBTest.testGreet' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GradleGreeterBTest.testIntro' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testIgnored name='test.GradleGreeterBTest.testIntro' message='' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GradleGreeterBTest.testIntro' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='test.GradleGreeterBTest' flowId='##Flow_ID##']
 ##teamcity[blockClosed name=':projectB:test']
 ##teamcity[blockOpened name=':projectB:check']
 ##teamcity[blockClosed name=':projectB:check']

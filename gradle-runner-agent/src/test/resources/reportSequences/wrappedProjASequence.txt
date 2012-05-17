@@ -1,5 +1,5 @@
 Downloading http://gradle.artifactoryonline.com/gradle/distributions/gradle-0.9.2-bin.zip
-gradle-0.9.2-bin.zip to
+Unzipping ##Checkout_directory##/wrappedProjectA/wrapper/dists/gradle-0.9.2-bin.zip to ##Checkout_directory##/wrappedProjectA/wrapper/dists
 ##teamcity[blockOpened name=':clean']
 ##teamcity[blockClosed name=':clean']
 ##teamcity[compilationStarted compiler=':compileJava']
@@ -19,12 +19,12 @@ gradle-0.9.2-bin.zip to
 ##teamcity[blockOpened name=':testClasses']
 ##teamcity[blockClosed name=':testClasses']
 ##teamcity[blockOpened name=':test']
-##teamcity[testSuiteStarted name='test.GradleGreeterTest'
-##teamcity[testStarted name='test.GradleGreeterTest.testGreet' captureStandardOutput='true'
-##teamcity[testFinished name='test.GradleGreeterTest.testGreet'
-##teamcity[testStarted name='test.GradleGreeterTest.testIntro' captureStandardOutput='true'
-##teamcity[testFinished name='test.GradleGreeterTest.testIntro'
-##teamcity[testSuiteFinished name='test.GradleGreeterTest'
+##teamcity[testSuiteStarted name='test.GradleGreeterTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GradleGreeterTest.testGreet' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GradleGreeterTest.testGreet' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GradleGreeterTest.testIntro' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GradleGreeterTest.testIntro' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='test.GradleGreeterTest' flowId='##Flow_ID##']
 ##teamcity[blockClosed name=':test']
 ##teamcity[blockOpened name=':check']
 ##teamcity[blockClosed name=':check']

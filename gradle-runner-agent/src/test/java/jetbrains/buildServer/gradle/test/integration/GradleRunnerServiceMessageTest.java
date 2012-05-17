@@ -19,7 +19,8 @@ package jetbrains.buildServer.gradle.test.integration;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -27,14 +28,13 @@ import java.util.regex.Pattern;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.api.Invocation;
 import org.jmock.lib.action.CustomAction;
-import org.testng.Reporter;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 /**
  * Author: Nikita.Skvortsov
@@ -46,13 +46,33 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
   protected static final String SEQENCE_FILES_ENCODING = "utf-8";
   protected static final String DEFAULT_MSG_PATTERN = "##teamcity\\[(.*?)(?<!\\|)\\]";
 
-  protected void assertMessageSequence(final List<String> actual, final String[] expected) {
-    Iterator<String> actualIterator = actual.iterator();
-    for (String expectation : expected) {
-      assertTrue(actualIterator.hasNext(), "Actual sequence too short.");
-      final String nextActual = actualIterator.next();
-      assertTrue(nextActual.contains(expectation), "Unexpected message in sequence. Expected to contain [" + expectation  + "] but was [" + nextActual + "]");
+  protected void assertServiceMessages(final List<String> actual, final String[] expected) {
+    assertEquals(actual.size(), expected.length, "Sequences differ in size. " + getAsStirng(actual, expected));
+    List<String> processedActual = preprocessMessages(actual);
+    for (String expectedMsg : expected) {
+      assertTrue(processedActual.remove(expectedMsg), "Could not find " + expectedMsg + " in actual sequence: "
+                                                      + getAsStirng(processedActual, expected));
     }
+  }
+
+  private List<String> preprocessMessages(List<String> messages) {
+    List<String> result = new ArrayList<String>(messages.size());
+    for (final String message : messages) {
+      String resultMessage = message.replaceAll("flowId='\\d+'", "flowId='##Flow_ID##'"); // drop flow id
+      resultMessage = resultMessage.replaceAll("(name|compiler)='(.*?)( UP-TO-DATE)?'", "$1='$2'"); // drop up-to-date marks
+      resultMessage = resultMessage.replaceAll("duration='\\d+'", "duration='##Duration##'"); // drop test durations
+      resultMessage = resultMessage.replaceAll("details='java.lang.AssertionError.*?[^|]'", "details='##Assert_Stacktrace##'"); // drop test durations
+      resultMessage = resultMessage.replaceAll("\\\\", "/"); // normalize paths if any
+      resultMessage = resultMessage.replaceAll(myCoDir.getAbsolutePath().replaceAll("\\\\", "/"), "##Checkout_directory##"); // drop test durations
+      result.add(resultMessage);
+    }
+
+    return result;
+  }
+
+  protected String getAsStirng(final Collection<String> actual, final String[] expected) {
+    return "\nActual messages:\n" + StringUtil.join("\n", actual)
+           + "\n\nExpected messages: " + StringUtil.join(expected, "\n");
   }
 
   protected String[] readReportSequence(final String sequenceName) throws RunBuildException {
@@ -68,63 +88,49 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
 
   }
 
-  protected void writeReportSequence(final String sequenceName, List<String> data) throws RunBuildException {
-    final File sequenceFile = new File (myProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
-    FileUtil.writeFile(sequenceFile, StringUtil.join(data, "\r\n"));
+  protected void writeReportSequence(final File sequenceFile, List<String> data) throws RunBuildException {
+    FileUtil.writeFile(sequenceFile, StringUtil.join(preprocessMessages(data), "\r\n"));
   }
 
-  protected void runAndCheckServiceMessages(final GradleRunConfiguration gradleRunConfiguration)
-    throws RunBuildException {
+  protected void runAndCheckServiceMessages(@NotNull final GradleRunConfiguration gradleRunConfiguration) throws RunBuildException {
+
     final Mockery ctx = initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
                                     gradleRunConfiguration.getGradleHome());
 
+    final String sequenceName = gradleRunConfiguration.getSequenceFileName();
+    final File sequenceFile = new File (myProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
     final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
     gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
 
-    final Expectations gatherServiceMessage = new Expectations() {{
-      allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).warning(with(any(String.class))); will(reportWarning);
-      allowing(myMockLogger).error(with(any(String.class))); will(reportError);
-    }};
+    if (sequenceFile.exists()) {
+      final Expectations gatherServiceMessage = new Expectations() {{
+        allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
+        allowing(myMockLogger).warning(with(any(String.class))); will(reportWarning);
+        allowing(myMockLogger).error(with(any(String.class))); will(reportError);
+      }};
 
-    runTest(gatherServiceMessage, ctx);
+      runTest(gatherServiceMessage, ctx);
 
-    String[] sequence = readReportSequence(gradleRunConfiguration.getSequenceFileName());
-    assertMessageSequence(gatherMessage.getMessages(), sequence);
+      String[] sequence = readReportSequence(sequenceName);
+      assertServiceMessages(gatherMessage.getMessages(), sequence);
+    } else {
+
+
+      final Expectations gatherServiceMessage = new Expectations() {{
+        allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
+        allowing(myMockLogger).warning(with(any(String.class))); will(gatherMessage);
+        allowing(myMockLogger).error(with(any(String.class))); will(gatherMessage);
+        allowing(myMockLogger).internalError(with(any(String.class)),
+                                             with(any(String.class)),
+                                             with(any(Throwable.class))); will(gatherMessage);
+      }};
+
+      runTest(gatherServiceMessage, ctx);
+      writeReportSequence(sequenceFile, gatherMessage.getMessages());
+      fail("Writing a report always causes test failure");
+    }
   }
 
-  protected void runAndWriteServiceMessages(final GradleRunConfiguration gradleRunConfiguration, final boolean writeToFile) throws RunBuildException {
-    final Mockery ctx = initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
-                                    gradleRunConfiguration.getGradleHome());
-
-    final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
-    if (writeToFile) {
-      gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
-    } else {
-      gatherMessage.setPattern(".*");
-    }
-
-    final Expectations gatherServiceMessage = new Expectations() {{
-      allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).warning(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).error(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).internalError(with(any(String.class)),
-                                           with(any(String.class)),
-                                           with(any(Throwable.class))); will(gatherMessage);
-    }};
-
-    runTest(gatherServiceMessage, ctx);
-
-    if (writeToFile) {
-      writeReportSequence(gradleRunConfiguration.getSequenceFileName(), gatherMessage.getMessages());
-    } else {
-      gatherMessage.printTrace();
-      for (String s : gatherMessage.getMessages()) {
-        Reporter.log(s);
-      }
-    }
-    fail("Writing a report always causes test failure");
-  }
 
   public static class GradleRunConfiguration {
     private final String myProject;

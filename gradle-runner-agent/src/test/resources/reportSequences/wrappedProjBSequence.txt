@@ -1,2 +1,2 @@
 Downloading http://snapshots.dist.codehaus.org/gradle/gradle-0.9-20100118091626+0100-bin.zip
-gradle-0.9-20100118091626+0100-bin.zip to
+Unzipping ##Checkout_directory##/wrappedProjectB/wrapper/dists/gradle-0.9-20100118091626+0100-bin.zip to ##Checkout_directory##/wrappedProjectB/wrapper/dists

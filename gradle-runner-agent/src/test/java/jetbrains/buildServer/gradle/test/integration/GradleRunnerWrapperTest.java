@@ -29,13 +29,16 @@ import org.testng.annotations.Test;
  * Author: Nikita.Skvortsov
  * Date: Oct 11, 2010
  */
-public class
+public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
 
-  GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
+  private boolean myExpectInternalError = false;
 
+  @Override
   @BeforeMethod
-  public void setUp() {
+  public void setUp() throws Exception {
+    super.setUp();
     myRunnerParams.clear();
+    myExpectInternalError = false;
   }
 
   @Test
@@ -52,8 +55,8 @@ public class
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectB", "clean build", "wrappedProjBSequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
-
-    runAndAssertInternalError(config);
+    myExpectInternalError = true;
+    runAndCheckServiceMessages(config);
   }
 
   @Test
@@ -61,32 +64,22 @@ public class
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectC", "clean test", "wrappedProjCSequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
-
-    runAndAssertInternalError(config);
+    myExpectInternalError = true;
+    runAndCheckServiceMessages(config);
   }
 
 
-  private void runAndAssertInternalError(final GradleRunConfiguration config) throws RunBuildException {
-    final Mockery ctx = initContext(config.getProject(), config.getCommand(),
-                                    config.getGradleHome());
+  @Override
+  protected Mockery initContext(final String projectName, final String gradleParams, final String gradleHomePath) {
+    final Mockery mockery = super.initContext(projectName, gradleParams,
+                                              gradleHomePath);
 
-    final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
-    gatherMessage.setPattern(config.getPatternStr());
-    final String wrongVersionStr = GradleVersionErrorsListener.WRONG_GRADLE_VERSION;
-
-    final Expectations gatherServiceMessage = new Expectations() {{
-      allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).warning(with(any(String.class))); will(reportWarning);
-      allowing(myMockLogger).error(with(any(String.class))); will(reportError);
-      oneOf(myMockLogger).internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE, wrongVersionStr, null);
-    }};
-
-    runTest(gatherServiceMessage, ctx);
-
-    String[] sequence = readReportSequence(config.getSequenceFileName());
-    assertMessageSequence(gatherMessage.getMessages(), sequence);
-    ctx.assertIsSatisfied();
+    if (myExpectInternalError) {
+      final Expectations expectInternalError = new Expectations() {{
+            oneOf(myMockLogger).internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE, GradleVersionErrorsListener.WRONG_GRADLE_VERSION, null);
+          }};
+      mockery.checking(expectInternalError);
+    }
+    return mockery;    //To change body of overridden methods use File | Settings | File Templates.
   }
-
-
 }

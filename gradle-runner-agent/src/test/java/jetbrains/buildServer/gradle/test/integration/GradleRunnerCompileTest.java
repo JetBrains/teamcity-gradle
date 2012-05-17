@@ -31,6 +31,7 @@ import static org.testng.Assert.fail;
 public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
 
   public static final String BUILD_CMD = "clean compileJava compileTest";
+  private static final boolean isJre7 = System.getProperty("java.specification.version").contains("1.7");
   private static final boolean isJre6 = System.getProperty("java.specification.version").contains("1.6");
   private static final boolean isJre5 = System.getProperty("java.specification.version").contains("1.5");
   private static final String COMPILATION_BLOCK_PROPS_MSGS_PATTERN = "##teamcity\\[(message|compilation|block)(.*?)(?<!\\|)\\]|##tc-property.*";
@@ -54,6 +55,8 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
       config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_5.txt");
     } else if (isJre6) {
       config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_6.txt");
+    } else if (isJre7) {
+      config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_7.txt");
     } else {
       fail("Compiler test requires JRE version 1.5 or 1.6 to run; Current version: " + System.getProperty("java.specification.version"));
     }

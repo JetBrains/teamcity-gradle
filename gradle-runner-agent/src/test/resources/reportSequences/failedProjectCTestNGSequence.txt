@@ -1,9 +1,9 @@
-##teamcity[testSuiteStarted name='TestAlpha'
-##teamcity[testStarted name='test.GreeterTestNGTest.testIntro' captureStandardOutput='true'
-##teamcity[testFinished name='test.GreeterTestNGTest.testIntro'
-##teamcity[testStarted name='test.GreeterTestNGTest.failedTest' captureStandardOutput='true'
-##teamcity[testFailed name='test.GreeterTestNGTest.failedTest' message='Explicit |'test|' |[failure|] ||' details='java.lang.AssertionError: Explicit |'test|' |[failure|] |||n	at org.testng.Assert.fail(Assert.java:89)|n	at test.GreeterTestNGTest.failedTest(GreeterTestNGTest.java:23)|n
-##teamcity[testFinished name='test.GreeterTestNGTest.failedTest'
-##teamcity[testStarted name='test.GreeterTestNGTest.testGreet' captureStandardOutput='true'
-##teamcity[testFinished name='test.GreeterTestNGTest.testGreet'
-##teamcity[testSuiteFinished name='TestAlpha'
+##teamcity[testSuiteStarted name='TestAlpha' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GreeterTestNGTest.testIntro' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GreeterTestNGTest.testIntro' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GreeterTestNGTest.failedTest' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFailed name='test.GreeterTestNGTest.failedTest' message='Explicit |'test|' |[failure|] ||' details='##Assert_Stacktrace##' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GreeterTestNGTest.failedTest' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.GreeterTestNGTest.testGreet' captureStandardOutput='true' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.GreeterTestNGTest.testGreet' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='TestAlpha' flowId='##Flow_ID##']
