@@ -92,10 +92,10 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     FileUtil.writeFile(sequenceFile, StringUtil.join(preprocessMessages(data), "\r\n"));
   }
 
-  protected void runAndCheckServiceMessages(@NotNull final GradleRunConfiguration gradleRunConfiguration) throws RunBuildException {
+  protected void runAndCheckServiceMessages(@NotNull final GradleRunConfiguration gradleRunConfiguration) throws IOException, RunBuildException {
 
     final Mockery ctx = initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
-                                    gradleRunConfiguration.getGradleHome());
+                                    gradleRunConfiguration.getGradleVersion());
 
     final String sequenceName = gradleRunConfiguration.getSequenceFileName();
     final File sequenceFile = new File (myProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
@@ -136,14 +136,14 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     private final String myProject;
     private final String myCommand;
     private final String mySequenceFileName;
-    private String myGradleHome;
+    private String myGradleVersion;
     private String myPatternStr;
 
     public GradleRunConfiguration(final String project, final String command, final String sequenceFileName) {
       myProject = project;
       myCommand = command;
       mySequenceFileName = sequenceFileName;
-      myGradleHome = System.getProperty(PROPERTY_GRADLE_RUNTIME);
+      myGradleVersion = System.getProperty(PROPERTY_GRADLE_RUNTIME);
       myPatternStr = DEFAULT_MSG_PATTERN;
     }
 
@@ -159,12 +159,12 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       return mySequenceFileName;
     }
 
-    public String getGradleHome() {
-      return myGradleHome;
+    public String getGradleVersion() {
+      return myGradleVersion;
     }
 
-    public void setGradleHome(String home) {
-      myGradleHome = home;
+    public void setGradleVersion(String version) {
+      myGradleVersion = version;
     }
 
     public String getPatternStr() {

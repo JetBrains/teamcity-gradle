@@ -16,7 +16,7 @@
 
 package jetbrains.buildServer.gradle.test.integration;
 
-import jetbrains.buildServer.RunBuildException;
+import java.io.IOException;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleVersionErrorsListener;
 import jetbrains.buildServer.messages.ErrorData;
@@ -42,7 +42,7 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
   }
 
   @Test
-  public void simpleWrapperTest() throws RunBuildException {
+  public void simpleWrapperTest() throws Exception {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_PATH, "gradle-runtime");
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectA", "clean build", "wrappedProjASequence.txt");
@@ -51,7 +51,7 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
   }
 
   @Test
-  public void incompatibleStartupScriptAPI() throws RunBuildException {
+  public void incompatibleStartupScriptAPI() throws Exception {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectB", "clean build", "wrappedProjBSequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
@@ -60,7 +60,7 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
   }
 
   @Test
-  public void startupScriptNotSupportedTest() throws RunBuildException {
+  public void startupScriptNotSupportedTest() throws Exception {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectC", "clean test", "wrappedProjCSequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
@@ -70,9 +70,9 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
 
 
   @Override
-  protected Mockery initContext(final String projectName, final String gradleParams, final String gradleHomePath) {
+  protected Mockery initContext(final String projectName, final String gradleParams, final String gradleVersion) throws IOException {
     final Mockery mockery = super.initContext(projectName, gradleParams,
-                                              gradleHomePath);
+                                              gradleVersion);
 
     if (myExpectInternalError) {
       final Expectations expectInternalError = new Expectations() {{

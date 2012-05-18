@@ -24,8 +24,8 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     myRunnerParams.put(GradleRunnerConstants.IS_INCREMENTAL, Boolean.TRUE.toString());
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testSingleDependency(String gradleHome) throws Exception {
+  @Test(dataProvider = "gradle-version-provider")
+  public void testSingleDependency(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1");
     final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
@@ -38,13 +38,13 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestSingleDep.txt");
-    gradleRunConfiguration.setGradleHome(gradleHome);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testDoubleDependency(String gradleHome) throws Exception {
+  @Test(dataProvider = "gradle-version-provider")
+  public void testDoubleDependency(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("src/main/java/my/module/GreeterRoot.java:ADD:1");
     final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
@@ -57,12 +57,12 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestDoubleDep.txt");
-    gradleRunConfiguration.setGradleHome(gradleHome);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testNoDependency(String gradleHome) throws Exception {
+  @Test(dataProvider = "gradle-version-provider")
+  public void testNoDependency(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectD/src/main/java/my/module/GreeterD.java:ADD:1");
     final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
@@ -75,12 +75,12 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestZeroDep.txt");
-    gradleRunConfiguration.setGradleHome(gradleHome);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testNothingTouched(String gradleHome) throws Exception {
+  @Test(dataProvider = "gradle-version-provider")
+  public void testNothingTouched(String gradleVersion) throws Exception {
     final String changedFilesPath = createFileWithChanges("");
     final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
 
@@ -92,13 +92,13 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestFullBuild.txt");
-    gradleRunConfiguration.setGradleHome(gradleHome);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
 
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testPersonalChange(String gradleHome) throws Exception {
+  @Test(dataProvider = "gradle-version-provider")
+  public void testPersonalChange(String gradleVersion) throws Exception {
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1\n" +
                                                           "projectA/src/main/java/my/module/GreeterA.java:ADD:<personal>");
     final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
@@ -111,12 +111,12 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestPersonalChange.txt");
-    gradleRunConfiguration.setGradleHome(gradleHome);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testSkipOption(String gradleHome) throws Exception {
+  @Test(dataProvider = "gradle-version-provider")
+  public void testSkipOption(String gradleVersion) throws Exception {
 
     System.setProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM, "false");
 
@@ -131,13 +131,13 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestFullBuild.txt");
-    gradleRunConfiguration.setGradleHome(gradleHome);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testChangeNotInSourceSet(String gradleHome) throws Exception {
+  @Test(dataProvider = "gradle-version-provider")
+  public void testChangeNotInSourceSet(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectA/build.gradle:ADD:1");
     final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
@@ -150,7 +150,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestFullBuild.txt");
-    gradleRunConfiguration.setGradleHome(gradleHome);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 

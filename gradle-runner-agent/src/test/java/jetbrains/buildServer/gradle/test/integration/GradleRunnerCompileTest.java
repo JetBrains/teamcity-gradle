@@ -37,18 +37,18 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
   private static final String COMPILATION_BLOCK_PROPS_MSGS_PATTERN = "##teamcity\\[(message|compilation|block)(.*?)(?<!\\|)\\]|##tc-property.*";
   private static final String COMPILATION_MSGS_PATTERN = "##teamcity\\[(message|compilation)(.*?)(?<!\\|)\\]";
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void successfulCompileTest(final String gradleHomePath) throws RunBuildException, IOException {
+  @Test(dataProvider = "gradle-version-provider")
+  public void successfulCompileTest(final String gradleVersion) throws RunBuildException, IOException {
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      new File(myProjectRoot, "src/test/resources/testProjects/test.properties").getAbsolutePath());
     GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", "mProjectABlockSequence.txt");
-    config.setGradleHome(gradleHomePath);
+    config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void failedCompileTest(final String gradleHomePath) throws RunBuildException, IOException {
+  @Test(dataProvider = "gradle-version-provider")
+  public void failedCompileTest(final String gradleVersion) throws RunBuildException, IOException {
     GradleRunConfiguration config = null;
     // Compilation errors output differs on different javac versions
     if (isJre5) {
@@ -60,7 +60,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     } else {
       fail("Compiler test requires JRE version 1.5 or 1.6 to run; Current version: " + System.getProperty("java.specification.version"));
     }
-    config.setGradleHome(gradleHomePath);
+    config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
   }

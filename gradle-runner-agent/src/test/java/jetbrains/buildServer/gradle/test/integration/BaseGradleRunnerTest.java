@@ -61,6 +61,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_E_NAME = "projectE";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
+  private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
 
   protected final TempFiles myTempFiles = new TempFiles();
 
@@ -119,14 +120,14 @@ public class BaseGradleRunnerTest {
     if (myProjectRoot == null) {
       myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
-    File gradleDir = new File(myProjectRoot, "../../../tools/gradle");
+    File gradleDir = new File(myProjectRoot, TOOLS_GRADLE_PATH);
     Reporter.log(gradleDir.getAbsolutePath());
     if (gradleDir.exists()) {
       File[] versions = gradleDir.listFiles();
       result = new Object[versions.length][];
       int i = 0;
       for (File version : versions) {
-        result[i] = new Object[] { version.getAbsolutePath() };
+        result[i] = new Object[] { version.getName() };
         i++;
       }
     } else {
@@ -134,6 +135,15 @@ public class BaseGradleRunnerTest {
         result = new Object[][] { new Object [] { propsGradleHome }};
     }
     return result;
+  }
+
+  public String getGradlePath(String gradleVersion) throws IOException {
+    final File gradleHome = new File(gradleVersion);
+    if (gradleHome.isAbsolute()) {
+      return gradleHome.getCanonicalPath();
+    } else {
+      return new File(new File(myProjectRoot, TOOLS_GRADLE_PATH), gradleVersion).getCanonicalPath();
+    }
   }
 
   @BeforeMethod
@@ -187,7 +197,7 @@ public class BaseGradleRunnerTest {
     myTestLogger.onTestFinish(false);
   }
 
-  protected Mockery initContext(final String projectName, final String gradleParams, final String gradleHomePath) {
+  protected Mockery initContext(final String projectName, final String gradleParams, final String gradleVersion) throws IOException {
     Mockery context = new Mockery();
 
     final String flowId = FlowGenerator.generateNewFlow();
@@ -199,9 +209,9 @@ public class BaseGradleRunnerTest {
     myMockLogger = context.mock(FlowLogger.class);
     final BuildParametersMap buildParams = context.mock(BuildParametersMap.class);
 
-    if (null != gradleHomePath) {
-      myRunnerParams.put(GradleRunnerConstants.GRADLE_HOME, gradleHomePath);
-    }
+    final String gradlePath = getGradlePath(gradleVersion);
+    myRunnerParams.put(GradleRunnerConstants.GRADLE_HOME, gradlePath);
+
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);
 
@@ -217,7 +227,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockRunner).getRunnerParameters(); will(returnValue(myRunnerParams));
       allowing(myMockRunner).getBuildParameters(); will(returnValue(buildParams));
       allowing(myMockRunner).getWorkingDirectory(); will(returnValue(workingDir));
-      allowing(myMockRunner).getToolPath("gradle"); will(returnValue(gradleHomePath));
+      allowing(myMockRunner).getToolPath("gradle"); will(returnValue(gradlePath));
       allowing(myMockRunner).getBuild(); will(returnValue(myMockBuild));
 
       allowing(buildParams).getAllParameters(); will(returnValue(myBuildEnvVars));

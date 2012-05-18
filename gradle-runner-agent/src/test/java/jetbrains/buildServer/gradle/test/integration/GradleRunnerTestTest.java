@@ -17,6 +17,7 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -42,40 +43,39 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   private static final int PROJECT_D_TEST_COUNT = 39;
 
-  private void testTest(String project, String command, String seqFile, String gradleHomePath) throws RunBuildException {
+  private void testTest(String project, String command, String seqFile, String gradleVersion) throws IOException, RunBuildException {
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project, command, seqFile);
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
-    gradleRunConfiguration.setGradleHome(gradleHomePath);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
-    //runAndWriteServiceMessages(gradleRunConfiguration, true);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void failedAndSkippedJUnitTest(final String gradleHomePath) throws RunBuildException {
-    testTest(PROJECT_C_NAME, "clean test", "failedProjectCJUnitSequence.txt", gradleHomePath);
+  @Test(dataProvider = "gradle-version-provider")
+  public void failedAndSkippedJUnitTest(final String gradleVersion) throws Exception {
+    testTest(PROJECT_C_NAME, "clean test", "failedProjectCJUnitSequence.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void failedAndSkippedTestNGTest(final String gradleHomePath) throws RunBuildException {
-    testTest(PROJECT_C_NAME, "clean testng", "failedProjectCTestNGSequence.txt", gradleHomePath);
+  @Test(dataProvider = "gradle-version-provider")
+  public void failedAndSkippedTestNGTest(final String gradleVersion) throws Exception {
+    testTest(PROJECT_C_NAME, "clean testng", "failedProjectCTestNGSequence.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void testOutputReportingTest(final String gradleHomePath) throws RunBuildException {
-    testTest(PROJECT_E_NAME, "clean test", "testOutputSequence.txt", gradleHomePath);
+  @Test(dataProvider = "gradle-version-provider")
+  public void testOutputReportingTest(final String gradleVersion) throws Exception {
+    testTest(PROJECT_E_NAME, "clean test", "testOutputSequence.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-path-provider")
-  public void parallelTestSuiteTest(final String gradleHomePath) throws RunBuildException {
+  @Test(dataProvider = "gradle-version-provider")
+  public void parallelTestSuiteTest(final String gradleVersion) throws RunBuildException, IOException {
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      new File(myProjectRoot, "src/test/resources/testProjects/testJvmArgs.properties").getAbsolutePath());
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(PROJECT_D_NAME,
                                                                                      "clean testParallel",null);
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
-    gradleRunConfiguration.setGradleHome(gradleHomePath);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
     final Mockery ctx = initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
-                                    gradleRunConfiguration.getGradleHome());
+                                    gradleRunConfiguration.getGradleVersion());
     final FlowServiceMessageReceiver gatherMessage = new FlowServiceMessageReceiver();
     gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
     final Expectations gatherServiceMessage = new Expectations() {{
