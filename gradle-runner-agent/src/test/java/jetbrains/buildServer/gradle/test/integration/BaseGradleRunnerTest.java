@@ -114,7 +114,7 @@ public class BaseGradleRunnerTest {
   private TestLogger myTestLogger = new TestLogger();
 
 
-  @DataProvider(name = "gradle-path-provider")
+  @DataProvider(name = "gradle-version-provider")
   public Object[][] getGradlePaths(Method m) {
     Object[][] result;
     if (myProjectRoot == null) {
