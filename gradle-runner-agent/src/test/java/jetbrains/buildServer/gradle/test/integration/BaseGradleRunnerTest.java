@@ -209,8 +209,13 @@ public class BaseGradleRunnerTest {
     myMockLogger = context.mock(FlowLogger.class);
     final BuildParametersMap buildParams = context.mock(BuildParametersMap.class);
 
-    final String gradlePath = getGradlePath(gradleVersion);
-    myRunnerParams.put(GradleRunnerConstants.GRADLE_HOME, gradlePath);
+    final String gradlePath;
+    if (gradleVersion != null) {
+       gradlePath = getGradlePath(gradleVersion);
+       myRunnerParams.put(GradleRunnerConstants.GRADLE_HOME, gradlePath);
+    } else {
+      gradlePath = null;
+    }
 
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);
