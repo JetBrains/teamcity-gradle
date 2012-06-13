@@ -227,10 +227,11 @@ public class BaseGradleRunnerTest {
       allowing(myMockBuild).getCheckoutDirectory(); will(returnValue(myCoDir));
       allowing(myMockBuild).getBuildTempDirectory(); will(returnValue(myTempDir));
       allowing(myMockBuild).getFailBuildOnExitCode(); will(returnValue(true));
-      allowing(myMockBuild).getSharedConfigParameters(); will(returnValue(myRunnerParams));
+      allowing(myMockBuild).getSharedConfigParameters(); will(returnValue(Collections.<String, String>emptyMap()));
 
       allowing(myMockRunner).getRunnerParameters(); will(returnValue(myRunnerParams));
       allowing(myMockRunner).getBuildParameters(); will(returnValue(buildParams));
+      allowing(myMockRunner).getConfigParameters(); will(returnValue(Collections.<String, String>emptyMap()));
       allowing(myMockRunner).getWorkingDirectory(); will(returnValue(workingDir));
       allowing(myMockRunner).getToolPath("gradle"); will(returnValue(gradlePath));
       allowing(myMockRunner).getBuild(); will(returnValue(myMockBuild));
