@@ -2,11 +2,9 @@ import jetbrains.buildServer.ComparisonFailureData
 import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
 import jetbrains.buildServer.gradle.GradleRunnerConstants
-
-import java.util.concurrent.ConcurrentHashMap
-
 import jetbrains.buildServer.messages.serviceMessages.*
 
+import java.util.concurrent.ConcurrentHashMap
 /*
 * Copyright 2000-2012 JetBrains s.r.o.
 *
@@ -130,6 +128,9 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
   public void beforeEvaluate(Project project) {
     loadProps(project);
+    // Marker for TeamCity listener that shows that init script started to execute successfully
+    System.out.println(GradleRunnerConstants.STARTING_TEAMCITY_BUILD_PREFIX + project.teamcity["build.number"])
+    System.out.flush()
   }
 
   public void afterEvaluate(Project project, ProjectState projectState) {
