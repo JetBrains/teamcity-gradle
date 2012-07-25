@@ -31,7 +31,6 @@ public class GradleVersionErrorsListenerTest extends GradleRunnerServiceMessageT
                                               gradleVersion);
 
     final Expectations dontExpectInternalErrors = new Expectations() {{
-      allowing(myMockBuild).getBuildNumber(); will(returnValue("12345"));
       never(myMockLogger).internalError(with(any(String.class)), with(any(String.class)), with(any(Throwable.class)));
     }};
     mockery.checking(dontExpectInternalErrors);
