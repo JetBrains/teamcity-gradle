@@ -16,10 +16,13 @@
 
 package jetbrains.buildServer.gradle.test.integration;
 
+import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jetbrains.buildServer.ExtensionHolder;
@@ -122,14 +125,15 @@ public class BaseGradleRunnerTest {
     }
     File gradleDir = new File(myProjectRoot, TOOLS_GRADLE_PATH);
     Reporter.log(gradleDir.getAbsolutePath());
-    if (gradleDir.exists()) {
+    if (gradleDir.exists() && gradleDir.isDirectory()) {
       File[] versions = gradleDir.listFiles();
-      result = new Object[versions.length][];
-      int i = 0;
+      List<Object[]> versionNames = new LinkedList<Object[]>();
       for (File version : versions) {
-        result[i] = new Object[] { version.getName() };
-        i++;
+        if (new File(version, "bin/gradle" + (SystemInfo.isWindows ? ".bat" : "")).exists()) {
+          versionNames.add(new Object[] { version.getName() });
+        }
       }
+      result = versionNames.toArray(new Object[versionNames.size()][]);
     } else {
         final String propsGradleHome = System.getProperty(PROPERTY_GRADLE_RUNTIME);
         result = new Object[][] { new Object [] { propsGradleHome }};
