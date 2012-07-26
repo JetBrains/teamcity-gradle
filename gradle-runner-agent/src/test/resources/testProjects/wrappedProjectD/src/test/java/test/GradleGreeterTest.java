@@ -20,7 +20,7 @@ public class GradleGreeterTest {
 
     @Test
     public void failedTestWithOutput() throws Exception {
-      System.err.println("\nCould not compile initialization script 'C:\\init.gradle'");
+      System.err.println("Could not compile initialization script 'C:\\init.gradle'");
       Assert.fail("oops");
     }
 

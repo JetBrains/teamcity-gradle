@@ -15,7 +15,7 @@ import org.testng.annotations.Test;
 public class GradleVersionErrorsListenerTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
-  public void failedAndSkippedJUnitTest(final String gradleVersion) throws Exception {
+  public void testGradleVersionErrorInTestOutput(final String gradleVersion) throws Exception {
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                          new File(myProjectRoot, "src/test/resources/testProjects/buildNumber.properties").getAbsolutePath());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
