@@ -5,6 +5,7 @@ import java.util.List;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.agent.runner.ProcessListenerAdapter;
 import jetbrains.buildServer.messages.DefaultMessagesInfo;
+import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,6 +17,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   private final BuildProgressLogger myBuildLogger;
   final private List<String> myErrorMessages = new LinkedList<String>();
   volatile private boolean myCollectErrors = false;
+  volatile private boolean myPreviousLineWasEmptyError = false;
 
   public GradleLoggingListener(final BuildProgressLogger buildLogger) {
     myBuildLogger = buildLogger;
@@ -24,6 +26,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   @Override
   public void onStandardOutput(@NotNull final String text) {
     myBuildLogger.message(text);
+    myPreviousLineWasEmptyError = false;
   }
 
   @Override
@@ -31,21 +34,14 @@ class GradleLoggingListener extends ProcessListenerAdapter {
     if (myCollectErrors) {
       myErrorMessages.add(text);
     } else {
-      if ("".equals(text.trim())) {
-        assert myErrorMessages.size() == 0;
-        myErrorMessages.add(text);
-        return;
-      }
-
-      if ((text.trim().startsWith("FAILURE:")
-          && myErrorMessages.size() == 1
-          && "".equals(myErrorMessages.get(0)))
+      if ((text.trim().startsWith("FAILURE:") && myPreviousLineWasEmptyError)
           || text.contains("[org.gradle.BuildExceptionReporter]")) {
         myCollectErrors = true;
         myErrorMessages.add(text);
         return;
       }
 
+      myPreviousLineWasEmptyError = StringUtil.isEmptyOrSpaces(text);
       myBuildLogger.warning(text);
     }
   }
@@ -58,8 +54,8 @@ class GradleLoggingListener extends ProcessListenerAdapter {
       myBuildLogger.activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
     } else {
       flushErrorMessages();
-      myCollectErrors = false;
     }
+    myCollectErrors = false;
   }
 
   private void flushErrorMessages() {
