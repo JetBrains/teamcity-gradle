@@ -50,6 +50,7 @@ public class GradleToolProviderTest {
   private Mockery myContext;
 
   private File myGradlePluginDir;
+  private File myWorkingDir;
   private ToolProvidersRegistry tpRegistry;
   private ToolProvider registeredProvider;
   private AgentRunningBuild build;
@@ -70,6 +71,7 @@ public class GradleToolProviderTest {
       return getToolProvider();
     }
   };
+  private Map<String,String> myRunnerParams;
 
 
   private ToolProvider getToolProvider() {
@@ -83,6 +85,7 @@ public class GradleToolProviderTest {
   @BeforeClass
   public void initDirs() throws IOException {
     final File pluginsDir = myTempFiles.createTempDir();
+    myWorkingDir = myTempFiles.createTempDir();
     myGradlePluginDir = new File(pluginsDir, "gradle");
     myGradlePluginDir.mkdirs();
   }
@@ -93,8 +96,11 @@ public class GradleToolProviderTest {
     tpRegistry = myContext.mock(ToolProvidersRegistry.class);
     build = myContext.mock(AgentRunningBuild.class);
     runner = myContext.mock(BuildRunnerContext.class);
+    myRunnerParams = new HashMap<String, String>();
+    myRunnerParams.put("teamcity.build.checkoutDir", myWorkingDir.getAbsolutePath());
     final BundledToolsRegistry reg = myContext.mock(BundledToolsRegistry.class);
     final BundledTool tool = myContext.mock(BundledTool.class);
+    final BuildParametersMap buildParams = myContext.mock(BuildParametersMap.class);
 
     myContext.checking(new Expectations() {{
       allowing(tpRegistry).registerToolProvider(with(any(ToolProvider.class))); will(registerToolProvider);
@@ -102,6 +108,10 @@ public class GradleToolProviderTest {
 
       allowing(reg).findTool("gradle"); will(returnValue(tool));
       allowing(tool).getRootPath(); will(returnValue(myGradlePluginDir));
+
+      allowing(runner).getRunnerParameters(); will(returnValue(myRunnerParams));
+      allowing(runner).getBuildParameters(); will(returnValue(buildParams));
+      allowing(buildParams).getAllParameters(); will(returnValue(myRunnerParams));
     }});
 
     new GradleToolProvider(tpRegistry, reg);
@@ -132,15 +142,20 @@ public class GradleToolProviderTest {
   @Test
   public void testProvidedGradlePath() {
     final String expectedPath = "testPathString";
-    final Map<String,String> runnerParams = new HashMap<String, String>();
-    runnerParams.put(GradleRunnerConstants.GRADLE_HOME, expectedPath);
-
-    myContext.checking(new Expectations() {{
-      allowing(runner).getRunnerParameters();will(returnValue(runnerParams));
-    }});
+    myRunnerParams.put(GradleRunnerConstants.GRADLE_HOME, expectedPath);
 
     final String path = myToolProvider.getPath(GradleToolProvider.GRADLE_TOOL, build, runner);
-    assertEquals(path, expectedPath, "Wrong server-provided gradle path");
+    assertEquals(path, new File(myWorkingDir, expectedPath).getAbsolutePath(), "Wrong server-provided gradle path");
+  }
+
+  // TW-24588
+  @Test
+  public void testEnvSettingGradlePath() {
+    final String expectedPath = "testPathString";
+    myRunnerParams.put(Constants.ENV_PREFIX + GRADLE_HOME, expectedPath);
+
+    final String path = myToolProvider.getPath(GradleToolProvider.GRADLE_TOOL, build, runner);
+    assertEquals(path, new File(myWorkingDir, expectedPath).getAbsolutePath(), "Wrong env provided gradle path");
   }
 
 

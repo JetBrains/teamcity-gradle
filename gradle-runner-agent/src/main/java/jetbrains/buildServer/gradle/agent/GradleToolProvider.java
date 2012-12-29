@@ -16,7 +16,12 @@
 
 package jetbrains.buildServer.gradle.agent;
 
+import java.io.File;
+import java.util.Map;
 import jetbrains.buildServer.agent.*;
+import jetbrains.buildServer.agent.util.ParameterValueFinder;
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -56,11 +61,15 @@ public class GradleToolProvider {
                             @NotNull final AgentRunningBuild build,
                             @NotNull final BuildRunnerContext runner)
         throws ToolCannotBeFoundException {
-        String homePath = ConfigurationParamsUtil.getGradleHome(runner.getRunnerParameters());
-        if (homePath.length() != 0) {
-          return homePath;
+        final Map<String, String> runParameters = runner.getRunnerParameters();
+        final Map<String, String> buildParameters = runner.getBuildParameters().getAllParameters();
+        final ParameterValueFinder parameterValueFinder = new ParameterValueFinder("Gradle runner home", Constants.ENV_PREFIX + GRADLE_HOME);
+        final String gradleHome = parameterValueFinder.getPropertyValue(runParameters.get(GradleRunnerConstants.GRADLE_HOME), buildParameters);
+
+        if (gradleHome != null) {
+                  return FileUtil.resolvePath(new File(AgentRuntimeProperties.getCheckoutDir(runParameters)), gradleHome).getAbsolutePath();
         } else {
-          return getPath(toolName);
+          throw new ToolCannotBeFoundException("Couldn't locate Gradle installation. Please use wrapper script or install Gradle and set environment variable GRADLE_HOME");
         }
       }
     });
