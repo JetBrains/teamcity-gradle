@@ -2,6 +2,7 @@ package jetbrains.buildServer.gradle.agent;
 
 import java.util.LinkedList;
 import java.util.List;
+import jetbrains.buildServer.BuildProblemData;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.agent.runner.ProcessListenerAdapter;
 import jetbrains.buildServer.messages.DefaultMessagesInfo;
@@ -50,6 +51,8 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   public void processFinished(final int exitCode) {
     if (exitCode != 0) {
       myBuildLogger.activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
+      final BuildProblemData problemData = BuildProblemData.createBuildProblem(BuildProblemData.TC_EXIT_CODE_TYPE, StringUtil.join("\n", myErrorMessages));
+      myBuildLogger.logBuildProblem(problemData);
       flushErrorMessages();
       myBuildLogger.activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
     } else {
