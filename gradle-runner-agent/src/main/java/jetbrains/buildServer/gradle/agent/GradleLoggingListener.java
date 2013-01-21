@@ -5,6 +5,7 @@ import java.util.List;
 import jetbrains.buildServer.BuildProblemData;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.agent.runner.ProcessListenerAdapter;
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.messages.DefaultMessagesInfo;
 import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
@@ -49,9 +50,9 @@ class GradleLoggingListener extends ProcessListenerAdapter {
 
   @Override
   public void processFinished(final int exitCode) {
-    if (exitCode != 0) {
+    if (exitCode != 0 && shouldReportBuildProblem()) {
       myBuildLogger.activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
-      final BuildProblemData problemData = BuildProblemData.createBuildProblem(BuildProblemData.TC_EXIT_CODE_TYPE, StringUtil.join("\n", myErrorMessages));
+      final BuildProblemData problemData = BuildProblemData.createBuildProblem(GradleRunnerConstants.GRADLE_BUILD_PROBLEM_TYPE, StringUtil.join("\n", myErrorMessages));
       myBuildLogger.logBuildProblem(problemData);
       flushErrorMessages();
       myBuildLogger.activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
@@ -59,6 +60,19 @@ class GradleLoggingListener extends ProcessListenerAdapter {
       flushErrorMessages();
     }
     myCollectErrors = false;
+  }
+
+  private boolean shouldReportBuildProblem() {
+    final String testErrorPrefix = "> There were failing tests";
+    final String compileErrorPrefix = "> Compilation failed";
+
+    for (String errorMessage : myErrorMessages) {
+      if (errorMessage.startsWith(testErrorPrefix)
+          || errorMessage.startsWith(compileErrorPrefix)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private void flushErrorMessages() {

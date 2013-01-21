@@ -46,4 +46,5 @@ public class GradleRunnerConstants
   public static final String INIT_SCRIPT_SUFFIX = "scripts/"+INIT_SCRIPT_NAME;
 
   public static final String STARTING_TEAMCITY_BUILD_PREFIX = "Starting Gradle in TeamCity build ";
+  public static final String GRADLE_BUILD_PROBLEM_TYPE = "gradleBuildProblem";
 }

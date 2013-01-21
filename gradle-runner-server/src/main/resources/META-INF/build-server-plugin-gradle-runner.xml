@@ -3,7 +3,6 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans default-autowire="constructor">
-
   <bean id="gradleRunType" class="jetbrains.buildServer.gradle.server.GradleRunType"/>
-
+  <bean class="jetbrains.buildServer.gradle.server.GradleProblemTypeDetailsProvider"/>
 </beans>
