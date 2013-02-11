@@ -19,6 +19,12 @@ public class GradleProblemTypeDetailsProvider extends BaseBuildProblemTypeDetail
     return "Gradle exception";
   }
 
+  @Nullable
+  @Override
+  public String getTypeDescription() {
+    return "Gradle failure";
+  }
+
   @NotNull
   public String getType() {
     return GradleRunnerConstants.GRADLE_BUILD_PROBLEM_TYPE;
