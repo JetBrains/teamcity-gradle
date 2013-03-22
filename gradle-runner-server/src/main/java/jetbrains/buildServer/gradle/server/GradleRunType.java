@@ -37,11 +37,13 @@ public class GradleRunType extends RunType {
     return GradleRunnerConstants.RUNNER_TYPE;
   }
 
+  @NotNull
   @Override
   public String getDisplayName() {
     return "Gradle";
   }
 
+  @NotNull
   @Override
   public String getDescription() {
     return "Runner for Gradle projects";
