@@ -5,6 +5,7 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants
 import jetbrains.buildServer.messages.serviceMessages.*
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /*
 * Copyright 2000-2013 JetBrains s.r.o.
@@ -127,11 +128,15 @@ public class DependencyBasedTestRun {
 
 public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
+  AtomicBoolean initScriptStartReported = new AtomicBoolean(false);
+
   public void beforeEvaluate(Project project) {
     loadProps(project);
     // Marker for TeamCity listener that shows that init script started to execute successfully
-    System.out.println(GradleRunnerConstants.STARTING_TEAMCITY_BUILD_PREFIX + project.teamcity["build.number"])
-    System.out.flush()
+    if (initScriptStartReported.compareAndSet(false, true)) {
+      System.out.println(GradleRunnerConstants.STARTING_TEAMCITY_BUILD_PREFIX + project.teamcity["build.number"])
+      System.out.flush()
+    }
   }
 
   public void afterEvaluate(Project project, ProjectState projectState) {
