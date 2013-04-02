@@ -5,6 +5,7 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants
 import jetbrains.buildServer.messages.serviceMessages.*
 
 import java.util.concurrent.ConcurrentHashMap
+
 /*
 * Copyright 2000-2013 JetBrains s.r.o.
 *
@@ -199,9 +200,15 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
   def taskMessages = new HashMap<Task, TeamCityOutputListener>()
   def blockOpenMessagesCache = new HashMap<Task, ServiceMessage>()
   def logger
+  boolean isParallelExec
 
-  public TeamcityTaskListener(Logger logger) {
-    this.logger = logger
+  public TeamcityTaskListener(Logger log, boolean parallelExec) {
+    logger = log;
+    isParallelExec = parallelExec;
+  }
+
+  String getProjectFlowId(project) {
+    return String.valueOf(project.getPath().hashCode());
   }
 
   public void beforeExecute(Task task) {
@@ -215,9 +222,9 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       }
       errorListener.reset();
       task.getLogging().addStandardOutputListener(errorListener);
-      message = new CompilationStarted(task.getPath());
+      message = addFlowId(task, new CompilationStarted(task.getPath()));
     } else {
-      message = new BlockOpened(task.getPath());
+      message = addFlowId(task, new BlockOpened(task.getPath()));
     }
 
     def oldMessage = popFromBlockOpenCache(task)
@@ -246,12 +253,12 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       if (null != failure) {
         final TeamCityOutputListener outputListener = taskMessages.get(task);
         for (String str : outputListener.getMessages()) {
-          System.out.println(new Message(str, "ERROR", null).asString()); // compilation failure
+          System.out.println(addFlowId(task, new Message(str, "ERROR", null)).asString()); // compilation failure
         }
       }
-      blockCloseMessage = new CompilationFinished(task.getPath());
+      blockCloseMessage = addFlowId(task, new CompilationFinished(task.getPath()));
     } else {
-      blockCloseMessage = new BlockClosed(task.getPath());
+      blockCloseMessage = addFlowId(task, new BlockClosed(task.getPath()));
     }
     System.out.println(blockCloseMessage.asString());
   }
@@ -281,11 +288,11 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
         text += " ${taskState.getSkipMessage()}";
 
         if (message instanceof CompilationStarted) {
-          System.out.println(new CompilationStarted(text));
-          System.out.println(new CompilationFinished(text));
+          System.out.println(addFlowId(task, new CompilationStarted(text)));
+          System.out.println(addFlowId(task, new CompilationFinished(text)));
         } else {
-          System.out.println(new BlockOpened(text));
-          System.out.println(new BlockClosed(text));
+          System.out.println(addFlowId(task, new BlockOpened(text)));
+          System.out.println(addFlowId(task, new BlockClosed(text)));
         }
 
         skipped = true;
@@ -317,6 +324,13 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
     // do nothing
   }
 
+  ServiceMessage addFlowId(task, message) {
+    if (isParallelExec) {
+      message.setFlowId(getProjectFlowId(task.project))
+    }
+    return message
+  }
+
   private class TeamCityOutputListener implements StandardOutputListener {
 
     private List<String> messages = new LinkedList<String>();
@@ -341,16 +355,28 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 
 }
 
-
 public class TeamcityTestListener {
   def workerCodes = new ConcurrentHashMap();
-  def root;
+  TestDescriptor root;
+  Test baseTask;
+  boolean isParallelBuild
 
-  String findFlowId(TestDescriptor desc) {
+  public TeamcityTestListener(task, isParallel) {
+    baseTask = task
+    isParallelBuild = isParallel
+  }
+
+  String getProjectFlowId(project) {
+    return String.valueOf(project.getPath().hashCode());
+  }
+
+  String findFlowId(TestDescriptor descriptor) {
     String code = "";
+    def desc = descriptor;
     while ((null != desc) && ((code = workerCodes.get(desc)) == null)) {
       desc = desc.getParent();
     }
+    if (code == null) throw new NullPointerException("Failed to find flowId for [${descriptor.getName()}]")
     return code;
   }
 
@@ -368,10 +394,10 @@ public class TeamcityTestListener {
       code = workerCodes.get(suite);
       if (null == code) {
         code = "" + System.identityHashCode(suite);
-        String oldCode = workerCodes.putIfAbsent(suite, code);
-        if (null != oldCode) {
-          code = oldCode;
+        if (isParallelBuild) {
+          System.out.println("##teamcity[flowStarted flowId='${code}' parent='${getProjectFlowId(baseTask.project)}']") ;
         }
+        workerCodes.putIfAbsent(suite, code);
       }
       return; // do not report service message for workers
     }
@@ -483,20 +509,25 @@ public class TeamcityTestListener {
 }
 
 
-
-
-def teamcityTestListener = new TeamcityTestListener()
-gradle.addListener(teamcityTestListener.testListenerDelegate as TestListener)
-
+def isParallelExec = gradle.startParameter.hasProperty("parallelThreadCount") && gradle.startParameter.parallelThreadCount != 0
+def testOutputListenerClass = null
 try {
-  def testOutputListenerClass = Class.forName("org.gradle.api.tasks.testing.TestOutputListener",false, getClass().getClassLoader());
-  gradle.addListener(teamcityTestListener.testOutputDelegate.asType(testOutputListenerClass));
-  logger.debug("added teamCityListener as ${testOutputListenerClass.getName()}")
-
+  testOutputListenerClass = Class.forName("org.gradle.api.tasks.testing.TestOutputListener", false, getClass().getClassLoader());
 } catch (ClassNotFoundException e) {
-  logger.debug("Could not load TestOutputListener class. Test out will not be available")
+  logger.debug("Could not load TestOutputListener class. Test output will not be available")
 }
 
 gradle.addListener(new TeamcityPropertiesListener())
-gradle.useLogger(new TeamcityTaskListener(logger))
-gradle.projectsEvaluated { new DependencyBasedTestRun(logger).configureGradle(it) }
+gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
+gradle.projectsEvaluated {
+  new DependencyBasedTestRun(logger).configureGradle(it)
+  it.rootProject.allprojects { Project p ->
+    p.tasks.withType(Test.class).each { Test testTask ->
+      def testListener = new TeamcityTestListener(testTask, isParallelExec)
+      testTask.addTestListener(testListener.testListenerDelegate as TestListener)
+      if (testOutputListenerClass != null) {
+        testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
+      }
+    }
+  }
+}
