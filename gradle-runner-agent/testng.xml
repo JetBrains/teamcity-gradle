@@ -9,6 +9,7 @@
       <class name="jetbrains.buildServer.gradle.test.integration.GradleToolProviderTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerServiceTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleVersionErrorsListenerTest"/>
+      <class name="jetbrains.buildServer.gradle.test.integration.GradleParallelRunTest"/>
     </classes>
   </test>
 </suite>
