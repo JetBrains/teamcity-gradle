@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 initscript {
   dependencies {
     def teamCityInitLib = System.getenv("TEAMCITY_BUILD_INIT_PATH")
-    println "Init lib: ${teamCityInitLib}"
+    logger.info "Init lib: ${teamCityInitLib}"
     def classPathFiles = teamCityInitLib.split(File.pathSeparator)
     classpath files(classPathFiles)
   }
@@ -130,12 +130,17 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
   AtomicBoolean initScriptStartReported = new AtomicBoolean(false);
 
+  def logger;
+
+  public TeamcityPropertiesListener(Logger log) {
+    logger = log
+  }
+
   public void beforeEvaluate(Project project) {
     loadProps(project);
     // Marker for TeamCity listener that shows that init script started to execute successfully
     if (initScriptStartReported.compareAndSet(false, true)) {
-      System.out.println(GradleRunnerConstants.STARTING_TEAMCITY_BUILD_PREFIX + project.teamcity["build.number"])
-      System.out.flush()
+      logger.lifecycle(GradleRunnerConstants.STARTING_TEAMCITY_BUILD_PREFIX + project.teamcity["build.number"])
     }
   }
 
@@ -222,7 +227,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       task.getLogging().captureStandardError(LogLevel.WARN);
       TeamCityOutputListener errorListener = taskMessages.get(task);
       if (null == errorListener) {
-        errorListener = new TeamCityOutputListener();
+        errorListener = new TeamCityOutputListener(logger);
         taskMessages.put(task, errorListener);
       }
       errorListener.reset();
@@ -235,7 +240,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
     def oldMessage = popFromBlockOpenCache(task)
     if (oldMessage != null) {
       logger.debug("Unexpected BlockOpen message cache content: key=[${task.getPath()}] value=[${oldMessage}]");
-      System.out.println(message.asString());
+      logger.lifecycle(message.asString());
     }
     logger.debug("BeforeExecute: storing message: key=[${task.getPath()}] value=[${message.asString().substring(2)}]");
     blockOpenMessagesCache.put(task, message);
@@ -258,14 +263,14 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       if (null != failure) {
         final TeamCityOutputListener outputListener = taskMessages.get(task);
         for (String str : outputListener.getMessages()) {
-          System.out.println(addFlowId(task, new Message(str, "ERROR", null)).asString()); // compilation failure
+          logger.lifecycle(addFlowId(task, new Message(str, "ERROR", null)).asString()); // compilation failure
         }
       }
       blockCloseMessage = addFlowId(task, new CompilationFinished(task.getPath()));
     } else {
       blockCloseMessage = addFlowId(task, new BlockClosed(task.getPath()));
     }
-    System.out.println(blockCloseMessage.asString());
+    logger.lifecycle(blockCloseMessage.asString());
   }
 
   /**
@@ -293,17 +298,17 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
         text += " ${taskState.getSkipMessage()}";
 
         if (message instanceof CompilationStarted) {
-          System.out.println(addFlowId(task, new CompilationStarted(text)));
-          System.out.println(addFlowId(task, new CompilationFinished(text)));
+          logger.lifecycle(addFlowId(task, new CompilationStarted(text)).asString());
+          logger.lifecycle(addFlowId(task, new CompilationFinished(text)).asString());
         } else {
-          System.out.println(addFlowId(task, new BlockOpened(text)));
-          System.out.println(addFlowId(task, new BlockClosed(text)));
+          logger.lifecycle(addFlowId(task, new BlockOpened(text)).asString());
+          logger.lifecycle(addFlowId(task, new BlockClosed(text)).asString());
         }
 
         skipped = true;
       } else {
         logger.debug("No actions were executed for task [${task}]. But task was not skipped, sending blockOpenmessage [${message.asString().substring(2)}]")
-        System.out.println(message.asString())
+        logger.lifecycle(message.asString())
       }
     }
     skipped
@@ -319,7 +324,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
     ServiceMessage message = popFromBlockOpenCache(task);
     if (message != null) {
       logger.debug("BeforeActions: task [${task}]. Sending blockOpen message [${message.asString().substring(2)}]")
-      System.out.println(message.asString());
+      logger.lifecycle(message.asString());
     } else {
       logger.debug("BeforeActions: null message for task [${task}]. Will not send service message")
     }
@@ -337,6 +342,13 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
   }
 
   private class TeamCityOutputListener implements StandardOutputListener {
+
+    def logger
+
+    public TeamCityOutputListener(Logger log) {
+      logger = log
+    }
+
 
     private List<String> messages = new LinkedList<String>();
 
@@ -362,11 +374,13 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 
 public class TeamcityTestListener {
   def workerCodes = new ConcurrentHashMap();
+  def logger
   TestDescriptor root;
   Test baseTask;
   boolean isParallelBuild
 
-  public TeamcityTestListener(task, isParallel) {
+  public TeamcityTestListener(log, task, isParallel) {
+    logger = log
     baseTask = task
     isParallelBuild = isParallel
   }
@@ -400,7 +414,7 @@ public class TeamcityTestListener {
       if (null == code) {
         code = "" + System.identityHashCode(suite);
         if (isParallelBuild) {
-          System.out.println("##teamcity[flowStarted flowId='${code}' parent='${getProjectFlowId(baseTask.project)}']") ;
+          logger.lifecycle("##teamcity[flowStarted flowId='${code}' parent='${getProjectFlowId(baseTask.project)}']") ;
         }
         workerCodes.putIfAbsent(suite, code);
       }
@@ -410,7 +424,7 @@ public class TeamcityTestListener {
     if (null != suite.getParent()) { // do not report root empty suite
       ServiceMessage msg = new TestSuiteStarted(suite.getName());
       msg.setFlowId(findFlowId(suite));
-      System.out.println(msg.asString());
+      logger.lifecycle(msg.asString());
     }
   }
 
@@ -423,7 +437,7 @@ public class TeamcityTestListener {
     if (null != suite?.getParent()?.getParent()) { // do not report root empty suite and workers
       ServiceMessage msg = new TestSuiteFinished(suite.getName());
       msg.setFlowId(findFlowId(suite));
-      System.out.println(msg.asString());
+      logger.lifecycle(msg.asString());
     }
   }
 
@@ -435,7 +449,7 @@ public class TeamcityTestListener {
     String testName = getTestName(testDescriptor)
     ServiceMessage msg = new TestStarted(testName, true, null);
     msg.setFlowId(findFlowId(testDescriptor));
-    System.out.println(msg.asString());
+    logger.lifecycle(msg.asString());
   }
 
   /**
@@ -455,19 +469,19 @@ public class TeamcityTestListener {
           msg = new TestFailed(testName, result.getException());
         }
         msg.setFlowId(findFlowId(testDescriptor));
-        System.out.println(msg.asString());
+        logger.lifecycle(msg.asString());
         break;
       case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
         msg = new TestIgnored(testName, "");
         msg.setFlowId(findFlowId(testDescriptor));
-        System.out.println(msg.asString());
+        logger.lifecycle(msg.asString());
         break;
     };
 
     final int duration = (int) (result.getEndTime() - result.getStartTime());
     msg = new TestFinished(testName, duration);
     msg.setFlowId(findFlowId(testDescriptor));
-    System.out.println(msg.asString());
+    logger.lifecycle(msg.asString());
   }
 
   public void onOutput(testDescriptor, outputEvent) {
@@ -482,7 +496,7 @@ public class TeamcityTestListener {
         break
     }
     msg.setFlowId(findFlowId(testDescriptor))
-    System.out.println(msg.asString())
+    logger.lifecycle(msg.asString())
   }
 
   private String getTestName(TestDescriptor testDescriptor) {
@@ -522,13 +536,13 @@ try {
   logger.debug("Could not load TestOutputListener class. Test output will not be available")
 }
 
-gradle.addListener(new TeamcityPropertiesListener())
+gradle.addListener(new TeamcityPropertiesListener(logger))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated {
   new DependencyBasedTestRun(logger).configureGradle(it)
   it.rootProject.allprojects { Project p ->
     p.tasks.withType(Test.class).each { Test testTask ->
-      def testListener = new TeamcityTestListener(testTask, isParallelExec)
+      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec)
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))

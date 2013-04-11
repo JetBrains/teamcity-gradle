@@ -5,6 +5,10 @@ dependencies {
     testCompile files('../lib/testng-5.14.1.jar')
 }
 
+test {
+  logging.captureStandardOutput LogLevel.INFO
+}
+
 task testng(type: Test) {
   useTestNG() {
      suites new File('src/test/resources/test.xml')
