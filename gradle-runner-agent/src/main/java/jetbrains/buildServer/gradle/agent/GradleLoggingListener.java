@@ -52,14 +52,19 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   public void processFinished(final int exitCode) {
     if (exitCode != 0 && shouldReportBuildProblem()) {
       myBuildLogger.activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
-      final BuildProblemData problemData = BuildProblemData.createBuildProblem(GradleRunnerConstants.GRADLE_BUILD_PROBLEM_TYPE, StringUtil.join("\n", myErrorMessages));
-      myBuildLogger.logBuildProblem(problemData);
+      myBuildLogger.logBuildProblem(createBuildProblem());
       flushErrorMessages();
       myBuildLogger.activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
     } else {
       flushErrorMessages();
     }
     myCollectErrors = false;
+  }
+
+  @NotNull
+  private BuildProblemData createBuildProblem() {
+    final String descr = StringUtil.join("\n", myErrorMessages);
+    return BuildProblemData.createBuildProblem(String.valueOf(descr.hashCode()), GradleRunnerConstants.GRADLE_BUILD_PROBLEM_TYPE, descr);
   }
 
   private boolean shouldReportBuildProblem() {
