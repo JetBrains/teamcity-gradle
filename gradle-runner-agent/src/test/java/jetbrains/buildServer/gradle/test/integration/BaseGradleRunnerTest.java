@@ -17,6 +17,7 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.util.containers.HashMap;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -31,10 +32,12 @@ import jetbrains.buildServer.TempFiles;
 import jetbrains.buildServer.TestLogger;
 import jetbrains.buildServer.agent.*;
 import jetbrains.buildServer.agent.runner.CommandLineBuildService;
+import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
+import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -224,6 +227,15 @@ public class BaseGradleRunnerTest {
 
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);
+    final HashMap<String, String> propsAndVars = new HashMap<String, String>();
+    propsAndVars.put("system.java.home", System.getProperty("java.home"));
+    final String javaHome = JavaRunnerUtil.findJavaHome(null, propsAndVars, null);
+    if (javaHome != null) {
+      System.out.println("Found java at [" + javaHome + "] adding as " + JavaRunnerConstants.TARGET_JDK_HOME);
+      myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, javaHome);
+    } else {
+      System.out.println("Failed to find java home!");
+    }
 
     final File workingDir = new File(myCoDir, projectName);
 
