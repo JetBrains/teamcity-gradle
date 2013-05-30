@@ -15,7 +15,7 @@ public class GradleProblemTypeDetailsProvider extends BaseBuildProblemTypeDetail
 
   @Nullable
   @Override
-  protected String getStatusText(@NotNull final BuildProblemData buildProblem, @NotNull final SBuild build) {
+  public String getStatusText(@NotNull final BuildProblemData buildProblem, @NotNull final SBuild build) {
     return "Gradle exception";
   }
 
