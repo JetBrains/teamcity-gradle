@@ -26,10 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import jetbrains.buildServer.ExtensionHolder;
-import jetbrains.buildServer.RunBuildException;
-import jetbrains.buildServer.TempFiles;
-import jetbrains.buildServer.TestLogger;
+import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
 import jetbrains.buildServer.agent.runner.CommandLineBuildService;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
@@ -190,7 +187,8 @@ public class BaseGradleRunnerTest {
     service.initialize(myMockBuild, myMockRunner);
     GenericCommandLineBuildProcess proc = GenericCommandLineBuildProcess.createProcessWithOldStyleCLBuildService(myMockRunner, service, myMockExtensionHolder);
     proc.start();
-    proc.waitFor();
+    final BuildFinishedStatus buildFinishedStatus = proc.waitFor();
+
 
     context.assertIsSatisfied();
   }
@@ -253,6 +251,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockRunner).getWorkingDirectory(); will(returnValue(workingDir));
       allowing(myMockRunner).getToolPath("gradle"); will(returnValue(gradlePath));
       allowing(myMockRunner).getBuild(); will(returnValue(myMockBuild));
+      allowing(myMockRunner).getRunType(); will(returnValue(GradleRunnerConstants.RUNNER_TYPE));
 
       allowing(buildParams).getAllParameters(); will(returnValue(myBuildEnvVars));
       allowing(buildParams).getEnvironmentVariables(); will(returnValue(myBuildEnvVars));
@@ -261,6 +260,9 @@ public class BaseGradleRunnerTest {
       allowing(myMockLogger).getFlowLogger(with(any(String.class)));will(returnValue(myMockLogger));
       allowing(myMockLogger).startFlow();
       allowing(myMockLogger).disposeFlow();
+      allowing(myMockLogger).activityStarted(with(any(String.class)), with(any(String.class)));
+      allowing(myMockLogger).logBuildProblem(with(any(BuildProblemData.class)));
+      allowing(myMockLogger).activityFinished(with(any(String.class)), with(any(String.class)));
 
       allowing(myMockExtensionHolder).getExtensions(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(Collections.<Object>emptyList()));
     }};
