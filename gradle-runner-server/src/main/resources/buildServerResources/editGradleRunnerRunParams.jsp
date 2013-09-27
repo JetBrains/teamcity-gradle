@@ -12,7 +12,7 @@
             <span class="smallNote">Enter task names separated by spaces, leave blank to use the 'default' task.<br/>Example: ':myproject:clean :myproject:build' or 'clean build'.</span>
         </td>
     </tr>
-    <tr>
+    <tr class="advancedSetting">
         <th><label>Incremental building:</label></th>
         <td>
           <props:checkboxProperty name="<%=GradleRunnerConstants.IS_INCREMENTAL%>"/>
@@ -29,7 +29,7 @@
             <span class="smallNote">Path to the Gradle home directory (parent of 'bin' directory). Overrides agent GRADLE_HOME environment variable</span>
         </td>
     </tr>
-    <tr>
+    <tr class="advancedSetting">
         <th><label for="ui.gradleRunner.additional.gradle.cmd.params">Additional Gradle command line
             parameters: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_PARAMS%>"  className="longField" expandable="true"/>
@@ -51,15 +51,15 @@
     </tr>
 </l:settingsGroup>
 
-<l:settingsGroup title="Run Parameters">
-    <tr>
+<l:settingsGroup title="Run Parameters" className="advancedSetting">
+    <tr class="advancedSetting">
         <th><label>Debug: <bs:help file="Gradle" anchor="LaunchingParameters"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.DEBUG%>"/>
             <label for="ui.gradleRunner.gradle.debug.enabled">Log debug messages</label>
             <br/>
         </td>
     </tr>
-    <tr>
+    <tr class="advancedSetting">
         <th><label>Stacktrace: <bs:help file="Gradle" anchor="LaunchingParameters"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.STACKTRACE%>"/>
             <label for="ui.gradleRunner.gradle.stacktrace.enabled">Print stacktrace</label>
@@ -68,11 +68,7 @@
     </tr>
 </l:settingsGroup>
 
-<l:settingsGroup title="Java Parameters">
-    <props:editJavaHome/>
-    <props:editJvmArgs/>
-</l:settingsGroup>
-
+<props:javaSettings/>
 
 <script type="text/javascript">
   var updateGradleHomeVisibility = function () {
