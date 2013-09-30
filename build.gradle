@@ -33,6 +33,10 @@ dependencies {
       include 'tests/tests-support.jar'
     }
 
+    agentCore = zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
+      include 'lib/agent.jar'
+    }
+
     commonApi = fileTree(teamCityDir + "/devPackage").matching {
       include 'common-api.jar'
     }
@@ -79,15 +83,11 @@ project (':gradle-runner-agent') {
   }
 
   dependencies {
-    gradleLibs = files(["../lib/gradle-core-0.9-rc-1.jar","../lib/gradle-plugins-0.9-rc-1.jar"])
 
     compile project(':gradle-runner-common')
     compile devPackage
     compile teamCityLib
     compile agentRuntime
-    compile gradleLibs
-
-    testRuntime gradleApi()
 
     integTestClasspath agentRuntime
     integTestClasspath 'org.jmock:jmock:2.5.1'
