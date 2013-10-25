@@ -36,10 +36,5 @@
     </div>
 </div>
 
-<div class="parameter">
-    Java Parameters:
-    <div class="parameter">
-        JDK home: <strong><props:displayValue name="ui.gradleRunner.gradleJdk.home" emptyValue="not specified"/></strong>
-    </div>
-    <props:viewJvmArgs/>
-</div>
+<props:viewJavaHome/>
+<props:viewJvmArgs/>
