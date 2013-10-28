@@ -115,7 +115,7 @@ public class BaseGradleRunnerTest {
   protected File myProjectRoot;
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
-  private TestLogger myTestLogger = new TestLogger();
+  private final TestLogger myTestLogger = new TestLogger();
 
 
   @DataProvider(name = "gradle-version-provider")
