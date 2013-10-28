@@ -172,7 +172,6 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
         properties.set(i, changedFilesProperty);
       }
     }
-    final File resultFile = myTempFiles.createTempFile(StringUtil.join("\n", properties));
-    return resultFile;
+    return myTempFiles.createTempFile(StringUtil.join("\n", properties));
   }
 }
