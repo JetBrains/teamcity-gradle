@@ -88,8 +88,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
 
   }
 
-  protected void writeReportSequence(final File sequenceFile, List<String> data) throws RunBuildException {
-    FileUtil.writeFile(sequenceFile, StringUtil.join(preprocessMessages(data), "\r\n"));
+  protected void writeReportSequence(final File sequenceFile, List<String> data) throws IOException {
+    FileUtil.writeFileAndReportErrors(sequenceFile, StringUtil.join(preprocessMessages(data), "\r\n"));
   }
 
   protected void runAndCheckServiceMessages(@NotNull final GradleRunConfiguration gradleRunConfiguration) throws IOException, RunBuildException {
