@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.serverSide.BreadthFirstRunnerDiscoveryExtension;
-import jetbrains.buildServer.serverSide.DiscoveredBuildRunner;
+import jetbrains.buildServer.serverSide.discovery.BreadthFirstRunnerDiscoveryExtension;
+import jetbrains.buildServer.serverSide.discovery.DiscoveredObject;
 import jetbrains.buildServer.util.browser.Element;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,8 +17,8 @@ import org.jetbrains.annotations.NotNull;
 public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryExtension {
   @NotNull
   @Override
-  protected List<DiscoveredBuildRunner> discoverRunnersInDirectory(@NotNull final Element dir, @NotNull final List<Element> filesAndDirs) {
-    final List<DiscoveredBuildRunner> res = new ArrayList<DiscoveredBuildRunner>();
+  protected List<DiscoveredObject> discoverRunnersInDirectory(@NotNull final Element dir, @NotNull final List<Element> filesAndDirs) {
+    final List<DiscoveredObject> res = new ArrayList<DiscoveredObject>();
     boolean foundBuildGradle = false;
     boolean foundWrapperScript = false;
     for (Element child: filesAndDirs) {
@@ -42,7 +42,7 @@ public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryE
       if (foundWrapperScript) {
         props.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true");
       }
-      res.add(new DiscoveredBuildRunner(GradleRunnerConstants.RUNNER_TYPE, props, "Gradle (" + dir.getFullName() + ")"));
+      res.add(new DiscoveredObject(GradleRunnerConstants.RUNNER_TYPE, props));
     }
     return res;
   }
