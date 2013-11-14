@@ -17,8 +17,10 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import java.io.IOException;
+import jetbrains.buildServer.BuildProblemData;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleVersionErrorsListener;
+import jetbrains.buildServer.messages.DefaultMessagesInfo;
 import jetbrains.buildServer.messages.ErrorData;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -71,13 +73,15 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
 
   @Override
   protected Mockery initContext(final String projectName, final String gradleParams, final String gradleVersion) throws IOException {
-    final Mockery mockery = super.initContext(projectName, gradleParams,
-                                              gradleVersion);
+    final Mockery mockery = super.initContext(projectName, gradleParams, gradleVersion);
 
     if (myExpectInternalError) {
       final Expectations expectInternalError = new Expectations() {{
-            oneOf(myMockLogger).internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE, GradleVersionErrorsListener.WRONG_GRADLE_VERSION, null);
-          }};
+        oneOf(myMockLogger).internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE, GradleVersionErrorsListener.WRONG_GRADLE_VERSION, null);
+        allowing(myMockLogger).activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
+        allowing(myMockLogger).logBuildProblem(with(any(BuildProblemData.class)));
+        allowing(myMockLogger).activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
+      }};
       mockery.checking(expectInternalError);
     }
     return mockery;    //To change body of overridden methods use File | Settings | File Templates.

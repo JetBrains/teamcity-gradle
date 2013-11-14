@@ -250,6 +250,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockRunner).getConfigParameters(); will(returnValue(Collections.<String, String>emptyMap()));
       allowing(myMockRunner).getWorkingDirectory(); will(returnValue(workingDir));
       allowing(myMockRunner).getToolPath("gradle"); will(returnValue(gradlePath));
+      allowing(myMockRunner).getRunType(); will(returnValue(GradleRunnerConstants.RUNNER_TYPE));
       allowing(myMockRunner).getBuild(); will(returnValue(myMockBuild));
       allowing(myMockRunner).getRunType(); will(returnValue(GradleRunnerConstants.RUNNER_TYPE));
 
