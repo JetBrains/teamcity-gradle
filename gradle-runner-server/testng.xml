@@ -3,6 +3,7 @@
   <test name="Gradle server-side">
     <classes>
       <class name="jetbrains.buildServer.gradle.test.GradleRunTypeTest"/>
+      <class name="jetbrains.buildServer.gradle.server.GradleRunnerDiscoveryExtensionTest"/>
     </classes>
   </test>
 </suite>
