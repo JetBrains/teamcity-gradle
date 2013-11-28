@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryExtension {
 
   private Element myWrapperScriptDir;
-  private int myWrapperDepthLimit = 5;
+  private final int myWrapperDepthLimit = 1;
 
   @NotNull
   @Override
@@ -26,13 +26,12 @@ public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryE
     final List<DiscoveredObject> res = new ArrayList<DiscoveredObject>();
     boolean foundBuildGradle = false;
 
-    if (myWrapperScriptDir == null) {
-      lookForWrapperScript(dir, filesAndDirs, 0);
-    }
-
     for (Element child: filesAndDirs) {
       if (child.isLeaf() && "build.gradle".equals(child.getName())) {
         foundBuildGradle = true;
+        if (myWrapperScriptDir == null) {
+          lookForWrapperScript(dir, filesAndDirs, 0);
+        }
       }
     }
 
