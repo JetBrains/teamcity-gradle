@@ -5,6 +5,7 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants
 import jetbrains.buildServer.messages.serviceMessages.*
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.atomic.AtomicBoolean
 
 /*
@@ -373,10 +374,10 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 }
 
 public class TeamcityTestListener {
-  def workerCodes = new ConcurrentHashMap();
+  def workerCodes = new ConcurrentHashMap()
   def logger
-  TestDescriptor root;
-  Test baseTask;
+  Set<TestDescriptor> roots = new CopyOnWriteArraySet<TestDescriptor>()
+  Test baseTask
   boolean isParallelBuild
 
   public TeamcityTestListener(log, task, isParallel) {
@@ -386,7 +387,7 @@ public class TeamcityTestListener {
   }
 
   String getProjectFlowId(project) {
-    return String.valueOf(project.getPath().hashCode());
+    return String.valueOf(project.getPath().hashCode())
   }
 
   String findFlowId(TestDescriptor descriptor) {
@@ -404,17 +405,18 @@ public class TeamcityTestListener {
    * @param suite The suite whose tests are about to be executed.
    */
   public void beforeSuite(TestDescriptor suite) {
-    if (null == suite.getParent()) {
-      root = suite;
+    if ("root".equals(suite.getId())) {
+      roots.add(suite);
     }
+
     String code = "";
-    if (suite.getParent() == root) {
+    if (roots.contains(suite.getParent())) {
       // assume, we have worker thread descriptor here
       code = workerCodes.get(suite);
       if (null == code) {
         code = "" + System.identityHashCode(suite);
         if (isParallelBuild) {
-          logger.lifecycle("##teamcity[flowStarted flowId='${code}' parent='${getProjectFlowId(baseTask.project)}']") ;
+          logger.lifecycle("##teamcity[flowStarted flowId='${code}' parent='${getProjectFlowId(baseTask.project)}']");
         }
         workerCodes.putIfAbsent(suite, code);
       }
@@ -504,24 +506,24 @@ public class TeamcityTestListener {
   }
 
   def testListenerDelegate = [
-          beforeSuite :  { suite ->
+          beforeSuite: { suite ->
             this.beforeSuite(suite)
           },
 
-          afterSuite : { suite, result ->
+          afterSuite: { suite, result ->
             this.afterSuite(suite, result)
           },
 
-          beforeTest : { testDescriptor ->
+          beforeTest: { testDescriptor ->
             this.beforeTest(testDescriptor)
           },
 
-          afterTest : { testDescriptor, result ->
+          afterTest: { testDescriptor, result ->
             this.afterTest(testDescriptor, result)
           }]
 
   def testOutputDelegate = [
-          onOutput : { testDescriptor, outputEvent ->
+          onOutput: { testDescriptor, outputEvent ->
             this.onOutput(testDescriptor, outputEvent)
           }]
 
