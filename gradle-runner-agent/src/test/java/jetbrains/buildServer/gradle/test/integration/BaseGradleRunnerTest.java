@@ -36,6 +36,7 @@ import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.api.Action;
@@ -46,7 +47,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * Author: Nikita.Skvortsov
@@ -117,6 +118,8 @@ public class BaseGradleRunnerTest {
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
   private final TestLogger myTestLogger = new TestLogger();
 
+  private static final boolean IS_JRE_8 = System.getProperty("java.specification.version").contains("1.8");
+
 
   @DataProvider(name = "gradle-version-provider")
   public Object[][] getGradlePaths(Method m) {
@@ -127,17 +130,66 @@ public class BaseGradleRunnerTest {
     File gradleDir = new File(myProjectRoot, TOOLS_GRADLE_PATH);
     Reporter.log(gradleDir.getAbsolutePath());
     if (gradleDir.exists() && gradleDir.isDirectory()) {
-      File[] versions = gradleDir.listFiles();
-      List<Object[]> versionNames = new LinkedList<Object[]>();
-      for (File version : versions) {
-        if (new File(version, "bin/gradle" + (SystemInfo.isWindows ? ".bat" : "")).exists()) {
-          versionNames.add(new Object[] { version.getName() });
-        }
-      }
-      result = versionNames.toArray(new Object[versionNames.size()][]);
+      result = listAvailableVersions(gradleDir);
     } else {
         final String propsGradleHome = System.getProperty(PROPERTY_GRADLE_RUNTIME);
         result = new Object[][] { new Object [] { propsGradleHome }};
+    }
+    return result;
+  }
+
+  private Object[][] listAvailableVersions(final @NotNull File gradleDir) {
+    final Object[][] result;
+    final File[] versions = gradleDir.listFiles();
+    assertNotNull(versions);
+
+    final List<Object[]> versionNames = new LinkedList<Object[]>();
+    for (File version : versions) {
+      if (looksLikeGradleDir(version) && versionFitsCurrentJdk(version)) {
+        versionNames.add(new Object[] { version.getName() });
+      }
+    }
+    result = versionNames.toArray(new Object[versionNames.size()][]);
+    return result;
+  }
+
+  private boolean looksLikeGradleDir(final File version) {
+    return new File(version, "bin/gradle" + (SystemInfo.isWindows ? ".bat" : "")).exists();
+  }
+
+  private boolean versionFitsCurrentJdk(final File gradleDir) {
+    if (IS_JRE_8) {
+      try {
+        final String versionString = gradleDir.getName().substring("gradle-".length());
+        return isBiggerOrEqualThan(versionString, "1.11");
+      } catch (NumberFormatException e) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean isBiggerOrEqualThan(final String versionString, final String otherVersionString) {
+    final int[] version = splitToInts(versionString);
+    final int[] otherVersion = splitToInts(otherVersionString);
+
+    assertNotEquals(version.length, 0);
+    assertNotEquals(otherVersion.length, 0);
+
+    for (int i = 0; i < version.length && i < otherVersion.length; i++) {
+      if (version[i] < otherVersion[i]) {
+        return false;
+      }
+    }
+
+    return otherVersion.length <= version.length;
+  }
+
+  private int[] splitToInts(final String versionString) {
+    final String[] numbers = versionString.split("\\.");
+    final int[] result = new int[numbers.length];
+    for (int i = 0; i < numbers.length; i++) {
+      result[i] = Integer.parseInt(numbers[i]);
     }
     return result;
   }
