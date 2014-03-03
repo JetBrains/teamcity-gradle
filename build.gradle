@@ -24,6 +24,7 @@ dependencies {
       include 'openapi.jar'
       include 'util.jar'
       include 'trove4j.jar'
+      include 'server.jar'
     }
 
     devPackage = fileTree(teamCityDir + "/devPackage").matching {
@@ -31,6 +32,7 @@ dependencies {
       include 'common-api.jar'
       include 'server-api.jar'
       include 'tests/tests-support.jar'
+      include 'tests/tests-integration.jar'
     }
 
     agentCore = zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
@@ -67,7 +69,7 @@ subprojects {
     compile 'log4j:log4j:1.2.16'
 
     testCompile 'org.jmock:jmock:2.5.1'
-    testCompile 'org.testng:testng:5.14'
+    testCompile 'org.testng:testng:6.8'
   }
 
   clean {
@@ -91,7 +93,7 @@ project (':gradle-runner-agent') {
 
     integTestClasspath agentRuntime
     integTestClasspath 'org.jmock:jmock:2.5.1'
-    integTestClasspath 'org.testng:testng:5.14'
+    integTestClasspath 'org.testng:testng:6.8'
     integTestClasspath commonApi
   }
 }
