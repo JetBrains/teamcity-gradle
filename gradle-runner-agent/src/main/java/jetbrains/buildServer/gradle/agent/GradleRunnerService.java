@@ -207,7 +207,6 @@ public class GradleRunnerService extends BuildServiceAdapter
   public List<ProcessListener> getListeners() {
     if (null == myListenerList) {
       myListenerList = new ArrayList<ProcessListener>(2);
-      myListenerList.add(new GradleVersionErrorsListener(getLogger(), getBuild().getBuildNumber()));
       myListenerList.add(new GradleLoggingListener(getLogger()));
     }
     return myListenerList;

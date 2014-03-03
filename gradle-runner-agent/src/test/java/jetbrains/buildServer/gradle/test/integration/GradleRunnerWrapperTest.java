@@ -16,14 +16,7 @@
 
 package jetbrains.buildServer.gradle.test.integration;
 
-import java.io.IOException;
-import jetbrains.buildServer.BuildProblemData;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.GradleVersionErrorsListener;
-import jetbrains.buildServer.messages.DefaultMessagesInfo;
-import jetbrains.buildServer.messages.ErrorData;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -33,14 +26,12 @@ import org.testng.annotations.Test;
  */
 public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
 
-  private boolean myExpectInternalError = false;
 
   @Override
   @BeforeMethod
   public void setUp() throws Exception {
     super.setUp();
     myRunnerParams.clear();
-    myExpectInternalError = false;
   }
 
   @Test
@@ -50,40 +41,5 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectA", "clean build", "wrappedProjASequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
     runAndCheckServiceMessages(config);
-  }
-
-  @Test
-  public void incompatibleStartupScriptAPI() throws Exception {
-    myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
-    GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectB", "clean build", "wrappedProjBSequence.txt");
-    config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
-    myExpectInternalError = true;
-    runAndCheckServiceMessages(config);
-  }
-
-  @Test
-  public void startupScriptNotSupportedTest() throws Exception {
-    myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
-    GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectC", "clean test", "wrappedProjCSequence.txt");
-    config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
-    myExpectInternalError = true;
-    runAndCheckServiceMessages(config);
-  }
-
-
-  @Override
-  protected Mockery initContext(final String projectName, final String gradleParams, final String gradleVersion) throws IOException {
-    final Mockery mockery = super.initContext(projectName, gradleParams, gradleVersion);
-
-    if (myExpectInternalError) {
-      final Expectations expectInternalError = new Expectations() {{
-        oneOf(myMockLogger).internalError(ErrorData.BUILD_RUNNER_ERROR_TYPE, GradleVersionErrorsListener.WRONG_GRADLE_VERSION, null);
-        allowing(myMockLogger).activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
-        allowing(myMockLogger).logBuildProblem(with(any(BuildProblemData.class)));
-        allowing(myMockLogger).activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
-      }};
-      mockery.checking(expectInternalError);
-    }
-    return mockery;    //To change body of overridden methods use File | Settings | File Templates.
   }
 }
