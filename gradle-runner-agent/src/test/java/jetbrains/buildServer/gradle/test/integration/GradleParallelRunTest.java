@@ -19,7 +19,7 @@ public class GradleParallelRunTest extends GradleRunnerServiceMessageTest {
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_C_NAME,
                                                                                      "clean test --parallel",null);
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
-    final String gradleVersion = "gradle-1.5";
+    final String gradleVersion = "gradle-1.11";
     if (new File(getGradlePath(gradleVersion)).exists()) {
       gradleRunConfiguration.setGradleVersion(gradleVersion);
     } else {

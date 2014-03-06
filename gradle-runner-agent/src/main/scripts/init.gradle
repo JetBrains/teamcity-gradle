@@ -379,15 +379,12 @@ public class TeamcityTestListener {
   Set<TestDescriptor> roots = new CopyOnWriteArraySet<TestDescriptor>()
   Test baseTask
   boolean isParallelBuild
+  private String projectFlowId
 
   public TeamcityTestListener(log, task, isParallel) {
     logger = log
-    baseTask = task
     isParallelBuild = isParallel
-  }
-
-  String getProjectFlowId(project) {
-    return String.valueOf(project.getPath().hashCode())
+    projectFlowId = String.valueOf(task.project.getPath().hashCode())
   }
 
   String findFlowId(TestDescriptor descriptor) {
@@ -405,8 +402,11 @@ public class TeamcityTestListener {
    * @param suite The suite whose tests are about to be executed.
    */
   public void beforeSuite(TestDescriptor suite) {
+
     if ("root".equals(suite.getId())) {
       roots.add(suite);
+      // log root suite output at the same flow with invoking project
+      workerCodes.putIfAbsent(suite, projectFlowId);
     }
 
     String code = "";
@@ -416,7 +416,7 @@ public class TeamcityTestListener {
       if (null == code) {
         code = "" + System.identityHashCode(suite);
         if (isParallelBuild) {
-          logger.lifecycle("##teamcity[flowStarted flowId='${code}' parent='${getProjectFlowId(baseTask.project)}']");
+          logger.lifecycle("##teamcity[flowStarted flowId='${code}' parent='${projectFlowId}']");
         }
         workerCodes.putIfAbsent(suite, code);
       }
