@@ -44,7 +44,7 @@ public class DependencyBasedTestRun {
   public def configureGradle(Gradle gradle) {
     def rootProject = gradle.rootProject
     def incrementalOption = System.getenv(GradleRunnerConstants.ENV_INCREMENTAL_PARAM);
-    logger.debug("Recieved following incremental setting: ${incrementalOption}")
+    logger.debug("Received following incremental setting: ${incrementalOption}")
 
     switch(incrementalOption) {
       case GradleRunnerConstants.ENV_INCREMENTAL_VALUE_SKIP:
