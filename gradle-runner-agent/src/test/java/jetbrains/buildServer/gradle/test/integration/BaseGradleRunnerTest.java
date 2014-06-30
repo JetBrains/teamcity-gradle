@@ -28,9 +28,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
-import jetbrains.buildServer.agent.runner.CommandLineBuildService;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
+import jetbrains.buildServer.agent.runner.MultiCommandBuildSession;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
+import jetbrains.buildServer.agent.runner2.SingleCommandLineBuildSessionFactoryAdapter;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
@@ -232,15 +233,13 @@ public class BaseGradleRunnerTest {
   }
 
   protected void runTest(final Expectations expectations, final Mockery context) throws RunBuildException {
-
     context.checking(expectations);
 
-    CommandLineBuildService service = new GradleRunnerServiceFactory().createService();
-    service.initialize(myMockBuild, myMockRunner);
-    GenericCommandLineBuildProcess proc = GenericCommandLineBuildProcess.createProcessWithOldStyleCLBuildService(myMockRunner, service, myMockExtensionHolder);
+    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory());
+    final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
+    final GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, session, myMockExtensionHolder);
     proc.start();
-    final BuildFinishedStatus buildFinishedStatus = proc.waitFor();
-
+    proc.waitFor();
 
     context.assertIsSatisfied();
   }
@@ -317,7 +316,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockLogger).logBuildProblem(with(any(BuildProblemData.class)));
       allowing(myMockLogger).activityFinished(with(any(String.class)), with(any(String.class)));
 
-      allowing(myMockExtensionHolder).getExtensions(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(Collections.<Object>emptyList()));
+      allowing(myMockExtensionHolder).getExtensions(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(Collections.emptyList()));
     }};
 
     context.checking(initMockingCtx);
