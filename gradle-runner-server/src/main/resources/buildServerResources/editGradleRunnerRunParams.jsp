@@ -12,6 +12,13 @@
             <span class="smallNote">Enter task names separated by spaces, leave blank to use the 'default' task.<br/>Example: ':myproject:clean :myproject:build' or 'clean build'.</span>
         </td>
     </tr>
+     <tr>
+        <th><label for="ui.gradleRUnner.gradle.build.file">Gradle build file: </label></th>
+        <td><props:textProperty name="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"  className="longField" maxlength="256"/>
+            <bs:vcsTree fieldId="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"/>
+            <span class="smallNote">Path to build file</span>
+        </td>
+    </tr>
     <tr class="advancedSetting">
         <th><label>Incremental building:</label></th>
         <td>

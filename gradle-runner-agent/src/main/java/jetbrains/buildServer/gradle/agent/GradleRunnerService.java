@@ -163,6 +163,11 @@ public class GradleRunnerService extends BuildServiceAdapter
     if (ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(), GradleRunnerConstants.STACKTRACE))
       params.add("-s");
 
+    if (getRunnerParameters().containsKey(GradleRunnerConstants.PATH_TO_BUILD_FILE)) {
+      params.add("-b");
+      params.add(getRunnerParameters().get(GradleRunnerConstants.PATH_TO_BUILD_FILE));
+    }
+
     String gradleTasks = ConfigurationParamsUtil.getGradleTasks(getRunnerParameters());
     if (gradleTasks.length() > 0)
       params.addAll(Arrays.asList(gradleTasks.split(" ")));

@@ -84,7 +84,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       throw new RunBuildException(e);
     }
 
-    return expected.split("[\n\r]{2}|\n(?=!\r)|\r(?=!\n)");
+    return expected.split("\\r\\n?|\\n");
 
   }
 

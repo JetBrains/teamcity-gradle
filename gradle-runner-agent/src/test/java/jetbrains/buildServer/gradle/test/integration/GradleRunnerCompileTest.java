@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.AgentRuntimeProperties;
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.fail;
@@ -39,7 +40,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
   private static final String COMPILATION_MSGS_PATTERN = "##teamcity\\[(message|compilation)(.*?)(?<!\\|)\\]";
 
   @Test(dataProvider = "gradle-version-provider")
-  public void successfulCompileTest(final String gradleVersion) throws RunBuildException, IOException {
+  public void successfulCompileTest(final String gradleVersion) throws Exception {
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      new File(myProjectRoot, "src/test/resources/testProjects/test.properties").getAbsolutePath());
     GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", "mProjectABlockSequence.txt");
@@ -49,7 +50,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
   }
 
   @Test(dataProvider = "gradle-version-provider")
-  public void failedCompileTest(final String gradleVersion) throws RunBuildException, IOException {
+  public void failedCompileTest(final String gradleVersion) throws Exception {
     GradleRunConfiguration config = null;
     // Compilation errors output differs on different javac versions
     if (isJre5) {
@@ -64,6 +65,16 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {
+    GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "projectABlockSequence.txt");
+    myRunnerParams.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "projectA/run.gradle");
+    config.setGradleVersion(gradleVersion);
+    config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
+    runAndCheckServiceMessages(config);
+    myRunnerParams.remove(GradleRunnerConstants.PATH_TO_BUILD_FILE); // todo fix test infrastructure
   }
 }
 

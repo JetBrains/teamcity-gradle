@@ -32,7 +32,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   private static final int PROJECT_D_TEST_COUNT = 39;
 
-  private void testTest(String project, String command, String seqFile, String gradleVersion) throws IOException, RunBuildException {
+  private void testTest(String project, String command, String seqFile, String gradleVersion) throws Exception {
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project, command, seqFile);
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
