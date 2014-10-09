@@ -70,7 +70,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
     assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
     assertEquals("true", parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
-    final String wrapperPath= parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_PATH);
+    final String wrapperPath = parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_PATH);
     assertTrue(wrapperPath == null || wrapperPath.length() == 0);
   }
 
@@ -84,5 +84,16 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
 
     assertNotNull(discovered);
     assertEquals(0, discovered.size());
+  }
+
+  @Test
+  public void testPathToBuildFileDetected() throws Exception {
+    final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "subdir"));
+    final List<DiscoveredObject> discovered = myExtension.discover(new MockBuildType(), browser);
+    assertNotNull(discovered);
+    assertEquals(1, discovered.size());
+    final Map<String,String> parameters = discovered.get(0).getParameters();
+    assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
+    assertEquals("projectB/build.gradle", parameters.get(GradleRunnerConstants.PATH_TO_BUILD_FILE));
   }
 }

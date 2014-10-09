@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryExtension {
 
   private Element myWrapperScriptDir;
-  private final int myWrapperDepthLimit = 1;
+  private static final int WRAPPER_DEPTH_LIMIT = 1;
 
   @NotNull
   @Override
@@ -39,9 +39,9 @@ public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryE
       Map<String, String> props = new HashMap<String, String>();
       props.put(GradleRunnerConstants.GRADLE_TASKS, "clean build");
 
-      final boolean isSubdirectory = dir.getFullName().length() > dir.getName().length();
+      final boolean isSubdirectory = !dir.getBrowser().getRoot().equals(dir);
       if (isSubdirectory) {
-        props.put(GradleRunnerConstants.GRADLE_WORKING_DIR, dir.getFullName());
+        props.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, dir.getFullName() + "/build.gradle");
       }
 
       res.add(new DiscoveredObject(GradleRunnerConstants.RUNNER_TYPE, props));
@@ -56,7 +56,7 @@ public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryE
       }
     }
 
-    if (depth < myWrapperDepthLimit) {
+    if (depth < WRAPPER_DEPTH_LIMIT) {
     for (Element child : children) {
       if (!child.isLeaf() && myWrapperScriptDir == null) {
         lookForWrapperScript(child, child.getChildren(), depth + 1);
