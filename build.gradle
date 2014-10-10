@@ -20,19 +20,14 @@ dependencies {
     def teamCityDir = project.getProperties()[TCPathVar]
 
     teamCityLib = fileTree(teamCityDir + "/webapps/ROOT/WEB-INF/lib").matching {
-      include 'annotations.jar'
-      include 'openapi.jar'
-      include 'util.jar'
-      include 'trove4j.jar'
-      include 'server.jar'
+      include '*.jar'
     }
 
     devPackage = fileTree(teamCityDir + "/devPackage").matching {
       include 'agent-api.jar'
       include 'common-api.jar'
       include 'server-api.jar'
-      include 'tests/tests-support.jar'
-      include 'tests/tests-integration.jar'
+      include 'tests/*.jar'
     }
 
     agentCore = zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {

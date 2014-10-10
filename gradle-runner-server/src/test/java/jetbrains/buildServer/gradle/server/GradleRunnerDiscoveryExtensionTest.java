@@ -1,4 +1,4 @@
-package jetbrains.buildServer.gradle.server;
+ package jetbrains.buildServer.gradle.server;
 
 import java.io.File;
 import java.util.Collections;
@@ -27,10 +27,9 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     myExtension = new GradleRunnerDiscoveryExtension();
-    final String gradleLocalPathToData = "gradle-runner-agent/src/test/resources/testProjects";
-    myRoot = new File(gradleLocalPathToData);
+    myRoot = new File("../gradle-runner-agent/src/test/resources/testProjects");
     if (!myRoot.exists()) {
-      myRoot = new File("svnrepo/gradle-runner/" + gradleLocalPathToData);
+      myRoot = new File("svnrepo/gradle-runner/gradle-runner-agent/src/test/resources/testProjects");
     }
 
     assertTrue("Can not find test data. Please check if test projects exist", myRoot.exists());

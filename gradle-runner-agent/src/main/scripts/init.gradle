@@ -2,6 +2,7 @@ import jetbrains.buildServer.ComparisonFailureData
 import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
 import jetbrains.buildServer.gradle.GradleRunnerConstants
+import jetbrains.buildServer.gradle.agent.GradleBuildProblem
 import jetbrains.buildServer.messages.serviceMessages.*
 
 import java.util.concurrent.ConcurrentHashMap
@@ -529,6 +530,29 @@ public class TeamcityTestListener {
 
 }
 
+public class TeamcityExceptionsListener extends BuildAdapter {
+  def logger
+
+  public TeamcityExceptionsListener(Logger log) {
+    logger = log
+  }
+
+  void buildFinished(BuildResult result) {
+    def failure = result.getFailure()
+    if (failure != null) {
+      while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCause() ) {
+        failure = failure?.getCause()
+      }
+      def message = "${failure?.getMessage()} ${failure.getCause()?.getClass()?.getName()}: ${failure.getCause()?.getMessage()}"
+      if (message.contains("There were failing tests") || message.contains("Compilation failed")) {
+        // do not report tests and compilation failures as build problems, as they are logged separately
+        return
+      }
+      logger.warn(new GradleBuildProblem(message).asString());
+    }
+  }
+}
+
 
 def isParallelExec = gradle.startParameter.hasProperty("parallelThreadCount") && gradle.startParameter.parallelThreadCount != 0
 def testOutputListenerClass = null
@@ -539,6 +563,7 @@ try {
 }
 
 gradle.addListener(new TeamcityPropertiesListener(logger))
+gradle.addListener(new TeamcityExceptionsListener(logger))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated {
   new DependencyBasedTestRun(logger).configureGradle(it)

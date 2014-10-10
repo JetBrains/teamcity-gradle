@@ -197,9 +197,11 @@ public class GradleRunnerService extends BuildServiceAdapter
       final File serviceMessagesLib = new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class));
       final File runtimeUtil = new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class));
       final File gradleRunnerConstants = new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class));
+      final File gradleMessageLib = new File(ClasspathUtil.getClasspathEntry(GradleBuildProblem.class));
 
       return serviceMessagesLib.getAbsolutePath() +
                        File.pathSeparator + runtimeUtil.getAbsolutePath() +
+                       File.pathSeparator + gradleMessageLib.getAbsolutePath() +
                        File.pathSeparator + gradleRunnerConstants.getAbsolutePath();
 
     } catch (IOException e) {
