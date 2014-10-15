@@ -540,10 +540,15 @@ public class TeamcityExceptionsListener extends BuildAdapter {
   void buildFinished(BuildResult result) {
     def failure = result.getFailure()
     if (failure != null) {
-      while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCause() ) {
-        failure = failure?.getCause()
+      while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCause() && failure.getCause() != null) {
+        failure = failure.getCause()
       }
-      def message = "${failure?.getMessage()} ${failure.getCause()?.getClass()?.getName()}: ${failure.getCause()?.getMessage()}"
+      def message;
+      if (failure instanceof org.gradle.api.tasks.TaskExecutionException && failure.getCause() != null) {
+        message = "${failure.getMessage()} ${failure.getCause().getClass().getName()}: ${failure.getCause().getMessage()}"
+      } else {
+        message = "${failure.getClass().getName()}: ${failure.getMessage()}"
+      }
       if (message.contains("There were failing tests") || message.contains("Compilation failed")) {
         // do not report tests and compilation failures as build problems, as they are logged separately
         return
