@@ -16,9 +16,13 @@
 
 package jetbrains.buildServer.gradle.server;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.requirements.Requirement;
+import jetbrains.buildServer.requirements.RequirementType;
 import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.RunType;
 import jetbrains.buildServer.serverSide.RunTypeRegistry;
@@ -98,5 +102,16 @@ public class GradleRunType extends RunType {
     }
 
     return result.toString();
+  }
+
+  @NotNull
+  @Override
+  public List<Requirement> getRunnerSpecificRequirements(@NotNull final Map<String, String> runParameters) {
+    if(!Boolean.valueOf(runParameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))
+       && StringUtil.isEmptyOrSpaces(runParameters.get(GradleRunnerConstants.GRADLE_HOME))) {
+      return Collections.singletonList(new Requirement("env.GRADLE_HOME", null, RequirementType.EXISTS));
+    } else {
+      return Collections.emptyList();
+    }
   }
 }
