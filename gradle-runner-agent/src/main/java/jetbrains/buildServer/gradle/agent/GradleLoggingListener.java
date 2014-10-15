@@ -1,10 +1,16 @@
 package jetbrains.buildServer.gradle.agent;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import jetbrains.buildServer.BuildProblemData;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.agent.runner.ProcessListenerAdapter;
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.messages.DefaultMessagesInfo;
+import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,10 +20,15 @@ import org.jetbrains.annotations.NotNull;
 */
 class GradleLoggingListener extends ProcessListenerAdapter {
 
+  private enum LastLine {NONE, EMPTY_ERROR, UNZIP_MESSAGE}
+
+  private volatile LastLine myLastLineState = LastLine.NONE;
+  private static final Pattern UNZIP_PATTERN = Pattern.compile("Unzipping (\\S*wrapper\\S*.zip) to.*");
+
   private final BuildProgressLogger myBuildLogger;
   final private List<String> myErrorMessages = new LinkedList<String>();
   volatile private boolean myCollectErrors = false;
-  volatile private boolean myPreviousLineWasEmptyError = false;
+  private String myWrapperDistPath;
 
   public GradleLoggingListener(final BuildProgressLogger buildLogger) {
     myBuildLogger = buildLogger;
@@ -25,8 +36,14 @@ class GradleLoggingListener extends ProcessListenerAdapter {
 
   @Override
   public void onStandardOutput(@NotNull final String text) {
+    final Matcher matcher = UNZIP_PATTERN.matcher(text);
+    if (matcher.matches()) {
+      myLastLineState = LastLine.UNZIP_MESSAGE;
+      myWrapperDistPath = matcher.group(1);
+    } else {
+      myLastLineState = LastLine.NONE;
+    }
     myBuildLogger.message(text);
-    myPreviousLineWasEmptyError = false;
   }
 
   @Override
@@ -34,28 +51,41 @@ class GradleLoggingListener extends ProcessListenerAdapter {
     if (myCollectErrors) {
       myErrorMessages.add(text);
     } else {
-      if ((text.trim().startsWith("FAILURE:") && myPreviousLineWasEmptyError)
+      if ((text.trim().startsWith("FAILURE:") && LastLine.EMPTY_ERROR.equals(myLastLineState))
           || text.contains("[org.gradle.BuildExceptionReporter]")) {
         myCollectErrors = true;
         myErrorMessages.add(text);
         return;
       }
 
-      myPreviousLineWasEmptyError = StringUtil.isEmptyOrSpaces(text);
+      if (StringUtil.isEmptyOrSpaces(text)) {
+        myLastLineState = LastLine.EMPTY_ERROR;
+      }
       myBuildLogger.warning(text);
     }
   }
 
   @Override
   public void processFinished(final int exitCode) {
-    if (exitCode != 0) {
-      myBuildLogger.activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
-      flushErrorMessages();
-      myBuildLogger.activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
+    if (exitCode != 0 ) {
+      if (myErrorMessages.size() > 0) {
+        myBuildLogger.activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
+        flushErrorMessages();
+        myBuildLogger.activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
+      } else if (LastLine.UNZIP_MESSAGE.equals(myLastLineState)) {
+        myBuildLogger.warning("Gradle wrapper failed to unpack downloaded archive: [" + myWrapperDistPath + "]. It will be deleted to force re-download next time.");
+        myBuildLogger.logBuildProblem(createBuildProblem("Gradle wrapper failed to unpack downloaded distribution."));
+        FileUtil.delete(new File(myWrapperDistPath));
+      }
     } else {
       flushErrorMessages();
     }
     myCollectErrors = false;
+  }
+
+  @NotNull
+  private BuildProblemData createBuildProblem(@NotNull final String descr) {
+    return BuildProblemData.createBuildProblem(String.valueOf(descr.hashCode()), GradleRunnerConstants.GRADLE_BUILD_PROBLEM_TYPE, descr);
   }
 
   private void flushErrorMessages() {
