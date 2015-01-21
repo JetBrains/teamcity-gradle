@@ -179,9 +179,9 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
         inStream = new FileInputStream(propsFile);
         props.load(inStream);
       } catch (FileNotFoundException e) {
-        log.error(e.getMessage(), e);
+        logger.error(e.getMessage(), e);
       } catch (IOException e) {
-        log.error(e.getMessage(), e);
+        logger.error(e.getMessage(), e);
       } finally {
         if (null != inStream) {
           try {
