@@ -404,7 +404,7 @@ public class TeamcityTestListener {
    */
   public void beforeSuite(TestDescriptor suite) {
 
-    if ("root".equals(suite.getId())) {
+    if (suite.getParent() == null) {
       roots.add(suite);
       // log root suite output at the same flow with invoking project
       workerCodes.putIfAbsent(suite, projectFlowId);
