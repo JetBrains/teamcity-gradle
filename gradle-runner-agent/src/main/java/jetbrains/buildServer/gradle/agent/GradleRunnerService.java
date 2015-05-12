@@ -213,8 +213,7 @@ public class GradleRunnerService extends BuildServiceAdapter
   @Override
   public List<ProcessListener> getListeners() {
     if (null == myListenerList) {
-      myListenerList = new ArrayList<ProcessListener>(2);
-      myListenerList.add(new GradleLoggingListener(getLogger()));
+      myListenerList = Collections.<ProcessListener>singletonList(new GradleLoggingListener(getLogger()));
     }
     return myListenerList;
   }
