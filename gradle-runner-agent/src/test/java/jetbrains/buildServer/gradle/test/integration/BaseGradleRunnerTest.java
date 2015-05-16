@@ -17,7 +17,7 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
-import com.intellij.util.containers.HashMap;
+import java.util.HashMap;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
