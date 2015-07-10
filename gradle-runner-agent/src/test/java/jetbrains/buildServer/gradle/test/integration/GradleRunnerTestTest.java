@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.AgentRuntimeProperties;
+import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.testng.annotations.Test;
@@ -46,7 +47,14 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void failedAndSkippedTestNGTest(final String gradleVersion) throws Exception {
-    testTest(PROJECT_C_NAME, "clean testng", "failedProjectCTestNGSequence.txt", gradleVersion);
+    testTest(PROJECT_C_NAME, "clean testng", versionSpecific("failedProjectCTestNGSequence.txt", gradleVersion), gradleVersion);
+  }
+
+  private String versionSpecific(@NotNull final String fileName, @NotNull final String gradleVersion) {
+    if (Float.valueOf(gradleVersion.substring(7)) > 2.0) {
+      return fileName + ".2.x";
+    }
+    return fileName;
   }
 
   @Test(dataProvider = "gradle-version-provider")

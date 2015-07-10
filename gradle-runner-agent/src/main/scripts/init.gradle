@@ -488,6 +488,10 @@ public class TeamcityTestListener {
   }
 
   public void onOutput(testDescriptor, outputEvent) {
+    if (testDescriptor.getClassName() == null) {
+      // this is not a real test output
+      return;
+    }
     def testName = getTestName(testDescriptor)
     def msg
     switch (outputEvent.getDestination()) {
