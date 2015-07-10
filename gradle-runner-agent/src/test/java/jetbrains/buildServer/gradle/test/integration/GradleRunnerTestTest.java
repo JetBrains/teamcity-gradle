@@ -51,7 +51,9 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   }
 
   private String versionSpecific(@NotNull final String fileName, @NotNull final String gradleVersion) {
-    if (Float.valueOf(gradleVersion.substring(7)) > 2.0) {
+    final String directoryName = "gradle-";
+    final String versionSuffix = gradleVersion.substring(gradleVersion.lastIndexOf(directoryName) + directoryName.length());
+    if (Float.valueOf(versionSuffix) > 2.0) {
       return fileName + ".2.x";
     }
     return fileName;
