@@ -65,6 +65,16 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   }
 
   @Test(dataProvider = "gradle-version-provider")
+  public void stdOutputSuppressTest(final String gradleVersion) throws Exception {
+    testTest(PROJECT_E_NAME, "clean test -Dteamcity.ignoreTestStdOut=true", "testStdOutSuppressed.txt", gradleVersion);
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void stdErrSuppressTest(final String gradleVersion) throws Exception {
+    testTest(PROJECT_E_NAME, "clean test -Dteamcity.ignoreTestStdErr=true", "testStdErrSuppressed.txt", gradleVersion);
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
   public void parallelTestSuiteTest(final String gradleVersion) throws RunBuildException, IOException {
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
                      new File(myProjectRoot, "src/test/resources/testProjects/testJvmArgs.properties").getAbsolutePath());

@@ -382,6 +382,9 @@ public class TeamcityTestListener {
   boolean isParallelBuild
   private String projectFlowId
 
+  boolean skipStdErr = false
+  boolean skipStdOut = false
+
   public TeamcityTestListener(log, task, isParallel) {
     logger = log
     isParallelBuild = isParallel
@@ -493,17 +496,19 @@ public class TeamcityTestListener {
       return;
     }
     def testName = getTestName(testDescriptor)
-    def msg
+    def msg = null
     switch (outputEvent.getDestination()) {
       case TestOutputEvent.Destination.StdErr:
-        msg = new TestStdErr(testName, outputEvent.getMessage())
+        msg = !skipStdErr ? new TestStdErr(testName, outputEvent.getMessage()) : null
         break
       case TestOutputEvent.Destination.StdOut:
-        msg = new TestStdOut(testName, outputEvent.getMessage())
+        msg = !skipStdOut ? new TestStdOut(testName, outputEvent.getMessage()) : null
         break
     }
-    msg.setFlowId(findFlowId(testDescriptor))
-    logger.lifecycle(msg.asString())
+    if (msg) {
+      msg.setFlowId(findFlowId(testDescriptor))
+      logger.lifecycle(msg.asString())
+    }
   }
 
   private String getTestName(TestDescriptor testDescriptor) {
@@ -582,6 +587,8 @@ gradle.projectsEvaluated {
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
+        testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
+        testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
       }
     }
   }
