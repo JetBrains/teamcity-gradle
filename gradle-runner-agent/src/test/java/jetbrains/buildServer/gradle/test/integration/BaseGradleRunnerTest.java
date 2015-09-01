@@ -17,14 +17,11 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
-import java.util.HashMap;
+import java.io.FileOutputStream;
+import java.util.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
@@ -117,6 +114,7 @@ public class BaseGradleRunnerTest {
   protected File myProjectRoot;
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
+  protected Map<String, String> mySystemProps = new ConcurrentHashMap<String,String>();
   private final TestLogger myTestLogger = new TestLogger();
 
   private static final boolean IS_JRE_8 = System.getProperty("java.specification.version").contains("1.8");
@@ -286,6 +284,12 @@ public class BaseGradleRunnerTest {
       System.out.println("Failed to find java home!");
     }
 
+    final Properties systemProperties = new Properties();
+    systemProperties.putAll(mySystemProps);
+    final File propertiesFile = myTempFiles.createTempFile();
+    systemProperties.store(new FileOutputStream(propertiesFile), null);
+    myBuildEnvVars.put("TEAMCITY_BUILD_PROPERTIES_FILE", propertiesFile.getAbsolutePath());
+
     final File workingDir = new File(myCoDir, projectName);
 
     final Expectations initMockingCtx = new Expectations() {{
@@ -307,6 +311,7 @@ public class BaseGradleRunnerTest {
 
       allowing(buildParams).getAllParameters(); will(returnValue(myBuildEnvVars));
       allowing(buildParams).getEnvironmentVariables(); will(returnValue(myBuildEnvVars));
+      allowing(buildParams).getSystemProperties(); will(returnValue(mySystemProps));
 
       allowing(myMockLogger).getFlowId();will(returnValue(flowId));
       allowing(myMockLogger).getFlowLogger(with(any(String.class)));will(returnValue(myMockLogger));

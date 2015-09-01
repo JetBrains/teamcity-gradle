@@ -28,12 +28,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testSingleDependency(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1");
-    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
-
-    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
-
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                     runtimePropsFile.getAbsolutePath());
+    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -47,13 +42,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testDoubleDependency(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("src/main/java/my/module/GreeterRoot.java:ADD:1");
-    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
-
-    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
-
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                     runtimePropsFile.getAbsolutePath());
-
+    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestDoubleDep.txt");
@@ -64,14 +53,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   @Test(dataProvider = "gradle-version-provider")
   public void testNoDependency(String gradleVersion) throws Exception {
 
-    final String changedFilesPath = createFileWithChanges("projectD/src/main/java/my/module/GreeterD.java:ADD:1");
-    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
-
-    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
-
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                     runtimePropsFile.getAbsolutePath());
-
+    mySystemProps.put("teamcity.build.changedFiles.file", createFileWithChanges("projectD/src/main/java/my/module/GreeterD.java:ADD:1"));
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestZeroDep.txt");
@@ -82,12 +64,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   @Test(dataProvider = "gradle-version-provider")
   public void testNothingTouched(String gradleVersion) throws Exception {
     final String changedFilesPath = createFileWithChanges("");
-    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
-
-    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
-
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                     runtimePropsFile.getAbsolutePath());
+    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -101,12 +78,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testPersonalChange(String gradleVersion) throws Exception {
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1\n" +
                                                           "projectA/src/main/java/my/module/GreeterA.java:ADD:<personal>");
-    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
-
-    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
-
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                     runtimePropsFile.getAbsolutePath());
+    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -121,12 +93,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     System.setProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM, "false");
 
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1");
-    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
-
-    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
-
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                     runtimePropsFile.getAbsolutePath());
+    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -140,12 +107,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testChangeNotInSourceSet(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectA/build.gradle:ADD:1");
-    final File runtimePropsTemplate = new File(myCoDir, "testDepsBasedTestRun.properties");
-
-    final File runtimePropsFile = addChangedFilesToRuntimeProps(changedFilesPath, runtimePropsTemplate);
-
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                       runtimePropsFile.getAbsolutePath());
+    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",

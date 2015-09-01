@@ -31,15 +31,15 @@
 ##teamcity[blockOpened name=':printProperties']
 ##tc-property name='property.bravo' value='value bravo'
 ##tc-property name='property_alpha' value='value_alpha'
-##tc-property name='property' value='charlie=value charlie'
+##tc-property name='property charlie' value='value charlie'
 ##teamcity[blockClosed name=':printProperties']
 ##teamcity[blockOpened name=':projectA:printProperties']
 ##tc-property name='property.bravo' value='value bravo'
 ##tc-property name='property_alpha' value='value_alpha'
-##tc-property name='property' value='charlie=value charlie'
+##tc-property name='property charlie' value='value charlie'
 ##teamcity[blockClosed name=':projectA:printProperties']
 ##teamcity[blockOpened name=':projectB:printProperties']
 ##tc-property name='property.bravo' value='value bravo'
 ##tc-property name='property_alpha' value='value_alpha'
-##tc-property name='property' value='charlie=value charlie'
+##tc-property name='property charlie' value='value charlie'
 ##teamcity[blockClosed name=':projectB:printProperties']

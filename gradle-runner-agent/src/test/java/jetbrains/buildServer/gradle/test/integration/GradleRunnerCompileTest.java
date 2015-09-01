@@ -41,8 +41,10 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void successfulCompileTest(final String gradleVersion) throws Exception {
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV,
-                     new File(myProjectRoot, "src/test/resources/testProjects/test.properties").getAbsolutePath());
+    mySystemProps.put("property_alpha", "value_alpha");
+    mySystemProps.put("property.bravo", "value bravo");
+    mySystemProps.put("property charlie", "value charlie");
+
     GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", "mProjectABlockSequence.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);

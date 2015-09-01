@@ -13,3 +13,11 @@ task printProperties << {
     println "##tc-property name='${key}' value='${val}'"
   }
 }
+
+task printTcProperty << {
+  println "##tc-property ${teamcity["test_teamcity_property"]}"
+}
+
+task printSystemProperty << {
+  println "##system-property ${System.properties['test_system_property']}"
+}

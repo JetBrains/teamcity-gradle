@@ -193,6 +193,7 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
       }
 
       addCustomProperties(p, props)
+      addSystemProperties(props)
     } else {
       addCustomProperties(p, new HashMap())
     }
@@ -204,6 +205,10 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
     } else {
       p.setProperty("teamcity", props)
     }
+  }
+
+  private void addSystemProperties(Map props) {
+    props.each { k,v -> System.setProperty(k, v) }
   }
 }
 
