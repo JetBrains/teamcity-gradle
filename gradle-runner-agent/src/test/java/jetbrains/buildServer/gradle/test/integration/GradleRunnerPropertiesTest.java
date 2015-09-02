@@ -32,4 +32,17 @@ public class GradleRunnerPropertiesTest extends GradleRunnerServiceMessageTest {
     config.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(config);
   }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void overrideSystemPropertiesInCommandlineTest(String gradleVersion) throws Exception {
+    final String testKey = "test_system_property";
+    final String testValue = "test_value";
+    final String otherValue = "other_value";
+
+    mySystemProps.put(testKey, testValue);
+    GradleRunConfiguration config = new GradleRunConfiguration("projectA", "clean printSystemProperty -D" + testKey + "=" + otherValue, "overrideSystemProperty.txt");
+    config.setPatternStr("##system-property(.*)");
+    config.setGradleVersion(gradleVersion);
+    runAndCheckServiceMessages(config);
+  }
 }

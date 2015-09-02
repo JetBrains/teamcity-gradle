@@ -208,7 +208,7 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   }
 
   private void addSystemProperties(Map props) {
-    props.each { k,v -> System.setProperty(k, v) }
+    props.each { k,v -> if (System.getProperty(k) == null) { System.setProperty(k, v) } }
   }
 }
 
