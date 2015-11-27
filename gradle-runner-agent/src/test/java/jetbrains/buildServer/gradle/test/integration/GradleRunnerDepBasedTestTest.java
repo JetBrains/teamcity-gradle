@@ -3,7 +3,6 @@ package jetbrains.buildServer.gradle.test.integration;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import jetbrains.buildServer.agent.AgentRuntimeProperties;
 import jetbrains.buildServer.agent.IncrementalBuild;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
@@ -28,7 +27,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testSingleDependency(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1");
-    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -42,7 +41,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testDoubleDependency(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("src/main/java/my/module/GreeterRoot.java:ADD:1");
-    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestDoubleDep.txt");
@@ -53,7 +52,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   @Test(dataProvider = "gradle-version-provider")
   public void testNoDependency(String gradleVersion) throws Exception {
 
-    mySystemProps.put("teamcity.build.changedFiles.file", createFileWithChanges("projectD/src/main/java/my/module/GreeterD.java:ADD:1"));
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", createFileWithChanges("projectD/src/main/java/my/module/GreeterD.java:ADD:1"));
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
                                                                                      "DepBasedTestZeroDep.txt");
@@ -64,7 +63,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   @Test(dataProvider = "gradle-version-provider")
   public void testNothingTouched(String gradleVersion) throws Exception {
     final String changedFilesPath = createFileWithChanges("");
-    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -78,7 +77,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testPersonalChange(String gradleVersion) throws Exception {
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1\n" +
                                                           "projectA/src/main/java/my/module/GreeterA.java:ADD:<personal>");
-    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -93,7 +92,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     System.setProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM, "false");
 
     final String changedFilesPath = createFileWithChanges("projectC/src/main/java/my/module/GreeterC.java:ADD:1");
-    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
@@ -107,7 +106,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void testChangeNotInSourceSet(String gradleVersion) throws Exception {
 
     final String changedFilesPath = createFileWithChanges("projectA/build.gradle:ADD:1");
-    mySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",

@@ -114,7 +114,7 @@ public class BaseGradleRunnerTest {
   protected File myProjectRoot;
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
-  protected Map<String, String> mySystemProps = new ConcurrentHashMap<String,String>();
+  protected Map<String, String> myTeamCitySystemProps = new ConcurrentHashMap<String,String>();
   private final TestLogger myTestLogger = new TestLogger();
 
   private static final boolean IS_JRE_8 = System.getProperty("java.specification.version").contains("1.8");
@@ -285,7 +285,7 @@ public class BaseGradleRunnerTest {
     }
 
     final Properties systemProperties = new Properties();
-    systemProperties.putAll(mySystemProps);
+    systemProperties.putAll(myTeamCitySystemProps);
     final File propertiesFile = myTempFiles.createTempFile();
     systemProperties.store(new FileOutputStream(propertiesFile), null);
     myBuildEnvVars.put("TEAMCITY_BUILD_PROPERTIES_FILE", propertiesFile.getAbsolutePath());
@@ -311,7 +311,7 @@ public class BaseGradleRunnerTest {
 
       allowing(buildParams).getAllParameters(); will(returnValue(myBuildEnvVars));
       allowing(buildParams).getEnvironmentVariables(); will(returnValue(myBuildEnvVars));
-      allowing(buildParams).getSystemProperties(); will(returnValue(mySystemProps));
+      allowing(buildParams).getSystemProperties(); will(returnValue(myTeamCitySystemProps));
 
       allowing(myMockLogger).getFlowId();will(returnValue(flowId));
       allowing(myMockLogger).getFlowLogger(with(any(String.class)));will(returnValue(myMockLogger));

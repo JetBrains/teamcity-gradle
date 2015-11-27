@@ -19,5 +19,5 @@ task printTcProperty << {
 }
 
 task printSystemProperty << {
-  println "##system-property ${System.properties['test_system_property']}"
+  println "##system-property ${test_system_property}"
 }

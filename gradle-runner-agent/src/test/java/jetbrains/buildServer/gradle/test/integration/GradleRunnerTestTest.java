@@ -16,10 +16,8 @@
 
 package jetbrains.buildServer.gradle.test.integration;
 
-import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
-import jetbrains.buildServer.agent.AgentRuntimeProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -76,7 +74,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void parallelTestSuiteTest(final String gradleVersion) throws RunBuildException, IOException {
-    mySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=valueAlpha\n-Dtest.property.bravo=valueBravo");
+    myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=valueAlpha\n-Dtest.property.bravo=valueBravo");
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(PROJECT_D_NAME,
                                                                                      "clean testParallel",null);

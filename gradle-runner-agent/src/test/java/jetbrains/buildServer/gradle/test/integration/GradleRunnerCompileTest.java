@@ -16,10 +16,6 @@
 
 package jetbrains.buildServer.gradle.test.integration;
 
-import java.io.File;
-import java.io.IOException;
-import jetbrains.buildServer.RunBuildException;
-import jetbrains.buildServer.agent.AgentRuntimeProperties;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import org.testng.annotations.Test;
 
@@ -41,9 +37,9 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void successfulCompileTest(final String gradleVersion) throws Exception {
-    mySystemProps.put("property_alpha", "value_alpha");
-    mySystemProps.put("property.bravo", "value bravo");
-    mySystemProps.put("property charlie", "value charlie");
+    myTeamCitySystemProps.put("property_alpha", "value_alpha");
+    myTeamCitySystemProps.put("property.bravo", "value bravo");
+    myTeamCitySystemProps.put("property charlie", "value charlie");
 
     GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", "mProjectABlockSequence.txt");
     config.setGradleVersion(gradleVersion);
