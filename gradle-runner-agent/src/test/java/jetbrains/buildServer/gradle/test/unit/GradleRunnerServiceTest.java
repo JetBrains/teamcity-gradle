@@ -284,6 +284,7 @@ public class GradleRunnerServiceTest {
     int initScriptIndex = args.indexOf("--init-script");
     assertTrue(initScriptIndex > -1, "--init-script argument not found!");
     assertEquals(args.get(initScriptIndex + 1), initScriptPath, "Wrong init script path");
+    assertTrue(args.indexOf("-Dorg.gradle.daemon=false") > -1, "Gradle daemon should be disabled");
   }
 
 }

@@ -157,6 +157,8 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     params.addAll(ConfigurationParamsUtil.getGradleParams(getRunnerParameters()));
 
+    params.add("-Dorg.gradle.daemon=false");
+
     if (ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(), GradleRunnerConstants.DEBUG))
       params.add("-d");
 
