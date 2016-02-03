@@ -76,7 +76,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
   }
 
   protected String[] readReportSequence(final String sequenceName) throws RunBuildException {
-    final File sequenceFile = new File (myProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
+    final File sequenceFile = new File (ourProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
     String expected;
     try {
       expected = new String(FileUtil.loadFileText(sequenceFile, SEQENCE_FILES_ENCODING));
@@ -98,7 +98,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
                                     gradleRunConfiguration.getGradleVersion());
 
     final String sequenceName = gradleRunConfiguration.getSequenceFileName();
-    final File sequenceFile = new File (myProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
+    final File sequenceFile = new File (ourProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
     final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
     gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
 

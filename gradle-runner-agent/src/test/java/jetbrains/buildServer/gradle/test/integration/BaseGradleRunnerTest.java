@@ -17,11 +17,10 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
-import java.io.FileOutputStream;
-import java.util.*;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
@@ -34,6 +33,7 @@ import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
+import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -45,7 +45,8 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Author: Nikita.Skvortsov
@@ -111,7 +112,7 @@ public class BaseGradleRunnerTest {
   protected ExtensionHolder myMockExtensionHolder;
   protected BuildRunnerContext myMockRunner;
   protected FlowLogger myMockLogger;
-  protected File myProjectRoot;
+  protected static File ourProjectRoot;
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
   protected Map<String, String> myTeamCitySystemProps = new ConcurrentHashMap<String,String>();
@@ -121,46 +122,52 @@ public class BaseGradleRunnerTest {
 
 
   @DataProvider(name = "gradle-version-provider")
-  public Object[][] getGradlePaths(Method m) {
-    Object[][] result;
-    if (myProjectRoot == null) {
-      myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
+  public static Iterator<String[]> getGradlePaths() {
+    Iterator<String[]> result;
+    if (ourProjectRoot == null) {
+      ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
-    File gradleDir = new File(myProjectRoot, TOOLS_GRADLE_PATH);
+    File gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH);
     Reporter.log(gradleDir.getAbsolutePath());
     if (gradleDir.exists() && gradleDir.isDirectory()) {
       result = listAvailableVersions(gradleDir);
     } else {
-        final String propsGradleHome = System.getProperty(PROPERTY_GRADLE_RUNTIME);
-        result = new Object[][] { new Object [] { propsGradleHome }};
+      final String propsGradleHome = System.getProperty(PROPERTY_GRADLE_RUNTIME);
+      result = Collections.singleton(new String[]{propsGradleHome}).iterator();
     }
     return result;
   }
 
-  private Object[][] listAvailableVersions(final @NotNull File gradleDir) {
-    final Object[][] result;
+  private static Iterator<String[]> listAvailableVersions(final @NotNull File gradleDir) {
     final File[] versions = gradleDir.listFiles();
     assertNotNull(versions);
 
-    final List<Object[]> versionNames = new LinkedList<Object[]>();
+    final List<String[]> versionNames = new ArrayList<String[]>(versions.length);
     for (File version : versions) {
       if (looksLikeGradleDir(version) && versionFitsCurrentJdk(version)) {
-        versionNames.add(new Object[] { version.getName() });
+        versionNames.add(new String[]{version.getName()});
       }
     }
-    result = versionNames.toArray(new Object[versionNames.size()][]);
-    return result;
+    Collections.sort(versionNames, new Comparator<String[]>() {
+      @Override
+      public int compare(final String[] o1, final String[] o2) {
+        final String v1 = o1[0].substring("gradle-".length());
+        final String v2 = o2[0].substring("gradle-".length());
+        return VersionComparatorUtil.compare(v1, v2);
+      }
+    });
+    return versionNames.iterator();
   }
 
-  private boolean looksLikeGradleDir(final File version) {
+  private static boolean looksLikeGradleDir(final File version) {
     return new File(version, "bin/gradle" + (SystemInfo.isWindows ? ".bat" : "")).exists();
   }
 
-  private boolean versionFitsCurrentJdk(final File gradleDir) {
+  private static boolean versionFitsCurrentJdk(final File gradleDir) {
     if (IS_JRE_8) {
       try {
         final String versionString = gradleDir.getName().substring("gradle-".length());
-        return isBiggerOrEqualThan(versionString, "1.11");
+        return VersionComparatorUtil.compare(versionString, "1.11") >= 0;
       } catch (NumberFormatException e) {
         return false;
       }
@@ -168,47 +175,22 @@ public class BaseGradleRunnerTest {
     return true;
   }
 
-  private boolean isBiggerOrEqualThan(final String versionString, final String otherVersionString) {
-    final int[] version = splitToInts(versionString);
-    final int[] otherVersion = splitToInts(otherVersionString);
-
-    assertNotEquals(version.length, 0);
-    assertNotEquals(otherVersion.length, 0);
-
-    for (int i = 0; i < version.length && i < otherVersion.length; i++) {
-      if (version[i] < otherVersion[i]) {
-        return false;
-      }
-    }
-
-    return otherVersion.length <= version.length;
-  }
-
-  private int[] splitToInts(final String versionString) {
-    final String[] numbers = versionString.split("\\.");
-    final int[] result = new int[numbers.length];
-    for (int i = 0; i < numbers.length; i++) {
-      result[i] = Integer.parseInt(numbers[i]);
-    }
-    return result;
-  }
-
-  public String getGradlePath(String gradleVersion) throws IOException {
+  public static String getGradlePath(String gradleVersion) throws IOException {
     final File gradleHome = new File(gradleVersion);
     if (gradleHome.isAbsolute()) {
       return gradleHome.getCanonicalPath();
     } else {
-      return new File(new File(myProjectRoot, TOOLS_GRADLE_PATH), gradleVersion).getCanonicalPath();
+      return new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH), gradleVersion).getCanonicalPath();
     }
   }
 
   @BeforeMethod
   public void checkEnvironment() throws IOException {
-    if (myProjectRoot == null) {
-      myProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
+    if (ourProjectRoot == null) {
+      ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
-    findInitScript(myProjectRoot);
-    createProjectsWorkingCopy(myProjectRoot);
+    findInitScript(ourProjectRoot);
+    createProjectsWorkingCopy(ourProjectRoot);
     myTestLogger.onSuiteStart();
   }
 
