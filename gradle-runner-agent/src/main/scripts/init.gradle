@@ -497,13 +497,14 @@ public class TeamcityTestListener {
       return;
     }
     def testName = getTestName(testDescriptor)
+    def output = outputEvent.getMessage().trim()
     def msg = null
     switch (outputEvent.getDestination()) {
       case TestOutputEvent.Destination.StdErr:
-        msg = !skipStdErr ? new TestStdErr(testName, outputEvent.getMessage()) : null
+        msg = !skipStdErr ? new TestStdErr(testName, output) : null
         break
       case TestOutputEvent.Destination.StdOut:
-        msg = !skipStdOut ? new TestStdOut(testName, outputEvent.getMessage()) : null
+        msg = !skipStdOut ? new TestStdOut(testName, output) : null
         break
     }
     if (msg) {
