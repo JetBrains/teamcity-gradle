@@ -497,7 +497,7 @@ public class TeamcityTestListener {
       return;
     }
     def testName = getTestName(testDescriptor)
-    def output = outputEvent.getMessage().trim()
+    def output = outputEvent.getMessage() - ~/\r?\n\z/
     def msg = null
     switch (outputEvent.getDestination()) {
       case TestOutputEvent.Destination.StdErr:
