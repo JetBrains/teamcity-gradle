@@ -26,6 +26,7 @@ dependencies {
     devPackage = fileTree(teamCityDir + "/devPackage").matching {
       include 'agent-api.jar'
       include 'common-api.jar'
+      include 'serviceMessages.jar'
       include 'server-api.jar'
       include 'tests/*.jar'
     }
@@ -36,6 +37,7 @@ dependencies {
 
     commonApi = fileTree(teamCityDir + "/devPackage").matching {
       include 'common-api.jar'
+      include 'serviceMessages.jar'
     }
 
     agentRuntime = zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
