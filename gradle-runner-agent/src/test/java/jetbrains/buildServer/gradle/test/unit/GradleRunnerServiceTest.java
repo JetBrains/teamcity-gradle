@@ -72,6 +72,7 @@ public class GradleRunnerServiceTest {
     final BuildParametersMap myBuildPrarams = myContext.mock(BuildParametersMap.class);
 
     myContext.checking(new Expectations() {{
+      allowing(myBuild).getBuildLogger();
       allowing(myRunnerContext).getRunnerParameters(); will(returnValue(myRunnerParams));
       allowing(myRunnerContext).getBuildParameters(); will(returnValue(myBuildPrarams));
       allowing(myBuildPrarams).getAllParameters(); will(returnValue(myBuildParams));
