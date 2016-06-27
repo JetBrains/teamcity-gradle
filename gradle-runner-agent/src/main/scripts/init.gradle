@@ -230,7 +230,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       task.getLogging().captureStandardError(LogLevel.WARN);
       TeamCityOutputListener errorListener = taskMessages.get(task);
       if (null == errorListener) {
-        errorListener = new TeamCityOutputListener(logger);
+        errorListener = new TeamCityOutputListener();
         taskMessages.put(task, errorListener);
       }
       errorListener.reset();
@@ -345,12 +345,6 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
   }
 
   private class TeamCityOutputListener implements StandardOutputListener {
-
-    def logger
-
-    public TeamCityOutputListener(Logger log) {
-      logger = log
-    }
 
     StringBuffer text = new StringBuffer()
 
