@@ -265,8 +265,8 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       Throwable failure = taskState.getFailure();
       if (null != failure) {
         final TeamCityOutputListener outputListener = taskMessages.get(task);
-        for (String str : outputListener.getMessages()) {
-          logger.lifecycle(addFlowId(task, new Message(str, "ERROR", null)).asString()); // compilation failure
+        outputListener.getMessages().each { message ->
+          logger.lifecycle(addFlowId(task, new Message(message, "ERROR", null)).asString()); // compilation failure
         }
       }
       blockCloseMessage = addFlowId(task, new CompilationFinished(task.getPath()));
@@ -352,24 +352,21 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       logger = log
     }
 
-
-    private List<String> messages = new LinkedList<String>();
+    StringBuffer text = new StringBuffer()
 
     public void onOutput(CharSequence chars) {
-      String[] strings = chars.toString().split('(\\n|\\r)*$');
-      for(String str : strings) {
-        if (str.trim().length() > 0) {
-          messages.add(str);
-        }
-      }
+      text.append(chars)
     }
 
-    public List<String> getMessages () {
-      return messages;
+    public Collection<String> getMessages() {
+      return text.toString()
+                      .split('(\\n|\\r)*$')
+                      .findAll { s -> s.trim().length() > 0}
+
     }
 
     public void reset() {
-      messages.clear();
+      text.setLength(0)
     }
   }
 
