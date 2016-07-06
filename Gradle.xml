@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dsl-extension kind="buildStep" type="gradle-runner" generateDslJar="true">
   <class name="GradleBuildStep"/>
-  <init>
-    <param name="teamcity.coverage.emma.include.source" value="true" />
-    <param name="teamcity.coverage.emma.instr.parameters" value="-ix -*Test*" />
-  </init>
   <function name="gradle"/>
   <params>
     <param name="ui.gradleRunner.gradle.tasks.names" dslName="tasks">
@@ -29,30 +25,5 @@
     <param name="ui.gradleRunner.gradle.stacktrace.enabled" dslName="enableStacktrace" type="boolean" trueValue="true" falseValue=""/>
     <param name="target.jdk.home" dslName="jdkHome"/>
     <param name="jvmArgs"/>
-    <param name="teamcity.coverage.runner" dslName="coverage" type="CoverageRunner"/>
-    <param name="teamcity.coverage.idea.excludePatterns" dslName="ideaCoverageExcludes">
-      <description>
-        Newline-separated patterns for fully qualified class names to be analyzed by code coverage.
-        A pattern should start with a valid package name and can contain a wildcard, for example: org.apache.*
-      </description>
-    </param>
-    <param name="teamcity.coverage.idea.includePatterns" dslName="ideaCoverageIncludes">
-      <description>Newline-separated patterns for fully qualified class names to be excluded from the coverage. Exclude patterns have priority over include patterns.</description>
-    </param>
-    <param name="teamcity.coverage.jacoco.classpath" dslName="jacocoClasspath">
-      <description>
-        Newline-delimited set of path patterns in the form of +|-:{path} to scan for class files to be analyzed.
-        Ant like patterns are supported, e.g.: '+:build/main/**/*.class'.
-      </description>
-    </param>
-    <param name="teamcity.coverage.jacoco.patterns" dslName="jacocoPatterns">
-      <description>Newline-delimited set of patterns in the form of +|-:{pattern} of classes to analyze. Wildcards are supported, e.g. '+:com.*:+:org.*'.</description>
-    </param>
   </params>
-  <types>
-    <enum name="CoverageRunner">
-      <option name="IDEA"/>
-      <option name="JACOCO"/>
-    </enum>
-  </types>
 </dsl-extension>
