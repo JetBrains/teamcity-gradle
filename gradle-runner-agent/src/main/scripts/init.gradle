@@ -499,6 +499,7 @@ public class TeamcityTestListener {
         break
     }
     if (msg) {
+      msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
       msg.setFlowId(findFlowId(testDescriptor))
       logger.lifecycle(msg.asString())
     }
