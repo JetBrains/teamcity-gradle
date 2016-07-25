@@ -28,6 +28,7 @@ import jetbrains.buildServer.agent.IncrementalBuild;
 import jetbrains.buildServer.agent.ToolCannotBeFoundException;
 import jetbrains.buildServer.agent.runner.*;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.ErrorData;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -90,11 +91,20 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     env.put("GRADLE_EXIT_CONSOLE", "true");
     env.put(JavaRunnerConstants.JAVA_HOME, getJavaHome());
-    env.put(GradleRunnerConstants.ENV_GRADLE_OPTS, buildGradleOpts());
+    env.put(GradleRunnerConstants.ENV_GRADLE_OPTS, appendTmpDir(buildGradleOpts(), getBuildTempDirectory()));
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
 
     return new SimpleProgramCommandLine(env, getWorkingDirectory().getPath(), exePath, params);
+  }
+
+  private String appendTmpDir(@NotNull final String s, @NotNull final File tempDir) {
+    try {
+      return s + " -Djava.io.tmpdir=" + tempDir.getCanonicalPath();
+    } catch (IOException e) {
+      Loggers.AGENT.warnAndDebugDetails("Failed patch temp dir for Gradle runtime environment: " + e.toString(), e);
+      return s;
+    }
   }
 
   @NotNull

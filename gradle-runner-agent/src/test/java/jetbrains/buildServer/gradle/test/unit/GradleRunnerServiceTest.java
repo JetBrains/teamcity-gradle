@@ -61,10 +61,12 @@ public class GradleRunnerServiceTest {
   protected File myGradleExe;
   protected File myWorkingDirectory;
   protected File myInitScript;
+  private File myTempDir;
 
 
   @BeforeMethod
   public void setUp() throws Exception {
+    myTempDir = myTempFiles.createTempDir();
     myContext = new Mockery();
 
     myRunnerContext = myContext.mock(BuildRunnerContext.class);
@@ -73,11 +75,12 @@ public class GradleRunnerServiceTest {
 
     myContext.checking(new Expectations() {{
       allowing(myBuild).getBuildLogger();
-      allowing(myRunnerContext).getRunnerParameters(); will(returnValue(myRunnerParams));
-      allowing(myRunnerContext).getBuildParameters(); will(returnValue(myBuildPrarams));
-      allowing(myBuildPrarams).getAllParameters(); will(returnValue(myBuildParams));
+      allowing(myBuild).getBuildTempDirectory();          will(returnValue(myTempDir));
+      allowing(myRunnerContext).getRunnerParameters();    will(returnValue(myRunnerParams));
+      allowing(myRunnerContext).getBuildParameters();     will(returnValue(myBuildPrarams));
+      allowing(myBuildPrarams).getAllParameters();        will(returnValue(myBuildParams));
       allowing(myBuildPrarams).getEnvironmentVariables(); will(returnValue(myEnvVars));
-      allowing(myBuildPrarams).getSystemProperties(); will(returnValue(mySystemProps));
+      allowing(myBuildPrarams).getSystemProperties();     will(returnValue(mySystemProps));
     }});
     myService = (GradleRunnerService) new GradleRunnerServiceFactory().createService();
   }
@@ -119,10 +122,10 @@ public class GradleRunnerServiceTest {
 
   @Test
   public void testCLGradleOpts() throws Exception {
-    final String runnerGradleOpts = "-DrunnerGradleOpt";
-    final String runnerJavaArgs = "-DrunnerJavaArg";
+    final String expectedRunnerGradleOpts = "-DrunnerGradleOpt";
+    final String expectedRunnerJavaArgs = "-DrunnerJavaArg";
 
-    myRunnerParams.put(GradleRunnerConstants.ENV_GRADLE_OPTS, runnerGradleOpts);
+    myRunnerParams.put(GradleRunnerConstants.ENV_GRADLE_OPTS, expectedRunnerGradleOpts);
 
     prepareGradleRequiredFiles();
     myService.initialize(myBuild,myRunnerContext);
@@ -130,16 +133,16 @@ public class GradleRunnerServiceTest {
     validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
 
     String gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
-    assertEquals(gradleOptsValue, runnerGradleOpts, "Wrong Java arguments." );
+    assertTrue(gradleOptsValue.contains(expectedRunnerGradleOpts), "Wrong Java arguments." );
 
-    myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, runnerJavaArgs);
+    myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, expectedRunnerJavaArgs);
 
     myService.initialize(myBuild,myRunnerContext);
     cmdLine = myService.makeProgramCommandLine();
     validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
 
     gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
-    assertEquals(gradleOptsValue, runnerJavaArgs, "Wrong Java arguments." );
+    assertTrue(gradleOptsValue.contains(expectedRunnerJavaArgs), "Wrong Java arguments." );
 
   }
 
