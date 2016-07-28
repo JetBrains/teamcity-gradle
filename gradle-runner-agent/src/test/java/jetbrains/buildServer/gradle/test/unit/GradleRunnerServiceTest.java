@@ -41,6 +41,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.testng.Assert.*;
 
 /**
@@ -142,7 +143,10 @@ public class GradleRunnerServiceTest {
     validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
 
     gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
-    assertTrue(gradleOptsValue.contains(expectedRunnerJavaArgs), "Wrong Java arguments." );
+
+
+    then(gradleOptsValue).as("Should contain new temp dir").contains("-Djava.io.tmpdir=\"" + myTempDir.getCanonicalPath() + "\"")
+                         .as("Should contain java args").contains(expectedRunnerJavaArgs);
 
   }
 
