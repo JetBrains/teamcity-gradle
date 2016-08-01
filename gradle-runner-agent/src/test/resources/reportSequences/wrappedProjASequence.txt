@@ -1,4 +1,4 @@
-Downloading file:##Checkout_directory##/wrappedProjectA/gradle/wrapper/../dists/gradle-1.0-bin.zip
+Downloading ##Checkout_directory##/wrappedProjectA/gradle/wrapper/../dists/gradle-1.0-bin.zip
 Unzipping ##Checkout_directory##/wrappedProjectA/wrapper/dists/gradle-1.0-bin/##HASH##/gradle-1.0-bin.zip to ##Checkout_directory##/wrappedProjectA/wrapper/dists/gradle-1.0-bin/##HASH##
 ##teamcity[blockOpened name=':clean']
 ##teamcity[blockClosed name=':clean']
