@@ -67,6 +67,7 @@ subprojects {
 
     testCompile 'org.jmock:jmock:2.5.1'
     testCompile 'org.testng:testng:6.8'
+    testCompile 'org.assertj:assertj-core:1.7.1'
   }
 
   clean {
