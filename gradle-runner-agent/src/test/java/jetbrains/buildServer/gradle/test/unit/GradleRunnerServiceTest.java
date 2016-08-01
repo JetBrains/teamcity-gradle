@@ -145,7 +145,7 @@ public class GradleRunnerServiceTest {
     gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
 
-    then(gradleOptsValue).as("Should contain new temp dir").contains("-Djava.io.tmpdir=\"" + myTempDir.getCanonicalPath() + "\"")
+    then(gradleOptsValue.split(" ")).as("Should contain new temp dir").contains("\"-Djava.io.tmpdir=" + myTempDir.getCanonicalPath() + "\"")
                          .as("Should contain java args").contains(expectedRunnerJavaArgs);
 
   }
