@@ -196,8 +196,9 @@ public class BaseGradleRunnerTest {
 
 
   private void createProjectsWorkingCopy(final File curDir) throws IOException {
-    myTempDir = myTempFiles.createTempDir();
-    myCoDir = new File(myTempDir, "checkoutDir");
+    myTempDir = new File(myTempFiles.createTempDir(), "Name With Spaces");
+    myTempDir.mkdir();
+    myCoDir = myTempFiles.createTempDir();
     FileUtil.copyDir(new File(curDir, "src/test/resources/testProjects"), myCoDir, true);
     assertTrue(new File(myCoDir, PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
   }

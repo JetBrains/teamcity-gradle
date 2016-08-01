@@ -37,7 +37,6 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
   @Test
   public void simpleWrapperTest() throws Exception {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
-    myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_PATH, "gradle-runtime");
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectA", "clean build", "wrappedProjASequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
     runAndCheckServiceMessages(config);

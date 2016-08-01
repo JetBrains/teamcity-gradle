@@ -100,7 +100,7 @@ public class GradleRunnerService extends BuildServiceAdapter
 
   private String appendTmpDir(@NotNull final String s, @NotNull final File tempDir) {
     try {
-      return s + " -Djava.io.tmpdir=\"" + tempDir.getCanonicalPath() +"\"";
+      return s + "\"-Djava.io.tmpdir=" + tempDir.getCanonicalPath() +"\"";
     } catch (IOException e) {
       Loggers.AGENT.warnAndDebugDetails("Failed patch temp dir for Gradle runtime environment: " + e.toString(), e);
       return s;

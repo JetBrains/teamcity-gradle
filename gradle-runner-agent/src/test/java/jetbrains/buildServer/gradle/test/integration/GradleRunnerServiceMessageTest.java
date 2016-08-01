@@ -64,6 +64,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll("details='java.lang.AssertionError.*?[^|]'", "details='##Assert_Stacktrace##'"); // drop test durations
       resultMessage = resultMessage.replaceAll("\\\\", "/"); // normalize paths if any
       resultMessage = resultMessage.replaceAll(myCoDir.getAbsolutePath().replaceAll("\\\\", "/"), "##Checkout_directory##"); // drop test durations
+      resultMessage = resultMessage.replaceAll("wrapper/dists/gradle-([0-9.]+)-bin/[^/]+", "wrapper/dists/gradle-$1-bin/##HASH##");
       result.add(resultMessage);
     }
 
