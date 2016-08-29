@@ -21,15 +21,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Groovy" level="project" />
     <orderEntry type="module" module-name="gradle-runner-common" />
-    <orderEntry type="module-library" scope="TEST">
-      <library>
-        <CLASSES>
-          <root url="jar://$APPLICATION_HOME_DIR$/plugins/testng/lib/testng-jdk15.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="module" module-name="agent" />
     <orderEntry type="library" name="jmock-2.5.1" level="project" />
     <orderEntry type="module" module-name="test-api" />
