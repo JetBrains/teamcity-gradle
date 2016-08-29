@@ -1,26 +1,31 @@
  package jetbrains.buildServer.gradle.server;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import jetbrains.MockBuildType;
-import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.serverSide.discovery.BuildRunnerDiscoveryExtension;
-import jetbrains.buildServer.serverSide.discovery.DiscoveredObject;
-import jetbrains.buildServer.serverSide.impl.BaseServerTestCase;
-import jetbrains.buildServer.util.browser.FileSystemBrowser;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+ import java.io.File;
+ import java.util.Collections;
+ import java.util.List;
+ import java.util.Map;
+ import jetbrains.buildServer.BaseTestCase;
+ import jetbrains.buildServer.gradle.GradleRunnerConstants;
+ import jetbrains.buildServer.serverSide.BuildTypeSettings;
+ import jetbrains.buildServer.serverSide.SBuildRunnerDescriptor;
+ import jetbrains.buildServer.serverSide.discovery.BuildRunnerDiscoveryExtension;
+ import jetbrains.buildServer.serverSide.discovery.DiscoveredObject;
+ import jetbrains.buildServer.util.browser.FileSystemBrowser;
+ import org.jmock.Expectations;
+ import org.jmock.Mockery;
+ import org.testng.annotations.BeforeMethod;
+ import org.testng.annotations.Test;
 
 /**
  * Created by Nikita.Skvortsov
  * date: 19.11.13.
  */
-public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
+public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
 
   private BuildRunnerDiscoveryExtension myExtension;
   private File myRoot;
+  private BuildTypeSettings mySettings;
+  private Mockery myContext;
 
   @BeforeMethod
   @Override
@@ -33,12 +38,17 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
     }
 
     assertTrue("Can not find test data. Please check if test projects exist", myRoot.exists());
+    myContext = new Mockery();
+    mySettings = myContext.mock(BuildTypeSettings.class, "empty");
+    myContext.checking(new Expectations() {{
+      allowing(mySettings).getBuildRunners();  will(returnValue(Collections.emptyList()));
+    }});
   }
 
   @Test
   public void testSimpleBuildDiscovery() throws Exception {
     final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "projectA"));
-    final List<DiscoveredObject> discovered = myExtension.discover(new MockBuildType(), browser);
+    final List<DiscoveredObject> discovered = myExtension.discover(mySettings, browser);
     assertNotNull(discovered);
     assertEquals(1, discovered.size());
     final Map<String,String> parameters = discovered.get(0).getParameters();
@@ -49,10 +59,11 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
   @Test
   public void testWrapperDiscovery() throws Exception {
     final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "wrappedProjectA"));
-    final List<DiscoveredObject> discovered = myExtension.discover(new MockBuildType(), browser);
+    final List<DiscoveredObject> discovered = myExtension.discover(mySettings, browser);
     assertNotNull(discovered);
     assertEquals(1, discovered.size());
     final Map<String,String> parameters = discovered.get(0).getParameters();
+
     assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
     assertEquals("true", parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
@@ -62,7 +73,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
   @Test
   public void testWrapperMultiProjectDiscovery() throws Exception {
     final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "MultiProjectB"));
-    final List<DiscoveredObject> discovered = myExtension.discover(new MockBuildType(), browser);
+    final List<DiscoveredObject> discovered = myExtension.discover(mySettings, browser);
     assertNotNull(discovered);
     assertEquals(1, discovered.size());
     final Map<String,String> parameters = discovered.get(0).getParameters();
@@ -76,10 +87,15 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
   @Test
   public void testExistingRunnersNotReported() throws Exception {
     final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "MultiProjectB"));
+    final BuildTypeSettings buildTypeSettings = myContext.mock(BuildTypeSettings.class, "btWithGradle");
+    final SBuildRunnerDescriptor runnerDescriptor = myContext.mock(SBuildRunnerDescriptor.class);
+    myContext.checking(new Expectations() {{
+      allowing(buildTypeSettings).getBuildRunners();  will(returnValue(Collections.singletonList(runnerDescriptor)));
+      allowing(runnerDescriptor).getType();             will(returnValue(GradleRunnerConstants.RUNNER_TYPE));
+      allowing(runnerDescriptor).getParameters();       will(returnValue(Collections.emptyMap()));
+    }});
 
-    myBuildType.addBuildRunner("", GradleRunnerConstants.RUNNER_TYPE, Collections.<String, String>emptyMap());
-
-    final List<DiscoveredObject> discovered = myExtension.discover(myBuildType, browser);
+    final List<DiscoveredObject> discovered = myExtension.discover(buildTypeSettings, browser);
 
     assertNotNull(discovered);
     assertEquals(0, discovered.size());
@@ -88,7 +104,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseServerTestCase {
   @Test
   public void testPathToBuildFileDetected() throws Exception {
     final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "subdir"));
-    final List<DiscoveredObject> discovered = myExtension.discover(new MockBuildType(), browser);
+    final List<DiscoveredObject> discovered = myExtension.discover(mySettings, browser);
     assertNotNull(discovered);
     assertEquals(1, discovered.size());
     final Map<String,String> parameters = discovered.get(0).getParameters();

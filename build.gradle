@@ -13,65 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-def TCPathVar = "path.variable.teamcitydistribution"
-
-dependencies {
-  if (project.hasProperty(TCPathVar)) {
-    def teamCityDir = project.getProperties()[TCPathVar]
-
-    teamCityLib = fileTree(teamCityDir + "/webapps/ROOT/WEB-INF/lib").matching {
-      include '*.jar'
-    }
-
-    devPackage = fileTree(teamCityDir + "/devPackage").matching {
-      include 'agent-api.jar'
-      include 'common-api.jar'
-      include 'serviceMessages.jar'
-      include 'server-api.jar'
-      include 'tests/*.jar'
-    }
-
-    agentCore = zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
-      include 'lib/agent.jar'
-    }
-
-    commonApi = fileTree(teamCityDir + "/devPackage").matching {
-      include 'common-api.jar'
-      include 'serviceMessages.jar'
-    }
-
-    agentRuntime = zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
-      include 'lib/*.jar'
-    }
-
-  } else {
-    throw new StopExecutionException("""TeamCity distribution not available.
-    Please, set path to valid TeamCity distribution in gradle.properties file.""")
-  }
-}
 
 allprojects {
-  tcVersion="6.0-SNAPSHOT"
+  TeamCityVersion="9.0"
   apply plugin: 'java'
 }
 
 subprojects {
-
   repositories {
     mavenRepo(name: "sonatype-public", urls: "https://oss.sonatype.org/content/groups/public/");
+    mavenRepo(name: "jetbrains-teamcit", urls: "http://download.jetbrains.com/teamcity-repository")
     mavenCentral()
   }
 
   dependencies {
-    compile 'log4j:log4j:1.2.16'
-
-    testCompile 'org.jmock:jmock:2.5.1'
-    testCompile 'org.testng:testng:6.8'
-    testCompile 'org.assertj:assertj-core:1.7.1'
+    testCompile "org.jetbrains.teamcity:tests-support:$TeamCityVersion"
   }
 
   clean {
     delete "target"
+  }
+}
+
+project (':gradle-runner-common') {
+  dependencies {
+    compile "org.jetbrains.teamcity:common-api:$TeamCityVersion"
   }
 }
 
@@ -83,24 +49,16 @@ project (':gradle-runner-agent') {
   }
 
   dependencies {
-
     compile project(':gradle-runner-common')
-    compile devPackage
-    compile teamCityLib
-    compile agentRuntime
-
-    integTestClasspath agentRuntime
-    integTestClasspath 'org.jmock:jmock:2.5.1'
-    integTestClasspath 'org.testng:testng:6.8'
-    integTestClasspath commonApi
+    compile "org.jetbrains.teamcity:agent-api:$TeamCityVersion"
+    compile "org.jetbrains.teamcity.internal:agent:$TeamCityVersion"
   }
 }
 
 project (':gradle-runner-server') {
   dependencies {
     compile project(':gradle-runner-common')
-    compile devPackage
-    compile teamCityLib
+    compile "org.jetbrains.teamcity:server-api:$TeamCityVersion"
   }
 }
 
