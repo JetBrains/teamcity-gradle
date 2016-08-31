@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
+
+def TeamCityVersion = "9.0"
+
 allprojects {
-  TeamCityVersion="9.0"
   apply plugin: 'java'
 }
 
 subprojects {
   repositories {
-    mavenRepo(name: "sonatype-public", urls: "https://oss.sonatype.org/content/groups/public/");
-    mavenRepo(name: "jetbrains-teamcit", urls: "http://download.jetbrains.com/teamcity-repository")
+    maven  { 
+        name = "sonatype-public"
+        url = "https://oss.sonatype.org/content/groups/public/" 
+    }
+    maven { 
+        name = "jetbrains-teamcit"
+        url = "http://download.jetbrains.com/teamcity-repository"
+    }
     mavenCentral()
   }
 
@@ -65,7 +73,7 @@ project (':gradle-runner-server') {
 def gradlePluginDist = new File(distsDir, 'gradle-runner')
 
 task initDistrDestinations << {
-  gradleServer = new File(gradlePluginDist, 'server')
+  def gradleServer = new File(gradlePluginDist, 'server')
   gradleServer.mkdirs()
 
   copy {
@@ -92,7 +100,7 @@ task zipAgent(type: Zip, dependsOn: ['initDistrDestinations',
 task zipPlugin(type: Zip, dependsOn: ['initDistrDestinations',
                                       'zipAgent']) {
   from gradlePluginDist
-  archiveName='gradle-runner.zip'
+  archiveName = 'gradle-runner.zip'
 }
 
 
@@ -101,6 +109,5 @@ task dist(dependsOn: [ 'zipPlugin' ]) {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.8'
-    jarPath = 'wrapper'
+    gradleVersion = '2.14'
 }

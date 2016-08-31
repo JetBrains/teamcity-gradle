@@ -41,8 +41,8 @@ task integrationTest(type: Test, dependsOn: [assemble, test]) {
 task dist(dependsOn: [build,':gradle-runner-common:build']) {
   description = 'Create Gradle Runner package for TeamCity Build Agent'
   doLast {
-    runnerDir = new File(distsDir,'gradle-runner')
-    runnerLib = new File(runnerDir,'lib')
+    def runnerDir = new File(distsDir,'gradle-runner')
+    def runnerLib = new File(runnerDir,'lib')
     runnerLib.mkdirs()
 
     copy {
