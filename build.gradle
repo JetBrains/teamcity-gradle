@@ -29,7 +29,7 @@ subprojects {
         url = "https://oss.sonatype.org/content/groups/public/" 
     }
     maven { 
-        name = "jetbrains-teamcit"
+        name = "jetbrains-teamcity"
         url = "http://download.jetbrains.com/teamcity-repository"
     }
     mavenCentral()
