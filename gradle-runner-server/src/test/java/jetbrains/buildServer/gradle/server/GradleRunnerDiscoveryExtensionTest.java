@@ -67,7 +67,6 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
     assertEquals("true", parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
-    assertEquals("gradle-runtime", parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_PATH));
   }
 
   @Test
