@@ -15,7 +15,8 @@
  */
 
 
-def TeamCityVersion = "9.0"
+def TeamCityVersion = "10.0"
+def teamCityDir = project.getProperties()["path.variable.teamcitydistribution"]
 
 allprojects {
   apply plugin: 'java'
@@ -60,6 +61,9 @@ project (':gradle-runner-agent') {
     compile project(':gradle-runner-common')
     compile "org.jetbrains.teamcity:agent-api:$TeamCityVersion"
     compile "org.jetbrains.teamcity.internal:agent:$TeamCityVersion"
+    integTestClasspath zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
+        include 'lib/*.jar'
+    }
   }
 }
 
