@@ -32,5 +32,6 @@
     <orderEntry type="library" name="testng" level="project" />
     <orderEntry type="module" module-name="server" />
     <orderEntry type="module" module-name="test-api" />
+    <orderEntry type="module" module-name="server-test-core" scope="TEST" />
   </component>
 </module>
