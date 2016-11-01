@@ -54,6 +54,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     final Map<String,String> parameters = discovered.get(0).getParameters();
     assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
+    assertEquals(null, parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
   }
 
   @Test
@@ -109,5 +110,14 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     final Map<String,String> parameters = discovered.get(0).getParameters();
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
     assertEquals("projectB/build.gradle", parameters.get(GradleRunnerConstants.PATH_TO_BUILD_FILE));
+  }
+
+  @Test // TW-47404
+  public void testDetectedWrapperIsResetBetweenInvocations() {
+    final List<DiscoveredObject> discoveredWrapper = myExtension.discover(new MockBuildType(), new FileSystemBrowser(new File(myRoot, "wrappedProjectA")));
+    assertEquals("true", discoveredWrapper.get(0).getParameters().get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
+
+    final List<DiscoveredObject> discoveredNoWrapper = myExtension.discover(new MockBuildType(), new FileSystemBrowser(new File(myRoot, "projectA")));
+    assertEquals(null, discoveredNoWrapper.get(0).getParameters().get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
   }
 }

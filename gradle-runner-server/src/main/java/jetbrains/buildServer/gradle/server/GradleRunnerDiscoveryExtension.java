@@ -17,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryExtension {
 
-  private Element myWrapperScriptDir;
   private static final int WRAPPER_DEPTH_LIMIT = 1;
 
   @NotNull
@@ -25,16 +24,16 @@ public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryE
   protected List<DiscoveredObject> discoverRunnersInDirectory(@NotNull final Element dir, @NotNull final List<Element> filesAndDirs) {
     final List<DiscoveredObject> res = new ArrayList<DiscoveredObject>();
     boolean foundBuildGradle = false;
+    Element myWrapperScriptDir = null;
 
     for (Element child: filesAndDirs) {
       if (child.isLeaf() && "build.gradle".equals(child.getName())) {
         foundBuildGradle = true;
         if (myWrapperScriptDir == null) {
-          lookForWrapperScript(dir, filesAndDirs, 0);
+          myWrapperScriptDir = lookForWrapperScript(dir, filesAndDirs, 0);
         }
       }
     }
-
     if (foundBuildGradle) {
       Map<String, String> props = new HashMap<String, String>();
       props.put(GradleRunnerConstants.GRADLE_TASKS, "clean build");
@@ -43,26 +42,31 @@ public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryE
       if (isSubdirectory) {
         props.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, dir.getFullName() + "/build.gradle");
       }
-
+      if (myWrapperScriptDir != null) {
+        props.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true");
+        final String wrapperDir = myWrapperScriptDir.getFullName();
+        props.put(GradleRunnerConstants.GRADLE_WRAPPER_PATH, wrapperDir);
+      }
       res.add(new DiscoveredObject(GradleRunnerConstants.RUNNER_TYPE, props));
     }
     return res;
   }
 
-  private void lookForWrapperScript(final Element dir, final Iterable<Element> children, int depth) {
+
+  private Element lookForWrapperScript(final Element dir, final Iterable<Element> children, int depth) {
     for (Element child : children) {
       if (child.isLeaf() && "gradlew".equals(child.getName())) {
-        myWrapperScriptDir = dir;
+        return dir;
       }
     }
-
     if (depth < WRAPPER_DEPTH_LIMIT) {
-    for (Element child : children) {
-      if (!child.isLeaf() && myWrapperScriptDir == null) {
-        lookForWrapperScript(child, child.getChildren(), depth + 1);
+      for (Element child : children) {
+        if (!child.isLeaf()) {
+          lookForWrapperScript(child, child.getChildren(), depth + 1);
+        }
       }
     }
-    }
+    return null;
   }
 
   @NotNull
@@ -71,31 +75,20 @@ public class GradleRunnerDiscoveryExtension extends BreadthFirstRunnerDiscoveryE
                                                                 @NotNull final Browser browser,
                                                                 @NotNull final List<DiscoveredObject> discovered) {
     final Set<String> foundGradles = new HashSet<String>();
+
     for (SBuildRunnerDescriptor descriptor : settings.getBuildRunners()) {
       if (GradleRunnerConstants.RUNNER_TYPE.equals(descriptor.getType())) {
-        foundGradles.add(StringUtil.emptyIfNull(descriptor.getParameters().get(GradleRunnerConstants.GRADLE_WORKING_DIR)));
+        foundGradles.add(StringUtil.emptyIfNull(descriptor.getParameters().get(GradleRunnerConstants.PATH_TO_BUILD_FILE)));
       }
     }
+
     final Iterator<DiscoveredObject> iterator = discovered.iterator();
     while (iterator.hasNext()) {
       final DiscoveredObject discoveredObject = iterator.next();
       final Map<String, String> parameters = discoveredObject.getParameters();
-      final String workingDir = StringUtil.emptyIfNull(parameters.get(GradleRunnerConstants.GRADLE_WORKING_DIR));
-
-      if (foundGradles.contains(workingDir)) {
+      final String pathToBuildFile = StringUtil.emptyIfNull(parameters.get(GradleRunnerConstants.PATH_TO_BUILD_FILE));
+      if (foundGradles.contains(pathToBuildFile)) {
         iterator.remove();
-      } else {
-      if (myWrapperScriptDir != null) {
-        parameters.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true");
-        final int workingDirLength = workingDir.length();
-        final String wrapperDir = myWrapperScriptDir.getFullName();
-        if (wrapperDir.length() > workingDirLength) {
-          if (workingDirLength > 0) {
-            parameters.put(GradleRunnerConstants.GRADLE_WRAPPER_PATH, wrapperDir.substring(workingDirLength));
-          }
-          parameters.put(GradleRunnerConstants.GRADLE_WRAPPER_PATH, wrapperDir);
-        }
-      }
       }
     }
     return super.postProcessDiscoveredObjects(settings, browser, discovered);
