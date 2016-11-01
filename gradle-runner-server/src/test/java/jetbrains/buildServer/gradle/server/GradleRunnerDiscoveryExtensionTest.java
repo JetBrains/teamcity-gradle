@@ -4,6 +4,7 @@
  import java.util.Collections;
  import java.util.List;
  import java.util.Map;
+ import jetbrains.MockBuildType;
  import jetbrains.buildServer.BaseTestCase;
  import jetbrains.buildServer.gradle.GradleRunnerConstants;
  import jetbrains.buildServer.serverSide.BuildTypeSettings;
