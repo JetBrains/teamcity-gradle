@@ -586,4 +586,11 @@ gradle.projectsEvaluated {
       }
     }
   }
+
+  it.rootProject.getTasksByName("junitPlatformTest", true).each { task ->
+    task.outputs.files.each { file ->
+      def message = new ServiceMessage("importData", [ "type" : "junit", "path": "$file.absolutePath/*.xml".toString()])
+      println(message.asString())
+    }
+  }
 }
