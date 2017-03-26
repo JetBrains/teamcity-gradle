@@ -41,7 +41,9 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     myTeamCitySystemProps.put("property.bravo", "value bravo");
     myTeamCitySystemProps.put("property charlie", "value charlie");
 
-    GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", "mProjectABlockSequence.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", gradleVersion.startsWith("gradle-3.") ?
+                                                                                                                     "mProjectABlockSequence.3.txt" :
+                                                                                                                     "mProjectABlockSequence.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
@@ -67,7 +69,10 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {
-    GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "projectABlockSequence.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build",
+                                                               gradleVersion.startsWith("gradle-3.") ?
+                                                               "projectABlockSequence.3.txt" :
+                                                               "projectABlockSequence.txt");
     myRunnerParams.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "projectA/run.gradle");
     try {
       config.setGradleVersion(gradleVersion);
