@@ -52,7 +52,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
       myErrorMessages.add(text);
     } else {
       if ((text.trim().startsWith("FAILURE:") && LastLine.EMPTY_ERROR.equals(myLastLineState))
-          || text.contains("[org.gradle.BuildExceptionReporter]")) {
+          || text.contains(".BuildExceptionReporter]")) {
         myCollectErrors = true;
         myErrorMessages.add(text);
         return;

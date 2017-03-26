@@ -106,7 +106,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     if (sequenceFile.exists()) {
       final Expectations gatherServiceMessage = new Expectations() {{
         allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
-        allowing(myMockLogger).warning(with(any(String.class))); will(reportWarning);
+        allowing(myMockLogger).warning(with(any(String.class))); will(gatherMessage);
         allowing(myMockLogger).error(with(any(String.class))); will(reportError);
       }};
 
