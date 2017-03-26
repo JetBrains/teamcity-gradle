@@ -69,10 +69,13 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
   public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {
     GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "projectABlockSequence.txt");
     myRunnerParams.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "projectA/run.gradle");
-    config.setGradleVersion(gradleVersion);
-    config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
-    runAndCheckServiceMessages(config);
-    myRunnerParams.remove(GradleRunnerConstants.PATH_TO_BUILD_FILE); // todo fix test infrastructure
+    try {
+      config.setGradleVersion(gradleVersion);
+      config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
+      runAndCheckServiceMessages(config);
+    } finally {
+      myRunnerParams.remove(GradleRunnerConstants.PATH_TO_BUILD_FILE);
+    }
   }
 }
 
