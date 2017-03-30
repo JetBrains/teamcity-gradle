@@ -24,6 +24,9 @@ import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.testng.annotations.Test;
 
+import static jetbrains.buildServer.util.FileUtil.getExtension;
+import static jetbrains.buildServer.util.FileUtil.getNameWithoutExtension;
+
 /**
  * Author: Nikita.Skvortsov
  * Date: Oct 8, 2010
@@ -53,7 +56,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     final String directoryName = "gradle-";
     final String versionSuffix = gradleVersion.substring(gradleVersion.lastIndexOf(directoryName) + directoryName.length());
     if (VersionComparatorUtil.compare(versionSuffix, "2.0") > 0) {
-      return fileName + ".2.x";
+      return getNameWithoutExtension(fileName) + "_2." + getExtension(fileName);
     }
     return fileName;
   }
