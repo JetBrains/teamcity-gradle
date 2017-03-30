@@ -39,6 +39,7 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
     GradleRunConfiguration config = new GradleRunConfiguration("wrappedProjectA", "clean build", "wrappedProjASequence.txt");
     config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
+    config.setGradleVersion("1.0");
     runAndCheckServiceMessages(config);
   }
 }
