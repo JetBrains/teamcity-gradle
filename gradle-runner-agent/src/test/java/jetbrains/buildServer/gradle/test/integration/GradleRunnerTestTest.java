@@ -18,6 +18,7 @@ package jetbrains.buildServer.gradle.test.integration;
 
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
+import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -51,7 +52,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   private String versionSpecific(@NotNull final String fileName, @NotNull final String gradleVersion) {
     final String directoryName = "gradle-";
     final String versionSuffix = gradleVersion.substring(gradleVersion.lastIndexOf(directoryName) + directoryName.length());
-    if (Float.valueOf(versionSuffix) > 2.0) {
+    if (VersionComparatorUtil.compare(versionSuffix, "2.0") > 0) {
       return fileName + ".2.x";
     }
     return fileName;
