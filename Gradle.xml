@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dsl-extension kind="buildStep" type="gradle-runner" generateDslJar="true">
-  <class name="GradleBuildStep"/>
-  <function name="gradle"/>
+  <class name="GradleBuildStep">
+    <description>
+      A [build step](https://confluence.jetbrains.com/display/TCDL/Gradle) running gradle script
+    </description>
+  </class>
+  <function name="gradle">
+    <description>
+      Adds a [build step](https://confluence.jetbrains.com/display/TCDL/Gradle) running gradle script
+      @see GradleBuildStep
+    </description>
+  </function>
   <params>
     <param name="ui.gradleRunner.gradle.tasks.names" dslName="tasks">
       <description>Space separated task names, when not set the 'default' task is used</description>
@@ -17,13 +26,34 @@
     <param name="ui.gradleRunner.additional.gradle.cmd.params" dslName="gradleParams">
       <description>Additional parameters will be added to the 'Gradle' command line</description>
     </param>
-    <param name="ui.gradleRunner.gradle.wrapper.useWrapper" dslName="useGradleWrapper" type="boolean" trueValue="true" falseValue=""/>
+    <param name="ui.gradleRunner.gradle.wrapper.useWrapper" dslName="useGradleWrapper" type="boolean" trueValue="true" falseValue="">
+      <description>
+        Whether TeamCity should look for Gradle Wrapper scripts in the checkout directory and run script using it
+      </description>
+    </param>
     <param name="ui.gradleRunner.gradle.wrapper.path" dslName="gradleWrapperPath">
       <description>Optional path to the Gradle wrapper script, relative to the working directory</description>
     </param>
-    <param name="ui.gradleRunner.gradle.debug.enabled" dslName="enableDebug" type="boolean" trueValue="true" falseValue=""/>
-    <param name="ui.gradleRunner.gradle.stacktrace.enabled" dslName="enableStacktrace" type="boolean" trueValue="true" falseValue=""/>
-    <param name="target.jdk.home" dslName="jdkHome"/>
-    <param name="jvmArgs"/>
+    <param name="ui.gradleRunner.gradle.debug.enabled" dslName="enableDebug" type="boolean" trueValue="true" falseValue="">
+      <description>
+        Whether Gradle should be executed with the -d option
+      </description>
+    </param>
+    <param name="ui.gradleRunner.gradle.stacktrace.enabled" dslName="enableStacktrace" type="boolean" trueValue="true" falseValue="">
+      <description>
+        Whether Gradle should be executed with the -s option
+      </description>
+    </param>
+    <param name="target.jdk.home" dslName="jdkHome">
+      <description>
+        Custom [JDK](https://confluence.jetbrains.com/display/TCDL/Predefined+Build+Parameters#PredefinedBuildParameters-DefiningJava-relatedEnvironmentVariables) to use.
+        The default is JAVA_HOME environment variable or the agent's own Java.
+      </description>
+    </param>
+    <param name="jvmArgs">
+      <description>
+        Space-separated list of additional arguments for JVM
+      </description>
+    </param>
   </params>
 </dsl-extension>
