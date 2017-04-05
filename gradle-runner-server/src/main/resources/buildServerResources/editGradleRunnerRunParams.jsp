@@ -53,7 +53,7 @@
         <th><label for="ui.gradleRunner.gradle.wrapper.path">Path to Wrapper script: </label></th>
         <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>" className="longField"/>
           <bs:vcsTree fieldId="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>" treeId="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>"/>
-          <span class="smallNote">Optional path to the Gradle wrapper script., relative to the working directory</span>
+          <span class="smallNote">Optional path to the Gradle wrapper script relative to the working directory</span>
         </td>
     </tr>
 </l:settingsGroup>
