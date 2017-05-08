@@ -4,7 +4,7 @@
 ##teamcity[testStarted name='test.GreeterJUnitTest.testIntro' captureStandardOutput='true' flowId='##Flow_ID##']
 ##teamcity[testFinished name='test.GreeterJUnitTest.testIntro' duration='##Duration##' flowId='##Flow_ID##']
 ##teamcity[testStarted name='test.GreeterJUnitTest.failedTest' captureStandardOutput='true' flowId='##Flow_ID##']
-##teamcity[testFailed name='test.GreeterJUnitTest.failedTest' message='Explicit |'test|' |[failure|] ||' details='##Assert_Stacktrace##' flowId='##Flow_ID##']
+##teamcity[testFailed name='test.GreeterJUnitTest.failedTest' message='java.lang.AssertionError: Explicit |'test|' |[failure|] ||' details='##Assert_Stacktrace##' flowId='##Flow_ID##']
 ##teamcity[testFinished name='test.GreeterJUnitTest.failedTest' duration='##Duration##' flowId='##Flow_ID##']
 ##teamcity[testStarted name='test.GreeterJUnitTest.skippedTest' captureStandardOutput='true' flowId='##Flow_ID##']
 ##teamcity[testIgnored name='test.GreeterJUnitTest.skippedTest' message='' flowId='##Flow_ID##']
