@@ -210,8 +210,8 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
 public class TeamcityTaskListener implements TaskExecutionListener, TaskActionListener {
 
-  def taskMessages = new HashMap<Task, TeamCityOutputListener>()
-  def blockOpenMessagesCache = new HashMap<Task, ServiceMessage>()
+  def taskMessages = new ConcurrentHashMap<Task, TeamCityOutputListener>()
+  def blockOpenMessagesCache = new ConcurrentHashMap<Task, ServiceMessage>()
   def logger
   boolean isParallelExec
 
@@ -251,12 +251,15 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 
 
   public void afterExecute(Task task, TaskState taskState) {
+    try {
+      if (handleTaskSkippedState(task, taskState)) {
+        return;
+      }
 
-    if (handleTaskSkippedState(task, taskState)) {
-      return;
+      handleTaskFinishedState(task, taskState)
+    } finally {
+      taskMessages.remove(task);
     }
-
-    handleTaskFinishedState(task, taskState)
   }
 
   private void handleTaskFinishedState(Task task, TaskState taskState) {
