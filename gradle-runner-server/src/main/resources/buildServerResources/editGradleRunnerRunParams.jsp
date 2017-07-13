@@ -14,8 +14,10 @@
     </tr>
      <tr>
         <th><label for="ui.gradleRUnner.gradle.build.file">Gradle build file: </label></th>
-        <td><props:textProperty name="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"  className="longField" maxlength="256"/>
-            <bs:vcsTree fieldId="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"/>
+        <td>
+            <props:textProperty name="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"  className="longField" maxlength="256">
+                <jsp:attribute name="afterTextField"><bs:vcsTree fieldId="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"/></jsp:attribute>
+            </props:textProperty>
             <span class="smallNote">Path to build file</span>
         </td>
     </tr>
