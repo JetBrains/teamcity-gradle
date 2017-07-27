@@ -6,6 +6,8 @@
   Gradle tasks: <strong><props:displayValue name="ui.gradleRunner.gradle.tasks.names" emptyValue="default"/></strong>
 </div>
 
+<props:viewWorkingDirectory />
+
 <div class="parameter">
     Gradle home path: <strong><props:displayValue name="ui.gradleRunner.gradle.home" emptyValue="not specified"/></strong>
 </div>
