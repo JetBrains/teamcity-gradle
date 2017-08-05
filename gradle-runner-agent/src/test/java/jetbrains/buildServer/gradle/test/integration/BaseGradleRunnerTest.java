@@ -67,6 +67,10 @@ public class BaseGradleRunnerTest {
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
 
+  static {
+    TestInternalProperties.init();
+  }
+
   protected final TempFiles myTempFiles = new TempFiles();
 
   final static Action reportMessage = new CustomAction("Echoes test output") {
