@@ -113,6 +113,10 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       runTest(gatherServiceMessage, ctx);
 
       String[] sequence = readReportSequence(sequenceName);
+      if (sequence.length != gatherMessage.getMessages().size()) {
+        System.out.println("Process output:");
+        for (String line: gatherMessage.getAllMessages()) System.out.println(line);
+      }
       assertServiceMessages(gatherMessage.getMessages(), sequence);
     } else {
 
@@ -128,6 +132,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
 
       runTest(gatherServiceMessage, ctx);
       writeReportSequence(sequenceFile, gatherMessage.getMessages());
+      System.out.println("Process output:");
+      for (String line: gatherMessage.getAllMessages()) System.out.println(line);
       fail("Writing a report always causes test failure");
     }
   }
@@ -181,7 +187,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
 
 
   protected static class ServiceMessageReceiver extends CustomAction {
-    protected final List<String> messages = new LinkedList<String>();
+    protected final List<String> messages = new ArrayList<String>();
+    protected final List<String> output = new ArrayList<String>();
     protected Pattern myPattern = Pattern.compile("##teamcity\\[(.*?)(?<!\\|)\\]");
 
     public ServiceMessageReceiver(String description) {
@@ -193,6 +200,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
           final String line = param == null ? "" : param.toString();
+          output.add(line);
           final Matcher matcher = myPattern.matcher(line);
           while(matcher.find()) {
             // convert to unix line ending
@@ -206,6 +214,10 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
 
     public List<String> getMessages() {
       return messages;
+    }
+
+    public List<String> getAllMessages() {
+      return output;
     }
 
     public void setPattern(String patternStr) {
