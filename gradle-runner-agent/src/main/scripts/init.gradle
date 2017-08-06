@@ -365,7 +365,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
     }
 
     public Collection<String> getMessages() {
-      return text.toString()
+      return text.toString().trim()
                       .split('(\\n|\\r)*$')
                       .findAll { s -> s.trim().length() > 0}
 

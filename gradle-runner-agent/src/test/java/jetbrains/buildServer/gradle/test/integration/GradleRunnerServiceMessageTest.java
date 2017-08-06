@@ -58,7 +58,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
   private List<String> preprocessMessages(List<String> messages) {
     List<String> result = new ArrayList<String>(messages.size());
     for (final String message : messages) {
-      String resultMessage = message.replaceAll("flowId='\\d+'", "flowId='##Flow_ID##'"); // drop flow id
+      String resultMessage = message.replaceAll("flowId='[^']+'", "flowId='##Flow_ID##'"); // drop flow id
       resultMessage = resultMessage.replaceAll("(name|compiler)='(.*?)( UP-TO-DATE)?'", "$1='$2'"); // drop up-to-date marks
       resultMessage = resultMessage.replaceAll("duration='\\d+'", "duration='##Duration##'"); // drop test durations
       resultMessage = resultMessage.replaceAll("details='java.lang.AssertionError.*?[^|]'", "details='##Assert_Stacktrace##'"); // drop test durations

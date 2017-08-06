@@ -17,6 +17,7 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.fail;
@@ -60,6 +61,15 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     } else {
       fail("Compiler test requires JRE version 5,6,7 or 8 to run; Current version: " + System.getProperty("java.specification.version"));
     }
+    config.setGradleVersion(gradleVersion);
+    config.setPatternStr(COMPILATION_MSGS_PATTERN);
+    runAndCheckServiceMessages(config);
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void failedParallelCompileTest(final String gradleVersion) throws Exception {
+    if (gradleVersion.startsWith("gradle-2.")) throw new SkipException("This test is for Gradle version > 2.x");
+    GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "failedCompilationParallel.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
