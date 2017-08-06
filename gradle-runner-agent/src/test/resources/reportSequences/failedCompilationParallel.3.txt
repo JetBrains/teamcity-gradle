@@ -1,7 +1,1 @@
-##teamcity[compilationStarted compiler=':compileJava NO-SOURCE' flowId='##Flow_ID##']
-##teamcity[compilationFinished compiler=':compileJava NO-SOURCE' flowId='##Flow_ID##']
-##teamcity[compilationStarted compiler=':projectA:compileJava' flowId='##Flow_ID##']
-##teamcity[compilationStarted compiler=':projectB:compileJava' flowId='##Flow_ID##']
 ##teamcity[message text='##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: not a statement|nxx        return "I|'m Project_B guinea pig";|n^|n##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: |';|' expected|nxx        return "I|'m Project_B guinea pig";|n  ^|n2 errors' status='ERROR' flowId='##Flow_ID##']
-##teamcity[compilationFinished compiler=':projectB:compileJava' flowId='##Flow_ID##']
-##teamcity[compilationFinished compiler=':projectA:compileJava' flowId='##Flow_ID##']
