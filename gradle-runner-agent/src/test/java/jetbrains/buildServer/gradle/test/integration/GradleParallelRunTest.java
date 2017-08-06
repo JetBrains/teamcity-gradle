@@ -13,19 +13,13 @@ import org.testng.annotations.Test;
  */
 public class GradleParallelRunTest extends GradleRunnerServiceMessageTest {
 
-  @Test
-  public void parallelProjectsTest() throws RunBuildException, IOException {
+  @Test(dataProvider = "gradle-version-provider")
+  public void parallelProjectsTest(final String gradleVersion) throws RunBuildException, IOException {
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_C_NAME,
                                                                                      "clean test --parallel",null);
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
-    final String gradleVersion = "gradle-1.11";
-    if (new File(getGradlePath(gradleVersion)).exists()) {
-      gradleRunConfiguration.setGradleVersion(gradleVersion);
-    } else {
-      final String propsGradleHome = System.getProperty(PROPERTY_GRADLE_RUNTIME);
-      gradleRunConfiguration.setGradleVersion(propsGradleHome);
-    }
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
 
     final Mockery ctx = initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
                                     gradleRunConfiguration.getGradleVersion());
