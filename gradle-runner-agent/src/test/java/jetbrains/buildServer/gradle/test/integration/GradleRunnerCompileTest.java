@@ -76,6 +76,14 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
   }
 
   @Test(dataProvider = "gradle-version-provider")
+  public void failedKotlinCompileTest(final String gradleVersion) throws Exception {
+    GradleRunConfiguration config = new GradleRunConfiguration("ProjectKotlinBroken", "clean build", "failedKotlinCompilation.txt");
+    config.setGradleVersion(gradleVersion);
+    config.setPatternStr(COMPILATION_MSGS_PATTERN);
+    runAndCheckServiceMessages(config);
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
   public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {
     GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "projectABlockSequence.txt");
     myRunnerParams.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "projectA/run.gradle");
