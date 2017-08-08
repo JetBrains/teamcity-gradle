@@ -77,7 +77,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void failedKotlinCompileTest(final String gradleVersion) throws Exception {
-    GradleRunConfiguration config = new GradleRunConfiguration("ProjectKotlinBroken", "clean build", "failedKotlinCompilation.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration("projectKotlinBroken", "clean build", "failedKotlinCompilation.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
