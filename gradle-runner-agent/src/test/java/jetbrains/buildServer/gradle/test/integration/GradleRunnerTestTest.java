@@ -97,4 +97,23 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     gatherMessage.validateTestFlows(PROJECT_D_TEST_COUNT);
   }
 
+  @Test(dataProvider = "gradle-version-provider")
+  public void parallelTestNgTests(final String gradleVersion) throws RunBuildException, IOException {
+    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration("projectF",
+                                                                                     "clean test",null);
+    gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
+    final Mockery ctx = initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
+                                    gradleRunConfiguration.getGradleVersion());
+    final FlowServiceMessageReceiver gatherMessage = new FlowServiceMessageReceiver();
+    gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
+    final Expectations gatherServiceMessage = new Expectations() {{
+      allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
+      allowing(myMockLogger).warning(with(any(String.class))); will(reportWarning);
+    }};
+
+    runTest(gatherServiceMessage, ctx);
+    gatherMessage.validateTestFlows(15);
+  }
+
 }

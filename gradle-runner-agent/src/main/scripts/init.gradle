@@ -4,9 +4,10 @@ import jetbrains.buildServer.agent.AgentRuntimeProperties
 import jetbrains.buildServer.gradle.GradleRunnerConstants
 import jetbrains.buildServer.gradle.agent.GradleBuildProblem
 import jetbrains.buildServer.messages.serviceMessages.*
+import org.gradle.api.tasks.testing.*
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArraySet
+import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /*
@@ -379,12 +380,11 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 }
 
 public class TeamcityTestListener {
-  def workerCodes = new ConcurrentHashMap()
   def logger
-  Set<TestDescriptor> roots = new CopyOnWriteArraySet<TestDescriptor>()
   Test baseTask
   boolean isParallelBuild
   private String projectFlowId
+  ConcurrentMap<TestDescriptor, List> testOutputs = new ConcurrentHashMap<>()
 
   boolean skipStdErr = false
   boolean skipStdOut = false
@@ -395,14 +395,8 @@ public class TeamcityTestListener {
     projectFlowId = String.valueOf(task.project.getPath().hashCode())
   }
 
-  String findFlowId(TestDescriptor descriptor) {
-    String code = "";
-    def desc = descriptor;
-    while ((null != desc) && ((code = workerCodes.get(desc)) == null)) {
-      desc = desc.getParent();
-    }
-    if (code == null) throw new NullPointerException("Failed to find flowId for [${descriptor.getName()}]")
-    return code;
+  String getFlowId(TestDescriptor descriptor) {
+    return projectFlowId + "-" + System.identityHashCode(descriptor);
   }
 
   /**
@@ -410,32 +404,17 @@ public class TeamcityTestListener {
    * @param suite The suite whose tests are about to be executed.
    */
   public void beforeSuite(TestDescriptor suite) {
+    if (suite.getParent() == null) return;
 
-    if (suite.getParent() == null) {
-      roots.add(suite);
-      // log root suite output at the same flow with invoking project
-      workerCodes.putIfAbsent(suite, projectFlowId);
+    if (suite.getParent().getParent() == null) {
+      logger.lifecycle("##teamcity[flowStarted flowId='${getFlowId(suite)}' parent='${projectFlowId}']");
+      return;
     }
 
-    String code = "";
-    if (roots.contains(suite.getParent())) {
-      // assume, we have worker thread descriptor here
-      code = workerCodes.get(suite);
-      if (null == code) {
-        code = "" + System.identityHashCode(suite);
-        if (isParallelBuild) {
-          logger.lifecycle("##teamcity[flowStarted flowId='${code}' parent='${projectFlowId}']");
-        }
-        workerCodes.putIfAbsent(suite, code);
-      }
-      return; // do not report service message for workers
-    }
-
-    if (null != suite.getParent()) { // do not report root empty suite
-      ServiceMessage msg = new TestSuiteStarted(suite.getName());
-      msg.setFlowId(findFlowId(suite));
-      logger.lifecycle(msg.asString());
-    }
+    def flowId = findFlowIdOfTopmostSuite(suite); // all suites should have the same flow id, otherwise they won't be stacked properly on server
+    ServiceMessage msg = new TestSuiteStarted(suite.getName());
+    msg.setFlowId(flowId);
+    logger.lifecycle(msg.asString());
   }
 
   /**
@@ -444,11 +423,33 @@ public class TeamcityTestListener {
    * @param result The aggregate result for the suite.
    */
   public void afterSuite(TestDescriptor suite, TestResult result) {
-    if (null != suite?.getParent()?.getParent()) { // do not report root empty suite and workers
-      ServiceMessage msg = new TestSuiteFinished(suite.getName());
-      msg.setFlowId(findFlowId(suite));
-      logger.lifecycle(msg.asString());
+    if (suite.getParent() == null) return;
+
+    if (suite.getParent().getParent() == null) {
+      logger.lifecycle("##teamcity[flowFinished flowId='${getFlowId(suite)}']");
+      return;
     }
+
+    def flowId = findFlowIdOfTopmostSuite(suite);
+    ServiceMessage msg = new TestSuiteFinished(suite.getName());
+    msg.setFlowId(flowId);
+    logger.lifecycle(msg.asString());
+  }
+
+  private String findFlowIdOfTopmostSuite(TestDescriptor testDescriptor) {
+    def parent = testDescriptor.getParent();
+    if (parent == null) {
+      return projectFlowId;
+    }
+
+    def parents = []
+    while (parent != null) {
+      parents.add(parent);
+      parent = parent.getParent();
+    }
+
+    // there will be at least one element in the list
+    return getFlowId(parents[parents.size()-1]);
   }
 
   /**
@@ -456,9 +457,12 @@ public class TeamcityTestListener {
    * @param testDescriptor The test which is about to be executed.
    */
   public void beforeTest(TestDescriptor testDescriptor) {
+    def flowId = getFlowId(testDescriptor)
+    logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${findFlowIdOfTopmostSuite(testDescriptor)}']");
+
     String testName = getTestName(testDescriptor)
-    ServiceMessage msg = new TestStarted(testName, true, null);
-    msg.setFlowId(findFlowId(testDescriptor));
+    ServiceMessage msg = new TestStarted(testName, false, null);
+    msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
   }
 
@@ -469,6 +473,15 @@ public class TeamcityTestListener {
    */
   public void afterTest(TestDescriptor testDescriptor, TestResult result) {
     String testName = getTestName(testDescriptor);
+    def flowId = getFlowId(testDescriptor);
+
+    def outputs = testOutputs.remove(testDescriptor);
+    if (outputs != null) {
+      synchronized (outputs) {
+        flushOutputs(testDescriptor, outputs);
+      }
+    }
+
     ServiceMessage msg;
     switch (result.getResultType()) {
       case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
@@ -478,20 +491,22 @@ public class TeamcityTestListener {
         } else {
           msg = new TestFailed(testName, result.getException());
         }
-        msg.setFlowId(findFlowId(testDescriptor));
+        msg.setFlowId(flowId);
         logger.lifecycle(msg.asString());
         break;
       case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
         msg = new TestIgnored(testName, "");
-        msg.setFlowId(findFlowId(testDescriptor));
+        msg.setFlowId(flowId);
         logger.lifecycle(msg.asString());
         break;
     };
 
     final int duration = (int) (result.getEndTime() - result.getStartTime());
     msg = new TestFinished(testName, duration);
-    msg.setFlowId(findFlowId(testDescriptor));
+    msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
+
+    logger.lifecycle("##teamcity[flowFinished flowId='${flowId}']");
   }
 
   public void onOutput(testDescriptor, outputEvent) {
@@ -499,20 +514,55 @@ public class TeamcityTestListener {
       // this is not a real test output
       return;
     }
-    def testName = getTestName(testDescriptor)
-    def output = outputEvent.getMessage() - ~/\r?\n\z/
-    def msg = null
-    switch (outputEvent.getDestination()) {
-      case TestOutputEvent.Destination.StdErr:
-        msg = !skipStdErr ? new TestStdErr(testName, output) : null
-        break
-      case TestOutputEvent.Destination.StdOut:
-        msg = !skipStdOut ? new TestStdOut(testName, output) : null
-        break
+
+    def outputs = testOutputs.get(testDescriptor);
+    if (outputs == null) {
+      outputs = [];
+      def prev = testOutputs.putIfAbsent(testDescriptor, outputs)
+      if (prev != null) {
+        outputs = prev
+      }
     }
-    if (msg) {
+
+    synchronized (outputs) {
+      outputs.add(outputEvent);
+
+      if (outputs.size() > 100) {
+        flushOutputs(testDescriptor, outputs)
+        outputs.clear();
+      }
+    }
+  }
+
+  private void flushOutputs(TestDescriptor testDescriptor, List outputs) {
+    def testName = getTestName(testDescriptor)
+    def flowId = getFlowId(testDescriptor)
+
+    StringBuilder stdout = new StringBuilder()
+    StringBuilder stderr = new StringBuilder()
+
+    for (oe in outputs) {
+      switch (oe.getDestination()) {
+        case TestOutputEvent.Destination.StdErr:
+          if (!skipStdErr) stderr.append(oe.message);
+          break
+        case TestOutputEvent.Destination.StdOut:
+          if (!skipStdOut) stdout.append(oe.message);
+          break
+      }
+    }
+
+    if (stdout.length() > 0) {
+      def msg = new TestStdOut(testName, stdout.toString() - ~/\r?\n\z/)
       msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
-      msg.setFlowId(findFlowId(testDescriptor))
+      msg.setFlowId(flowId)
+      logger.lifecycle(msg.asString())
+    }
+
+    if (stderr.length() > 0) {
+      def msg = new TestStdErr(testName, stderr.toString() - ~/\r?\n\z/)
+      msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
+      msg.setFlowId(flowId)
       logger.lifecycle(msg.asString())
     }
   }

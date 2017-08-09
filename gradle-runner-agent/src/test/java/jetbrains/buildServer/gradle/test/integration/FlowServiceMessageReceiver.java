@@ -81,7 +81,16 @@ public class FlowServiceMessageReceiver extends GradleRunnerServiceMessageTest.S
 
         List<String> tests = new ArrayList<String>((flow.getValue().size() / 2) + 1);
 
+        // check only one testStarted per flow
+        int testStarted = 0;
+        for (String msg: flow.getValue()) {
+          if (msg.indexOf("testStarted") != -1) testStarted++;
+        }
+
+        assertTrue(testStarted <= 1, "For each flow there should be only one testStarted message, flowId: "+ flow.getKey() + ", messages: " + flow.getValue());
+
         for(String msg : flow.getValue()) {
+          if (msg.indexOf("testStdOut") != -1) continue;
           Matcher parser = testMsg.matcher(msg);
           assertTrue(parser.find(), "Failed to parse service message: " + msg);
 

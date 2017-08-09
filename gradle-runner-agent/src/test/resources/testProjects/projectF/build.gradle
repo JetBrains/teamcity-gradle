@@ -1,0 +1,27 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'org.testng', name: 'testng', version: '6.11'
+}
+
+test.dependsOn "testParallelInstances", "testParallelMethods"
+
+task testParallelInstances(type: Test) {
+    useTestNG() {
+        parallel "instances"
+        threadCount 3
+        include "MyTestFactory.class"
+    }
+}
+
+task testParallelMethods(type: Test) {
+    useTestNG() {
+        parallel "methods"
+        threadCount 2
+        include "MyTest.class"
+    }
+}
