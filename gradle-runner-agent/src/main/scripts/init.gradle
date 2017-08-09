@@ -210,12 +210,13 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 }
 
 public class TeamcityTaskListener implements TaskExecutionListener, TaskActionListener {
+  public static final String DEFAULT_FLOW_ID_PREFIX = "%%teamcity%%-"
 
   def taskMessages = new ConcurrentHashMap<Task, TeamCityOutputListener>()
   def blockOpenMessagesCache = new ConcurrentHashMap<Task, ServiceMessage>()
   def logger
   boolean isParallelExec
-  def flowIdPrefix = "%%teamcity%%-";
+  def flowIdPrefix = DEFAULT_FLOW_ID_PREFIX;
 
   public TeamcityTaskListener(Logger log, boolean parallelExec) {
     logger = log;
@@ -392,7 +393,7 @@ public class TeamcityTestListener {
   public TeamcityTestListener(log, task, isParallel) {
     logger = log
     isParallelBuild = isParallel
-    projectFlowId = String.valueOf(task.project.getPath().hashCode())
+    projectFlowId = TeamcityTaskListener.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode())
   }
 
   String getFlowId(TestDescriptor descriptor) {
