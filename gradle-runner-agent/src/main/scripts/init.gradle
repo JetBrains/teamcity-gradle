@@ -353,7 +353,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
   }
 
   private class TeamCityOutputListener implements StandardOutputListener {
-    private StringBuffer text = new StringBuffer()
+    private volatile StringBuffer text = new StringBuffer()
     private String ignoreMarker
 
     TeamCityOutputListener(final String ignoreMarker) {
@@ -367,14 +367,19 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
     }
 
     public Collection<String> getMessages() {
-      return text.toString().trim()
-                      .split('(\\n|\\r)*$')
-                      .findAll { s -> s.trim().length() > 0}
-
+      def lines = text.toString().split('\\r?\\n');
+      def res = []
+      for (line in lines) {
+        def trimmed = line.trim();
+        if (trimmed.length() > 0) {
+          res.add(line);
+        }
+      }
+      return res;
     }
 
     public void reset() {
-      text.setLength(0)
+      text = new StringBuffer()
     }
   }
 

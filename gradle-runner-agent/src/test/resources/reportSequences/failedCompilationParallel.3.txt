@@ -1,1 +1,7 @@
-##teamcity[message text='##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: not a statement|nxx        return "I|'m Project_B guinea pig";|n^|n##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: |';|' expected|nxx        return "I|'m Project_B guinea pig";|n  ^|n2 errors' status='ERROR' flowId='##Flow_ID##']
+##teamcity[message text='##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: not a statement' status='ERROR' flowId='##Flow_ID##']
+##teamcity[message text='xx        return "I|'m Project_B guinea pig";' status='ERROR' flowId='##Flow_ID##']
+##teamcity[message text='^' status='ERROR' flowId='##Flow_ID##']
+##teamcity[message text='##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: |';|' expected' status='ERROR' flowId='##Flow_ID##']
+##teamcity[message text='xx        return "I|'m Project_B guinea pig";' status='ERROR' flowId='##Flow_ID##']
+##teamcity[message text='  ^' status='ERROR' flowId='##Flow_ID##']
+##teamcity[message text='2 errors' status='ERROR' flowId='##Flow_ID##']
