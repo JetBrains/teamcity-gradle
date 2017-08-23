@@ -390,7 +390,7 @@ public class TeamcityTestListener {
   Test baseTask
   boolean isParallelBuild
   private String projectFlowId
-  ConcurrentMap<TestDescriptor, List> testOutputs = new ConcurrentHashMap<>()
+  ConcurrentMap<TestDescriptor, List> testOutputs = new ConcurrentHashMap()
 
   boolean skipStdErr = false
   boolean skipStdOut = false
