@@ -390,7 +390,8 @@ public class TeamcityTestListener {
   Test baseTask
   boolean isParallelBuild
   private String projectFlowId
-  ConcurrentMap<TestDescriptor, List> testOutputs = new ConcurrentHashMap()
+  private ConcurrentMap<TestDescriptor, List> testOutputs = new ConcurrentHashMap()
+  private Map<String, Boolean> startedFlowIds = new ConcurrentHashMap();
 
   boolean skipStdErr = false
   boolean skipStdOut = false
@@ -411,16 +412,30 @@ public class TeamcityTestListener {
    */
   public void beforeSuite(TestDescriptor suite) {
     if (suite.getParent() == null) return;
+    if (shouldBeIgnored(suite)) return;
 
-    if (suite.getParent().getParent() == null) {
-      logger.lifecycle("##teamcity[flowStarted flowId='${getFlowId(suite)}' parent='${projectFlowId}']");
-      return;
-    }
+    def flowId = getFlowId(suite);
+    startFlowIfNotStarted(flowId, suite);
 
-    def flowId = findFlowIdOfTopmostSuite(suite); // all suites should have the same flow id, otherwise they won't be stacked properly on server
     ServiceMessage msg = new TestSuiteStarted(suite.getName());
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
+  }
+
+  private boolean shouldBeIgnored(TestDescriptor suite) {
+    suite.getName().startsWith("Gradle Test Executor")
+  }
+
+  private void startFlowIfNotStarted(String flowId, TestDescriptor suite) {
+    if (startedFlowIds.put(flowId, true) == null) {
+      def parentFlowId = projectFlowId;
+      def parentSuite = suite.getParent()
+      if (parentSuite != null && !shouldBeIgnored(parentSuite)) {
+        parentFlowId = getFlowId(parentSuite);
+      }
+
+      logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${parentFlowId}']");
+    }
   }
 
   /**
@@ -430,16 +445,20 @@ public class TeamcityTestListener {
    */
   public void afterSuite(TestDescriptor suite, TestResult result) {
     if (suite.getParent() == null) return;
+    if (shouldBeIgnored(suite)) return;
 
-    if (suite.getParent().getParent() == null) {
-      logger.lifecycle("##teamcity[flowFinished flowId='${getFlowId(suite)}']");
-      return;
-    }
-
-    def flowId = findFlowIdOfTopmostSuite(suite);
+    def flowId = getFlowId(suite);
     ServiceMessage msg = new TestSuiteFinished(suite.getName());
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
+
+    finishStartedFlow(flowId);
+  }
+
+  private void finishStartedFlow(String flowId) {
+    if (startedFlowIds.remove(flowId) != null) {
+      logger.lifecycle("##teamcity[flowFinished flowId='${flowId}']");
+    }
   }
 
   private String findFlowIdOfTopmostSuite(TestDescriptor testDescriptor) {
@@ -463,8 +482,8 @@ public class TeamcityTestListener {
    * @param testDescriptor The test which is about to be executed.
    */
   public void beforeTest(TestDescriptor testDescriptor) {
-    def flowId = getFlowId(testDescriptor)
-    logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${findFlowIdOfTopmostSuite(testDescriptor)}']");
+    def flowId = getFlowId(testDescriptor);
+    startFlowIfNotStarted(flowId, testDescriptor);
 
     String testName = getTestName(testDescriptor)
     ServiceMessage msg = new TestStarted(testName, false, null);
@@ -512,7 +531,7 @@ public class TeamcityTestListener {
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
 
-    logger.lifecycle("##teamcity[flowFinished flowId='${flowId}']");
+    finishStartedFlow(flowId);
   }
 
   public void onOutput(testDescriptor, outputEvent) {
