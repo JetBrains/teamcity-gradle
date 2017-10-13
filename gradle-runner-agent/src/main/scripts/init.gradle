@@ -4,7 +4,6 @@ import jetbrains.buildServer.agent.AgentRuntimeProperties
 import jetbrains.buildServer.gradle.GradleRunnerConstants
 import jetbrains.buildServer.gradle.agent.GradleBuildProblem
 import jetbrains.buildServer.messages.serviceMessages.*
-import org.gradle.api.tasks.testing.*
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -414,8 +413,7 @@ public class TeamcityTestListener {
     if (suite.getParent() == null) return;
     if (shouldBeIgnored(suite)) return;
 
-    def flowId = getFlowId(suite);
-    startFlowIfNotStarted(flowId, suite);
+    def flowId = findFlowIdOfTopmostSuite(suite); // all suites should have the same flow id, otherwise they won't be stacked properly on server
 
     ServiceMessage msg = new TestSuiteStarted(suite.getName());
     msg.setFlowId(flowId);
@@ -431,7 +429,7 @@ public class TeamcityTestListener {
       def parentFlowId = projectFlowId;
       def parentSuite = suite.getParent()
       if (parentSuite != null && !shouldBeIgnored(parentSuite)) {
-        parentFlowId = getFlowId(parentSuite);
+        parentFlowId = findFlowIdOfTopmostSuite(suite);
       }
 
       logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${parentFlowId}']");
