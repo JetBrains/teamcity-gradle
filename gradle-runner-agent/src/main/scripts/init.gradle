@@ -413,7 +413,9 @@ public class TeamcityTestListener {
     if (suite.getParent() == null) return;
     if (shouldBeIgnored(suite)) return;
 
-    def flowId = findFlowIdOfTopmostSuite(suite); // all suites should have the same flow id, otherwise they won't be stacked properly on server
+    // all suites should have the same flow id, otherwise they won't be stacked properly on server
+    def flowId = isTopmostSuite(suite) ? getFlowId(suite) : findFlowIdOfTopmostSuite(suite);
+    startFlowIfNotStarted(flowId, suite);
 
     ServiceMessage msg = new TestSuiteStarted(suite.getName());
     msg.setFlowId(flowId);
@@ -421,7 +423,7 @@ public class TeamcityTestListener {
   }
 
   private boolean shouldBeIgnored(TestDescriptor suite) {
-    suite.getName().startsWith("Gradle Test Executor")
+    suite.getName().startsWith("Gradle Test Executor") || suite.getName().startsWith("Gradle Test Run")
   }
 
   private void startFlowIfNotStarted(String flowId, TestDescriptor suite) {
@@ -445,12 +447,12 @@ public class TeamcityTestListener {
     if (suite.getParent() == null) return;
     if (shouldBeIgnored(suite)) return;
 
-    def flowId = getFlowId(suite);
+    def flowId = isTopmostSuite(suite) ? getFlowId(suite) : findFlowIdOfTopmostSuite(suite);
     ServiceMessage msg = new TestSuiteFinished(suite.getName());
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
 
-    finishStartedFlow(flowId);
+    if (isTopmostSuite(suite)) finishStartedFlow(flowId);
   }
 
   private void finishStartedFlow(String flowId) {
@@ -459,14 +461,18 @@ public class TeamcityTestListener {
     }
   }
 
+  private boolean isTopmostSuite(TestDescriptor suite) {
+    return suite.getParent() ? shouldBeIgnored(suite.getParent()) : false
+  }
+  
   private String findFlowIdOfTopmostSuite(TestDescriptor testDescriptor) {
     def parent = testDescriptor.getParent();
-    if (parent == null) {
+    if (parent == null || shouldBeIgnored(parent)) {
       return projectFlowId;
     }
 
     def parents = []
-    while (parent != null) {
+    while (parent != null && !shouldBeIgnored(parent)) {
       parents.add(parent);
       parent = parent.getParent();
     }
