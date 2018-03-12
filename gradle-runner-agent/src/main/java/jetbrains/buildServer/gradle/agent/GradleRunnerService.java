@@ -57,19 +57,24 @@ public class GradleRunnerService extends BuildServiceAdapter
     List<String> params = new LinkedList<String>();
     Map<String,String> env = new HashMap<String,String>(getEnvironmentVariables());
     File gradleExe;
-    String exePath;
+    String exePath = "gradle";
 
     if (!useWrapper) {
-      File gradleHome = getGradleHome();
-      gradleExe = new File(gradleHome, this.exePath);
-      exePath = gradleExe.getAbsolutePath();
+      if (getRunnerContext().isVirtualContext()) {
+        getLogger().message("Step is running in a virtual context, skip detecting GRADLE_HOME");
+      }
+      else {
+        File gradleHome = getGradleHome();
+        gradleExe = new File(gradleHome, this.exePath);
+        exePath = gradleExe.getAbsolutePath();
 
-      if(!gradleHome.exists())
-        throw new RunBuildException("Gradle home path ("+gradleHome+") is invalid.");
-      if(!gradleExe.exists())
-        throw new RunBuildException("Gradle home path ("+gradleHome+") does not contain a Gradle installation.  Cannot find "+
-                                    this.exePath +".");
-      env.put("GRADLE_HOME", gradleHome.getAbsolutePath());
+        if(!gradleHome.exists())
+          throw new RunBuildException("Gradle home path (" + gradleHome + ") is invalid.");
+        if(!gradleExe.exists())
+          throw new RunBuildException("Gradle home path ("+gradleHome+") does not contain a Gradle installation.  Cannot find "+
+                                      this.exePath +".");
+        env.put("GRADLE_HOME", gradleHome.getAbsolutePath());
+      }
     } else {
 
       String relativeGradleWPath = ConfigurationParamsUtil.getGradleWPath(getRunnerParameters());
@@ -83,8 +88,8 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
 
     if (SystemInfo.isUnix) {
+      params.add(exePath);
       exePath = "bash";
-      params.add(gradleExe.getAbsolutePath());
     }
 
     params.addAll(getParams());

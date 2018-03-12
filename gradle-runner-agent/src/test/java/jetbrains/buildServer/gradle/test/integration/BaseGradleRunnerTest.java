@@ -120,6 +120,7 @@ public class BaseGradleRunnerTest {
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
   protected Map<String, String> myTeamCitySystemProps = new ConcurrentHashMap<String,String>();
+  protected boolean myVirtualContext = false;
   private final TestLogger myTestLogger = new TestLogger();
 
   private static final boolean IS_JRE_8 = System.getProperty("java.specification.version").contains("1.8");
@@ -295,6 +296,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockRunner).getRunType(); will(returnValue(GradleRunnerConstants.RUNNER_TYPE));
       allowing(myMockRunner).getBuild(); will(returnValue(myMockBuild));
       allowing(myMockRunner).getRunType(); will(returnValue(GradleRunnerConstants.RUNNER_TYPE));
+      allowing(myMockRunner).isVirtualContext(); will(returnValue(myVirtualContext));
 
       allowing(buildParams).getAllParameters(); will(returnValue(myBuildEnvVars));
       allowing(buildParams).getEnvironmentVariables(); will(returnValue(myBuildEnvVars));

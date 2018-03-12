@@ -79,6 +79,7 @@ public class GradleRunnerServiceTest {
       allowing(myBuild).getBuildTempDirectory();          will(returnValue(myTempDir));
       allowing(myRunnerContext).getRunnerParameters();    will(returnValue(myRunnerParams));
       allowing(myRunnerContext).getBuildParameters();     will(returnValue(myBuildPrarams));
+      allowing(myRunnerContext).isVirtualContext();       will(returnValue(false));
       allowing(myBuildPrarams).getAllParameters();        will(returnValue(myBuildParams));
       allowing(myBuildPrarams).getEnvironmentVariables(); will(returnValue(myEnvVars));
       allowing(myBuildPrarams).getSystemProperties();     will(returnValue(mySystemProps));
