@@ -283,7 +283,7 @@ public class GradleRunnerServiceTest {
     if (SystemInfo.isWindows) {
       assertEquals(cmdLine.getExecutablePath(), exePath, "Wrong Gradle executable path.");
     } else if (SystemInfo.isUnix) {
-      assertEquals(cmdLine.getExecutablePath(), "bash", "Gradle startup script must be executed by explicit bash call.");
+      assertEquals(cmdLine.getExecutablePath(), "sh", "Gradle startup script must be executed by explicit sh call.");
       assertEquals(args.get(0), exePath, "Wrong Gradle startup script path.");
     } else {
       fail("OS is not supported. This test must be started under Windows, Linux or *nix OS.");
