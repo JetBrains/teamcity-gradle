@@ -89,7 +89,7 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     if (SystemInfo.isUnix) {
       params.add(exePath);
-      exePath = "sh";
+      exePath = "bash";
     }
 
     params.addAll(getParams());
