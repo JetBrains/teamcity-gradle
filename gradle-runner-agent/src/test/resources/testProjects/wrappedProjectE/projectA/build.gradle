@@ -1,0 +1,9 @@
+apply plugin: 'java'
+
+dependencies {
+   testCompile files('../lib/junit-4.8.1.jar')
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.1-rc-1-20120711002459+0200'
+}

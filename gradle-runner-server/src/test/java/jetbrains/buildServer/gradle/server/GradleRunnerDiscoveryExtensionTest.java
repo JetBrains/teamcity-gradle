@@ -11,11 +11,15 @@
  import jetbrains.buildServer.serverSide.SBuildRunnerDescriptor;
  import jetbrains.buildServer.serverSide.discovery.BuildRunnerDiscoveryExtension;
  import jetbrains.buildServer.serverSide.discovery.DiscoveredObject;
+ import jetbrains.buildServer.util.TestFor;
  import jetbrains.buildServer.util.browser.FileSystemBrowser;
+ import org.assertj.core.data.MapEntry;
  import org.jmock.Expectations;
  import org.jmock.Mockery;
  import org.testng.annotations.BeforeMethod;
  import org.testng.annotations.Test;
+
+ import static org.assertj.core.api.BDDAssertions.then;
 
 /**
  * Created by Nikita.Skvortsov
@@ -76,7 +80,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "MultiProjectB"));
     final List<DiscoveredObject> discovered = myExtension.discover(mySettings, browser);
     assertNotNull(discovered);
-    assertEquals(1, discovered.size());
+    then(discovered).hasSize(1);
     final Map<String,String> parameters = discovered.get(0).getParameters();
     assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
@@ -99,7 +103,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     final List<DiscoveredObject> discovered = myExtension.discover(buildTypeSettings, browser);
 
     assertNotNull(discovered);
-    assertEquals(0, discovered.size());
+    then(discovered).isEmpty();
   }
 
   @Test
@@ -121,4 +125,37 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     final List<DiscoveredObject> discoveredNoWrapper = myExtension.discover(new MockBuildType(), new FileSystemBrowser(new File(myRoot, "projectA")));
     assertEquals(null, discoveredNoWrapper.get(0).getParameters().get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
   }
+
+  @TestFor(issues = "TW-55155")
+  @Test
+  public void testSimpleBuildKotlinScriptDiscovery() {
+    final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "projectK"));
+    final List<DiscoveredObject> discovered = myExtension.discover(mySettings, browser);
+    assertNotNull(discovered);
+    assertEquals(1, discovered.size());
+    final Map<String, String> parameters = discovered.get(0).getParameters();
+    assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
+    assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
+    assertEquals(null, parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
+  }
+
+  @Test
+  public void testWrapperOutsideOfProjects() {
+    final FileSystemBrowser browser = new FileSystemBrowser(new File(myRoot, "wrappedProjectE"));
+    final List<DiscoveredObject> discovered = myExtension.discover(mySettings, browser);
+    assertNotNull(discovered);
+
+    then(discovered).hasSize(2);
+
+    for (DiscoveredObject object : discovered) {
+      assertEquals(GradleRunnerConstants.RUNNER_TYPE, object.getType());
+
+      final Map<String, String> parameters = object.getParameters();
+      then(parameters).contains(MapEntry.entry(GradleRunnerConstants.GRADLE_TASKS, "clean build"),
+                                MapEntry.entry(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true"));
+    }
+    then(discovered).extracting(input -> input.getParameters().get(GradleRunnerConstants.PATH_TO_BUILD_FILE))
+                    .containsOnly("projectA/build.gradle", "projectB/build.gradle");
+  }
+
 }

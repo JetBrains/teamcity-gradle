@@ -73,6 +73,7 @@ public class GradleRunType extends RunType {
   public Map<String, String> getDefaultRunnerProperties() {
     final Map<String, String> map = new HashMap<String, String>();
     map.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "build.gradle");
+    map.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true");
     return map;
   }
 
