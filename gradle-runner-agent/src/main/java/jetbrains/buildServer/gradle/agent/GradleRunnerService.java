@@ -82,7 +82,7 @@ public class GradleRunnerService extends BuildServiceAdapter
       gradleExe = new File(getWorkingDirectory(), relativeGradleWPath + File.separator + wrapperName);
       exePath = gradleExe.getAbsolutePath();
       if (!gradleExe.exists())
-        throw new RunBuildException("Gradle wrapper script " + wrapperName + " can not be found in " +
+        throw new RunBuildException("Gradle wrapper script " + wrapperName + " can not be found at " +
                                     gradleExe.getAbsolutePath() + "\n" +
                                     "Please, provide path to wrapper script in build configuration settings.");
     }
