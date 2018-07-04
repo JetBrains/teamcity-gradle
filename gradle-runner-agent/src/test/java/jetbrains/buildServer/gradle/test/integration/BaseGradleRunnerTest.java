@@ -288,6 +288,8 @@ public class BaseGradleRunnerTest {
       allowing(myMockBuild).getSharedConfigParameters(); will(returnValue(Collections.<String, String>emptyMap()));
       allowing(myMockBuild).getBuildNumber(); will(returnValue("12345"));
 
+      allowing(myMockRunner).getId(); will(returnValue("myRunnerId"));
+      allowing(myMockRunner).getName(); will(returnValue("myRunnerName"));
       allowing(myMockRunner).getRunnerParameters(); will(returnValue(myRunnerParams));
       allowing(myMockRunner).getBuildParameters(); will(returnValue(buildParams));
       allowing(myMockRunner).getConfigParameters(); will(returnValue(Collections.<String, String>emptyMap()));
