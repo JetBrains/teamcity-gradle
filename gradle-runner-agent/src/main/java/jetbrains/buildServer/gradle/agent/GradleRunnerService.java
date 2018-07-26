@@ -172,7 +172,9 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     params.addAll(ConfigurationParamsUtil.getGradleParams(getRunnerParameters()));
 
-    params.add("-Dorg.gradle.daemon=false");
+    if (!hasDaemonParam()) {
+      params.add("-Dorg.gradle.daemon=false");
+    }
 
     if (ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(), GradleRunnerConstants.DEBUG))
       params.add("-d");
@@ -197,8 +199,19 @@ public class GradleRunnerService extends BuildServiceAdapter
     return params;
   }
 
-  private void insertInitScript(List<String> params)
-  {
+  private boolean hasDaemonParam() {
+    for (String param: ConfigurationParamsUtil.getGradleParams(getRunnerParameters())) {
+      if (param.startsWith("-Dorg.gradle.daemon=")) {
+        return true;
+      }
+      if ("--daemon".equals(param) || "--no-daemon".equals(param)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void insertInitScript(List<String> params) {
     final String scriptPath = ConfigurationParamsUtil.getGradleInitScript(getRunnerParameters());
     File initScript;
 

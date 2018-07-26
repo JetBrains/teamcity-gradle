@@ -19,6 +19,7 @@ package jetbrains.buildServer.gradle.test.unit;
 import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ import org.jmock.Mockery;
 import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.assertj.core.api.BDDAssertions.then;
@@ -88,7 +90,7 @@ public class GradleRunnerServiceTest {
   }
 
   @AfterMethod
-  public void tearDown() throws Exception {
+  public void tearDown() {
     myTempFiles.cleanup();
     myRunnerParams.clear();
     myBuildParams.clear();
@@ -103,10 +105,58 @@ public class GradleRunnerServiceTest {
     myService.initialize(myBuild, myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
 
-    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
     reportCmdLine(cmdLine);
   }
 
+  @DataProvider(name = "enable daemon")
+  public static Object[][] enableDaemonParam() {
+    return new Object[][] {{"--daemon"}, {"-Dorg.gradle.daemon=true"}};
+  }
+
+  @Test(dataProvider = "enable daemon")
+  public void generateWithDaemonCommandLineTest(String param) throws Exception {
+    myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, param);
+    prepareGradleRequiredFiles();
+
+    myService.initialize(myBuild, myRunnerContext);
+    ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
+
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    assertTrue(cmdLine.getArguments().indexOf(param) > -1);
+    assertTrue(cmdLine.getArguments().indexOf("-Dorg.gradle.daemon=false") == -1);
+
+    reportCmdLine(cmdLine);
+  }
+
+  @Test
+  public void generateWithoutDaemonCommandLineTest() throws Exception {
+    myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, "--no-daemon");
+    prepareGradleRequiredFiles();
+
+    myService.initialize(myBuild, myRunnerContext);
+    ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
+
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    assertTrue(cmdLine.getArguments().indexOf("--no-daemon") > -1);
+    assertEquals(cmdLine.getArguments().indexOf("-Dorg.gradle.daemon=false"), -1);
+
+    reportCmdLine(cmdLine);
+  }
+
+  @Test
+  public void generateWithoutDaemonDuplicateParamCommandLineTest() throws Exception {
+    myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, "-Dorg.gradle.daemon=false");
+    prepareGradleRequiredFiles();
+
+    myService.initialize(myBuild, myRunnerContext);
+    ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
+
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    assertEquals(Collections.frequency(cmdLine.getArguments(), "-Dorg.gradle.daemon=false"), 1);
+
+    reportCmdLine(cmdLine);
+  }
 
   @Test
   public void generateCLwithJavaHome() throws Exception {
@@ -116,7 +166,7 @@ public class GradleRunnerServiceTest {
     prepareGradleRequiredFiles();
     myService.initialize(myBuild,myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
-    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
 
     String actualJavaHome = cmdLine.getEnvironment().get(JavaRunnerConstants.JAVA_HOME);
     assertEquals(actualJavaHome, expectedJavaHome, "Wrong Java Home environment variable.");
@@ -132,7 +182,7 @@ public class GradleRunnerServiceTest {
     prepareGradleRequiredFiles();
     myService.initialize(myBuild,myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
-    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
 
     String gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
     assertTrue(gradleOptsValue.contains(expectedRunnerGradleOpts), "Wrong Java arguments." );
@@ -141,7 +191,7 @@ public class GradleRunnerServiceTest {
 
     myService.initialize(myBuild,myRunnerContext);
     cmdLine = myService.makeProgramCommandLine();
-    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
 
     gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
@@ -171,7 +221,7 @@ public class GradleRunnerServiceTest {
     prepareGradleRequiredFiles();
     myService.initialize(myBuild,myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
-    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath());
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
 
     List<String> args = cmdLine.getArguments();
 
@@ -215,7 +265,7 @@ public class GradleRunnerServiceTest {
     myService.initialize(myBuild,myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
 
-    validateCmdLine(cmdLine, gradlew.getAbsolutePath());
+    validateCmdLine(cmdLine, gradlew.getAbsolutePath(), true);
   }
 
 
@@ -275,7 +325,7 @@ public class GradleRunnerServiceTest {
     Reporter.log("Env : " + cmdLine.getEnvironment(), true);
   }
 
-  private void validateCmdLine(final ProgramCommandLine cmdLine, final String exePath) throws Exception {
+  private void validateCmdLine(final ProgramCommandLine cmdLine, final String exePath, boolean isTestDaemon) throws Exception {
     final String workDir = myWorkingDirectory.getAbsolutePath();
     final String initScriptPath = myInitScript.getAbsolutePath();
     final List<String> args = cmdLine.getArguments();
@@ -293,7 +343,8 @@ public class GradleRunnerServiceTest {
     int initScriptIndex = args.indexOf("--init-script");
     assertTrue(initScriptIndex > -1, "--init-script argument not found!");
     assertEquals(args.get(initScriptIndex + 1), initScriptPath, "Wrong init script path");
-    assertTrue(args.indexOf("-Dorg.gradle.daemon=false") > -1, "Gradle daemon should be disabled");
+    if (isTestDaemon) {
+      assertTrue(args.indexOf("-Dorg.gradle.daemon=false") > -1, "Gradle daemon should be disabled");
+    }
   }
-
 }
