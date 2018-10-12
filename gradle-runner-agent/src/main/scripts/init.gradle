@@ -413,8 +413,7 @@ public class TeamcityTestListener {
     if (suite.getParent() == null) return;
     if (shouldBeIgnored(suite)) return;
 
-    // all suites should have the same flow id, otherwise they won't be stacked properly on server
-    def flowId = isTopmostSuite(suite) ? getFlowId(suite) : findFlowIdOfTopmostSuite(suite);
+    def flowId = getFlowId(suite);
     startFlowIfNotStarted(flowId, suite);
 
     ServiceMessage msg = new TestSuiteStarted(suite.getName());
@@ -431,7 +430,7 @@ public class TeamcityTestListener {
       def parentFlowId = projectFlowId;
       def parentSuite = suite.getParent()
       if (parentSuite != null && !shouldBeIgnored(parentSuite)) {
-        parentFlowId = findFlowIdOfTopmostSuite(suite);
+        parentFlowId = getFlowId(parentSuite);
       }
 
       logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${parentFlowId}']");
@@ -447,12 +446,12 @@ public class TeamcityTestListener {
     if (suite.getParent() == null) return;
     if (shouldBeIgnored(suite)) return;
 
-    def flowId = isTopmostSuite(suite) ? getFlowId(suite) : findFlowIdOfTopmostSuite(suite);
+    def flowId = getFlowId(suite);
     ServiceMessage msg = new TestSuiteFinished(suite.getName());
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
 
-    if (isTopmostSuite(suite)) finishStartedFlow(flowId);
+    finishStartedFlow(flowId);
   }
 
   private void finishStartedFlow(String flowId) {
@@ -461,25 +460,6 @@ public class TeamcityTestListener {
     }
   }
 
-  private boolean isTopmostSuite(TestDescriptor suite) {
-    return suite.getParent() ? shouldBeIgnored(suite.getParent()) : false
-  }
-  
-  private String findFlowIdOfTopmostSuite(TestDescriptor testDescriptor) {
-    def parent = testDescriptor.getParent();
-    if (parent == null || shouldBeIgnored(parent)) {
-      return projectFlowId;
-    }
-
-    def parents = []
-    while (parent != null && !shouldBeIgnored(parent)) {
-      parents.add(parent);
-      parent = parent.getParent();
-    }
-
-    // there will be at least one element in the list
-    return getFlowId(parents[parents.size()-1]);
-  }
 
   /**
    * Called before a test is started.
