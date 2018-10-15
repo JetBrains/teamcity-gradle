@@ -190,7 +190,8 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     String gradleTasks = ConfigurationParamsUtil.getGradleTasks(getRunnerParameters());
     if (gradleTasks.length() > 0) {
-      final List<String> tasks = StringUtil.split(gradleTasks, true, ' ');
+      final List<String> tasks = StringUtil.splitHonorQuotes(gradleTasks, ' ');
+      //final List<String> tasks = StringUtil.split(gradleTasks, true, ' ');
       for (String task: tasks) {
         params.add(task.trim());
       }

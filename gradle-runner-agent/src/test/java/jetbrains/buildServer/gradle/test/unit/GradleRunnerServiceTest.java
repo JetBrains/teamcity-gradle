@@ -35,6 +35,7 @@ import jetbrains.buildServer.gradle.agent.GradleRunnerService;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.agent.GradleToolProvider;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
+import jetbrains.buildServer.util.TestFor;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.testng.Reporter;
@@ -198,6 +199,23 @@ public class GradleRunnerServiceTest {
 
     then(gradleOptsValue.split(" ")).as("Should contain new temp dir").contains("\"-Djava.io.tmpdir=" + myTempDir.getCanonicalPath() + "\"")
                          .as("Should contain java args").contains(expectedRunnerJavaArgs);
+
+  }
+
+  @Test
+  @TestFor(issues = "TW-57278")
+  public void test_spaces_in_tasks_args() throws Exception {
+    myRunnerParams.put(GradleRunnerConstants.GRADLE_TASKS, "run --args=\"foo -bar this\"");
+
+    prepareGradleRequiredFiles();
+
+    myService.initialize(myBuild, myRunnerContext);
+    ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
+
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    then(cmdLine.getArguments()).doesNotContain("-bar", "this\"", "this").contains("--args=\"foo -bar this\"");
+
+    reportCmdLine(cmdLine);
 
   }
 
