@@ -385,6 +385,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 }
 
 public class TeamcityTestListener {
+  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 24 * 1024)
   def logger
   Test baseTask
   boolean isParallelBuild
@@ -496,9 +497,9 @@ public class TeamcityTestListener {
       case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
         ComparisonFailureData cfd = ComparisonFailureUtil.extractComparisonFailure(result.getException());
         if (cfd != null) {
-          msg = new TestFailed(testName, result.getException(), cfd.getActual(), cfd.getExpected());
+          msg = new TestFailed(testName, new WrappedException(result.getException(), MAX_MESSAGE_SIZE), cfd.getActual(), cfd.getExpected());
         } else {
-          msg = new TestFailed(testName, result.getException());
+          msg = new TestFailed(testName, new WrappedException(result.getException(), MAX_MESSAGE_SIZE));
         }
         msg.setFlowId(flowId);
         logger.lifecycle(msg.asString());
@@ -632,6 +633,62 @@ public class TeamcityExceptionsListener extends BuildAdapter {
   }
 }
 
+/**
+ * Use WrappedException if you need to make a error message shorter
+ */
+class WrappedException extends Exception {
+  private final Throwable th
+  private final int length
+  private final String DELIMITER
+
+  /**
+   * @param th     original exception
+   * @param length max message length
+   */
+  WrappedException(Throwable th, int length) {
+    this.th = th
+    this.length = length
+    int size = length / 1024
+    DELIMITER = "***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded ${size} KB *****"
+  }
+
+  @Override
+  public String toString() {
+    return trim(th.toString(), length)
+  }
+
+  /**
+   * Print StackTrace from the delegate object but a message from current current
+   */
+  @Override
+  void printStackTrace(final PrintStream s) {
+    Throwable exc = this;
+    PrintStream stream = new PrintStream(s) {
+      @Override
+      void println(final Object obj) {
+        super.println(th.is(obj) ? exc : obj)
+      }
+    }
+    th.printStackTrace(stream)
+  }
+
+  /**
+   * Split the message into 2 parts, if its size is large
+   * @param str original message
+   * @param length       max length
+   * @return original message if str.length < length or split message with delimiter
+   */
+  private String trim(String str, int length) {
+    if (str.length() > length) {
+      str = """${str.substring(0, (int)(length / 2))} ...
+
+${DELIMITER}
+
+... ${str.substring(str.length() - (int)(length / 2))}"""
+    }
+    return str;
+  }
+}
 
 def isParallelExec = (gradle.startParameter.hasProperty("parallelThreadCount") && gradle.startParameter.parallelThreadCount != 0) ||
                      (gradle.startParameter.hasProperty("parallelProjectExecutionEnabled") && gradle.startParameter.parallelProjectExecutionEnabled);

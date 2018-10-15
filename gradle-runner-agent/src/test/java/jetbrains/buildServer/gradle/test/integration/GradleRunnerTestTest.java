@@ -116,4 +116,8 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     gatherMessage.validateTestFlows(15);
   }
 
+  @Test(dataProvider = "gradle-version-provider")
+  public void bigErrorMessage(final String gradleVersion) throws Exception {
+    testTest(PROJECT_I_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=100", "failedProjectITest.txt", gradleVersion);
+  }
 }

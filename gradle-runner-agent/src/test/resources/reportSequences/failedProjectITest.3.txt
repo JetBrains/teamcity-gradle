@@ -1,0 +1,5 @@
+##teamcity[testSuiteStarted name='big.message.MyTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='big.message.MyTest.test' flowId='##Flow_ID##']
+##teamcity[testFailed name='big.message.MyTest.test' message='java.lang.AssertionError: 012345678910111213141516 ...|n|n***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded 0 KB *****|n|n... 91499992499993499994499995499996499997499998499999' details='##Assert_Stacktrace##' flowId='##Flow_ID##']
+##teamcity[testFinished name='big.message.MyTest.test' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='big.message.MyTest' flowId='##Flow_ID##']
