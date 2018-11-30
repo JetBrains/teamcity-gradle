@@ -24,7 +24,7 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants;
  * Date: 11/8/10
  */
 public class GradleTestUtil {
-  public static final String ABS_MOD_DIR = "bundled-plugins/gradle-runner/gradle-runner-agent/";
+  public static final String ABS_MOD_DIR = "external-repos/gradle-runner/gradle-runner-agent/";
   public static final String REL_SCRIPT_DIR = "src/main/scripts/";
 
   public static File setProjectRoot(File curDir) {
