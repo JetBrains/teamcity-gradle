@@ -1,0 +1,21 @@
+##tc-property name='load-module' value='main'
+##tc-property name='load-module' value='sub-module 1'
+##tc-property name='load-module' value='sub-module 1.1'
+##teamcity[blockOpened name=':sub-module1:clean']
+##teamcity[blockClosed name=':sub-module1:clean']
+##teamcity[compilationStarted compiler=':sub-sub-module1:compileJava NO-SOURCE']
+##teamcity[compilationFinished compiler=':sub-sub-module1:compileJava NO-SOURCE']
+##teamcity[blockOpened name=':sub-sub-module1:processResources NO-SOURCE']
+##teamcity[blockClosed name=':sub-sub-module1:processResources NO-SOURCE']
+##teamcity[blockOpened name=':sub-sub-module1:classes']
+##teamcity[blockClosed name=':sub-sub-module1:classes']
+##teamcity[blockOpened name=':sub-sub-module1:jar']
+##teamcity[blockClosed name=':sub-sub-module1:jar']
+##teamcity[compilationStarted compiler=':sub-module1:compileJava NO-SOURCE']
+##teamcity[compilationFinished compiler=':sub-module1:compileJava NO-SOURCE']
+##teamcity[blockOpened name=':sub-module1:processResources NO-SOURCE']
+##teamcity[blockClosed name=':sub-module1:processResources NO-SOURCE']
+##teamcity[blockOpened name=':sub-module1:classes']
+##teamcity[blockClosed name=':sub-module1:classes']
+##teamcity[compilationStarted compiler=':sub-module1:compileTestJava']
+##teamcity[compilationFinished compiler=':sub-module1:compileTestJava']
