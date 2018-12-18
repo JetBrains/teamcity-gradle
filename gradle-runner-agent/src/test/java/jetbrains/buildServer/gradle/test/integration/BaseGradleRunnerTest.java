@@ -66,6 +66,7 @@ public class BaseGradleRunnerTest {
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
+  protected static final String DEMAND_MULTI_PROJECT_A_NAME = "demandMultiProjectA";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
 
   static {

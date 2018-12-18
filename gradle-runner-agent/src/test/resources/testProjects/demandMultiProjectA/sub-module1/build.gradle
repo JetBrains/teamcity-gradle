@@ -1,0 +1,7 @@
+version 'unspecified'
+
+dependencies {
+  compile project(':sub-sub-module1')
+}
+
+println "##tc-property name='load-module' value='sub-module 1'"
