@@ -36,8 +36,12 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   private static final int PROJECT_D_TEST_COUNT = 39;
 
   private void testTest(String project, String command, String seqFile, String gradleVersion) throws Exception {
+    testTest(project, command, seqFile, gradleVersion, "##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
+  }
+
+  private void testTest(String project, String command, String seqFile, String gradleVersion, String pattern) throws Exception {
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project, command, seqFile);
-    gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
+    gradleRunConfiguration.setPatternStr(pattern);
     gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
@@ -118,6 +122,17 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void bigErrorMessage(final String gradleVersion) throws Exception {
-    testTest(PROJECT_I_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=100", "failedProjectITest.txt", gradleVersion);
+    testTest(PROJECT_I_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=2048 -Dteamcity.gradle.minAttachedTestException=-1", "failedProjectITest.txt", gradleVersion);
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void bigErrorExpectedAndActual(final String gradleVersion) throws Exception {
+    testTest(PROJECT_J_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=100 -Dteamcity.gradle.minAttachedTestException=-1", "failedProjectJTest.txt", gradleVersion);
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void attacheFailMessage(final String gradleVersion) throws Exception {
+    testTest(PROJECT_L_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=100", "failedProjectLTest.txt", gradleVersion,
+             "##teamcity\\[(test|message|publishArtifacts)(.*?)(?<!\\|)\\]");
   }
 }

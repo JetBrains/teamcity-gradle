@@ -1,0 +1,7 @@
+##teamcity[testSuiteStarted name='big.message.MyTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='big.message.MyTest.test' flowId='##Flow_ID##']
+##teamcity[publishArtifacts '##Checkout_directory##/projectL/build/.teamcity/testFailMessages/##NUMBER##.big.message.MyTest.test.log => .teamcity/gradle']
+##teamcity[testMetadata testName='big.message.MyTest.test' type='artifact' value='.teamcity/gradle/##NUMBER##.big.message.MyTest.test.log' name='teamcity.test.output' flowId='##Flow_ID##']
+##teamcity[testFailed name='big.message.MyTest.test' message='java.lang.AssertionError: expected:<01234567891011 ...|n|n***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded 0 KB *****|n|n... 2827262524232221202918171615141312111019876543210>' details='##Assert_Stacktrace##' actual='99948994799469945994499439942994199409949894889478 ...|n|n***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded 0 KB *****|n|n... 92827262524232221202918171615141312111019876543210' expected='01234567891011121314151617181920212223242526272829 ...|n|n***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded 0 KB *****|n|n... 87498849894990499149924993499449954996499749984999' type='comparisonFailure' flowId='##Flow_ID##']
+##teamcity[testFinished name='big.message.MyTest.test' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='big.message.MyTest' flowId='##Flow_ID##']

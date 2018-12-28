@@ -8,6 +8,7 @@ import jetbrains.buildServer.messages.serviceMessages.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /*
 * Copyright 2000-2013 JetBrains s.r.o.
@@ -386,6 +387,7 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 
 public class TeamcityTestListener {
   private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 24 * 1024)
+  private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.minAttachedTestException", MAX_MESSAGE_SIZE)
   def logger
   Test baseTask
   boolean isParallelBuild
@@ -395,11 +397,15 @@ public class TeamcityTestListener {
 
   boolean skipStdErr = false
   boolean skipStdOut = false
+  private final Project project
+  private final AtomicLong testCounter;
 
-  public TeamcityTestListener(log, task, isParallel) {
+  public TeamcityTestListener(log, task, isParallel, Project project, AtomicLong testCounter) {
+    this.project = project
     logger = log
     isParallelBuild = isParallel
     projectFlowId = TeamcityTaskListener.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode())
+    this.testCounter = testCounter;
   }
 
   String getFlowId(TestDescriptor descriptor) {
@@ -495,12 +501,10 @@ public class TeamcityTestListener {
     ServiceMessage msg;
     switch (result.getResultType()) {
       case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
-        ComparisonFailureData cfd = ComparisonFailureUtil.extractComparisonFailure(result.getException());
-        if (cfd != null) {
-          msg = new TestFailed(testName, new WrappedException(result.getException(), MAX_MESSAGE_SIZE), cfd.getActual(), cfd.getExpected());
-        } else {
-          msg = new TestFailed(testName, new WrappedException(result.getException(), MAX_MESSAGE_SIZE));
-        }
+        WrappedException exception = new WrappedException(result.getException(), MAX_MESSAGE_SIZE)
+        msg = exception.getServiceMessage(testName)
+        attacheBigFailTestMessage(testName, exception, flowId);
+
         msg.setFlowId(flowId);
         logger.lifecycle(msg.asString());
         break;
@@ -517,6 +521,60 @@ public class TeamcityTestListener {
     logger.lifecycle(msg.asString());
 
     finishStartedFlow(flowId);
+  }
+
+  synchronized private File createBigStacktracesDir() {
+    final String rootTmpDirectory = System.properties["teamcity.build.tmpDirectory"] ?: project.getBuildDir().path
+    File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages")
+    if (resultDir.exists()) {
+      if (resultDir.isDirectory()) {
+        return resultDir
+      } else {
+        return null
+      }
+    }
+    if (resultDir.mkdirs()) {
+      return resultDir
+    }
+    return null
+  }
+
+  private void attacheBigFailTestMessage(String testName, WrappedException exception, String flowId) {
+    if (MIN_ATTACHED_MESSAGE_SIZE == -1) return
+    if (MIN_ATTACHED_MESSAGE_SIZE > exception.size) return
+    if (exception.equalsOrigin) return
+
+    File artifactDir = createBigStacktracesDir()
+    if (artifactDir == null) {
+      return
+    }
+    String fileName = "${testCounter.incrementAndGet()}.${testName}.log"
+            .replaceAll("[\\/\\\\\\?\\%\\*\\:\\|\\\"\\<\\>]", "") // not allowed characters in filename ['/', '\', '?', '%', '*', ':', '|', '"', '<', '>']
+    File artifactPath = new File(fileName, artifactDir)
+
+    OutputStream logFileStream
+    PrintStream logFilePrint
+    try {
+      logFileStream = new PrintStream(
+              logFileStream = new FileOutputStream(artifactPath)
+      )
+      exception.th.printStackTrace(logFileStream)
+    } finally {
+      logFileStream?.close()
+      logFileStream?.close()
+    }
+
+    String artifactName = ".teamcity/gradle"
+    def artifact = new PublishArtifacts("${artifactPath.canonicalPath} => ${artifactName}")
+    artifact.setFlowId(flowId)
+    logger.lifecycle(artifact.toString())
+
+    ServiceMessage metadata = new ServiceMessage(ServiceMessageTypes.TEST_METADATA, [testName: testName,
+                                                                                     type    : 'artifact',
+                                                                                     value   : "${artifactName}/${fileName}" as String,
+                                                                                     name    : 'teamcity.test.output'])
+    metadata.setFlowId(flowId)
+    logger.lifecycle(metadata.toString())
   }
 
   public void onOutput(testDescriptor, outputEvent) {
@@ -637,9 +695,10 @@ public class TeamcityExceptionsListener extends BuildAdapter {
  * Use WrappedException if you need to make a error message shorter
  */
 class WrappedException extends Exception {
-  private final Throwable th
+  final Throwable th
   private final int length
   private final String DELIMITER
+  private final String message;
 
   /**
    * @param th     original exception
@@ -650,11 +709,29 @@ class WrappedException extends Exception {
     this.length = length
     int size = length / 1024
     DELIMITER = "***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded ${size} KB *****"
+    message = trim(th.toString(), length)
+  }
+
+  public boolean isEqualsOrigin() {
+    return size <= length
+  }
+
+  public int getSize() {
+    return th.toString().length()
   }
 
   @Override
   public String toString() {
     return trim(th.toString(), length)
+  }
+
+  public ServiceMessage getServiceMessage(String testName) {
+    ComparisonFailureData cfd = ComparisonFailureUtil.extractComparisonFailure(th)
+    if (cfd != null) {
+      return new TestFailed(testName, this, trim(cfd.getActual(), length), trim(cfd.getExpected(), length));
+    } else {
+      return new TestFailed(testName, this);
+    }
   }
 
   /**
@@ -679,14 +756,13 @@ class WrappedException extends Exception {
    * @return original message if str.length < length or split message with delimiter
    */
   private String trim(String str, int length) {
-    if (str.length() > length) {
-      str = """${str.substring(0, (int)(length / 2))} ...
+    if (str.length() <= length) return str
+
+    return """${str.substring(0, (int)(length / 2))} ...
 
 ${DELIMITER}
 
 ... ${str.substring(str.length() - (int)(length / 2))}"""
-    }
-    return str;
   }
 }
 
@@ -702,11 +778,12 @@ try {
 gradle.addListener(new TeamcityPropertiesListener(logger))
 gradle.addListener(new TeamcityExceptionsListener(logger))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
+AtomicLong testCounter = new AtomicLong(0);
 gradle.projectsEvaluated {
   new DependencyBasedTestRun(logger).configureGradle(it)
-  it.rootProject.allprojects { Project p ->
-    p.tasks.withType(Test.class).each { Test testTask ->
-      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec)
+  it.rootProject.allprojects { Project project ->
+    project.tasks.withType(Test.class).each { Test testTask ->
+      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter)
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))

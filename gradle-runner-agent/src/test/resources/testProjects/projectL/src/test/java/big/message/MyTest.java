@@ -11,6 +11,6 @@ public class MyTest {
     for (int i = 0; i < 5000; i++) {
       str.append(i);
     }
-    Assert.fail(str.toString());
+    Assert.assertEquals(str, new StringBuilder(str).reverse().toString());
   }
 }

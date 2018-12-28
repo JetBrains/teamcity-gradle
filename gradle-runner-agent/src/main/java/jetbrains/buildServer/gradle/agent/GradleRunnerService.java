@@ -53,8 +53,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     boolean useWrapper = ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(),
                                                                     GradleRunnerConstants.GRADLE_WRAPPER_FLAG);
 
-
-    List<String> params = new LinkedList<String>();
+    List<String> params = new ArrayList<String>();
     Map<String,String> env = new HashMap<String,String>(getEnvironmentVariables());
     File gradleExe;
     String exePath = "gradle";
@@ -168,13 +167,14 @@ public class GradleRunnerService extends BuildServiceAdapter
   private List<String> getParams()
   {
     List<String> params = new ArrayList<String>();
-    insertInitScript(params);
 
+    params.add("-Dteamcity.build.tmpDirectory=" + getBuild().getBuildTempDirectory().getPath());
+
+    params.addAll(getInitScriptParams());
     params.addAll(ConfigurationParamsUtil.getGradleParams(getRunnerParameters()));
 
-    if (!hasDaemonParam()) {
+    if (!hasDaemonParam())
       params.add("-Dorg.gradle.daemon=false");
-    }
 
     if (ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(), GradleRunnerConstants.DEBUG))
       params.add("-d");
@@ -211,7 +211,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     return false;
   }
 
-  private void insertInitScript(List<String> params) {
+  private List<String> getInitScriptParams() {
     final String scriptPath = ConfigurationParamsUtil.getGradleInitScript(getRunnerParameters());
     File initScript;
 
@@ -223,8 +223,7 @@ public class GradleRunnerService extends BuildServiceAdapter
       initScript = new File(runnerPluginDir, GradleRunnerConstants.INIT_SCRIPT_SUFFIX);
     }
 
-    params.add("--init-script");
-    params.add(initScript.getAbsolutePath());
+    return Arrays.asList("--init-script", initScript.getAbsolutePath());
   }
 
   private String buildInitScriptClassPath() throws RunBuildException {
