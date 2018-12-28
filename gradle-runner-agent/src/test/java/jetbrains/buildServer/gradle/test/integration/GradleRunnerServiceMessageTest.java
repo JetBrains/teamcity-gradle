@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -66,6 +65,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll("\\\\", "/"); // normalize paths if any
       resultMessage = resultMessage.replaceAll( "(file:(/)?)?" + myCoDir.getAbsolutePath().replaceAll("\\\\", "/"), "##Checkout_directory##"); // substitute temp checkout dir
       resultMessage = resultMessage.replaceAll("wrapper/dists/gradle-([0-9.]+)-bin/[^/]+", "wrapper/dists/gradle-$1-bin/##HASH##");
+      resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts.*?)/[0-9]+\\.(.*?)\\.log =>", "$1/##NUMBER##.$2.log =>"); // drop file number
+      resultMessage = resultMessage.replaceAll("^(##teamcity\\[testMetadata.*?)value='(.*?)/[0-9]+\\.(.*?)\\.log'", "$1value='$2/##NUMBER##.$3.log'"); // drop file number
       result.add(resultMessage);
     }
 
