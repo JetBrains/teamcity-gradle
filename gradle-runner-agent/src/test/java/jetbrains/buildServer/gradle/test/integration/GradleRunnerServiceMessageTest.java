@@ -67,6 +67,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll("wrapper/dists/gradle-([0-9.]+)-bin/[^/]+", "wrapper/dists/gradle-$1-bin/##HASH##");
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts.*?)/[0-9]+\\.(.*?)\\.log =>", "$1/##NUMBER##.$2.log =>"); // drop file number
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[testMetadata.*?)value='(.*?)/[0-9]+\\.(.*?)\\.log'", "$1value='$2/##NUMBER##.$3.log'"); // drop file number
+      resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts[ \t]+')" + myMockBuild.getBuildTempDirectory().getPath().replaceAll("\\\\", "/"), "$1##Build_temp_directory##"); // drop build tmp directory
       result.add(resultMessage);
     }
 
