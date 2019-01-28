@@ -386,7 +386,8 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 }
 
 public class TeamcityTestListener {
-  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 24 * 1024)
+  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 18 * 1024)
+  private static final int MAX_TEST_NAME_LENGTH = Integer.getInteger("teamcity.gradle.testName.maxLength", 100)
   private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.minAttachedTestException", MAX_MESSAGE_SIZE)
   def logger
   Test baseTask
@@ -523,20 +524,45 @@ public class TeamcityTestListener {
     finishStartedFlow(flowId);
   }
 
-  synchronized private File createBigStacktracesDir() {
-    final String rootTmpDirectory = System.properties["teamcity.build.tmpDirectory"] ?: project.getBuildDir().path
-    File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages")
-    if (resultDir.exists()) {
-      if (resultDir.isDirectory()) {
-        return resultDir
-      } else {
-        return null
-      }
+  private String getProjectProperty(String propertyName) {
+    if (project.hasProperty("ext")) {
+      return project.ext.teamcity[propertyName]
+    } else {
+      return project.property(propertyName)
     }
+  }
+
+  private setProjectProperty(String propertyName, String propertyValue) {
+    if (project.hasProperty("ext")) {
+      project.ext.teamcity[propertyName] = propertyValue
+    } else {
+      Map props = project.property("teamcity")
+      props[propertyName] = propertyValue
+
+      project.setProperty("teamcity", props)
+    }
+  }
+
+  synchronized private File createBigStacktracesDir() {
+    String path = null;
+    if ((path = getProjectProperty("teamcity.build.stacktraceLogDir")) != null) {
+      return new File(path)
+    }
+
+    final String rootTmpDirectory = getProjectProperty("teamcity.build.tempDir") ?: project.getBuildDir().path
+    File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages${File.separator}${System.nanoTime()}")
     if (resultDir.mkdirs()) {
+      setProjectProperty("teamcity.build.stacktraceLogDir", resultDir.path)
       return resultDir
     }
     return null
+  }
+
+  private static String trim(String str, int len) {
+    if (str.length() > len) {
+      return str.substring(0, len) + "___"
+    }
+    return str
   }
 
   private void attacheBigFailTestMessage(String testName, WrappedException exception, String flowId) {
@@ -548,20 +574,17 @@ public class TeamcityTestListener {
     if (artifactDir == null) {
       return
     }
-    String fileName = "${testCounter.incrementAndGet()}.${testName}.log"
+    String fileName = "${testCounter.incrementAndGet()}.${trim(testName, MAX_TEST_NAME_LENGTH)}.log"
             .replaceAll("[\\/\\\\\\?\\%\\*\\:\\|\\\"\\<\\>]", "") // not allowed characters in filename ['/', '\', '?', '%', '*', ':', '|', '"', '<', '>']
     File artifactPath = new File(fileName, artifactDir)
 
-    OutputStream logFileStream
     PrintStream logFilePrint
     try {
-      logFileStream = new PrintStream(
-              logFileStream = new FileOutputStream(artifactPath)
-      )
-      exception.th.printStackTrace(logFileStream)
+      artifactPath.delete()
+      logFilePrint = new PrintStream(new FileOutputStream(artifactPath))
+      exception.th.printStackTrace(logFilePrint)
     } finally {
-      logFileStream?.close()
-      logFileStream?.close()
+      logFilePrint?.close()
     }
 
     String artifactName = ".teamcity/gradle"

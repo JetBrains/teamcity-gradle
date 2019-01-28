@@ -168,8 +168,6 @@ public class GradleRunnerService extends BuildServiceAdapter
   {
     List<String> params = new ArrayList<String>();
 
-    params.add("-Dteamcity.build.tmpDirectory=" + getBuild().getBuildTempDirectory().getPath());
-
     params.addAll(getInitScriptParams());
     params.addAll(ConfigurationParamsUtil.getGradleParams(getRunnerParameters()));
 

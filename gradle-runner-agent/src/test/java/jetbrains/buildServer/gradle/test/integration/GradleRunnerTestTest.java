@@ -132,6 +132,8 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void attacheFailMessage(final String gradleVersion) throws Exception {
+    myTeamCitySystemProps.put("teamcity.build.tempDir", myTempFiles.createTempDir().getPath());
+
     testTest(PROJECT_L_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=100", "failedProjectLTest.txt", gradleVersion,
              "##teamcity\\[(test|message|publishArtifacts)(.*?)(?<!\\|)\\]");
   }
