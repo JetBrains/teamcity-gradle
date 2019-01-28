@@ -46,11 +46,11 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
   protected static final String DEFAULT_MSG_PATTERN = "##teamcity\\[(.*?)(?<!\\|)\\]";
 
   protected void assertServiceMessages(final List<String> actual, final String[] expected) {
-    assertEquals(actual.size(), expected.length, "Sequences differ in size. " + getAsStirng(actual, expected));
+    assertEquals(actual.size(), expected.length, "Sequences differ in size. " + getAsString(actual, expected));
     List<String> processedActual = preprocessMessages(actual);
     for (String expectedMsg : expected) {
       assertTrue(processedActual.remove(expectedMsg), "Could not find " + expectedMsg + " in actual sequence: "
-                                                      + getAsStirng(processedActual, expected));
+                                                      + getAsString(processedActual, expected));
     }
   }
 
@@ -67,14 +67,21 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll("wrapper/dists/gradle-([0-9.]+)-bin/[^/]+", "wrapper/dists/gradle-$1-bin/##HASH##");
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts.*?)/[0-9]+\\.(.*?)\\.log =>", "$1/##NUMBER##.$2.log =>"); // drop file number
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[testMetadata.*?)value='(.*?)/[0-9]+\\.(.*?)\\.log'", "$1value='$2/##NUMBER##.$3.log'"); // drop file number
-      resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts[ \t]+')" + myMockBuild.getBuildTempDirectory().getPath().replaceAll("\\\\", "/"), "$1##Build_temp_directory##"); // drop build tmp directory
+      resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts.*?)/[0-9]+/",
+                                               "$1/##NUMBER##/"); // drop build number directory
+
+      String tempDir = myTeamCitySystemProps.get("teamcity.build.tempDir");
+      if (tempDir != null) {
+        resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts[ \t]+')" + tempDir.replaceAll("\\\\", "/"),
+                                                 "$1##Build_temp_directory##"); // drop build tmp directory
+      }
       result.add(resultMessage);
     }
 
     return result;
   }
 
-  protected String getAsStirng(final Collection<String> actual, final String[] expected) {
+  protected String getAsString(final Collection<String> actual, final String[] expected) {
     return "\nActual messages:\n" + StringUtil.join("\n", actual)
            + "\n\nExpected messages: " + StringUtil.join(expected, "\n");
   }
