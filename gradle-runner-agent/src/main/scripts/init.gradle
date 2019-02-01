@@ -558,13 +558,6 @@ public class TeamcityTestListener {
     return null
   }
 
-  private static String trim(String str, int len) {
-    if (str.length() > len) {
-      return str.substring(0, len) + "___"
-    }
-    return str
-  }
-
   private void attacheBigFailTestMessage(String testName, WrappedException exception, String flowId) {
     if (MIN_ATTACHED_MESSAGE_SIZE == -1) return
     if (MIN_ATTACHED_MESSAGE_SIZE > exception.size) return
@@ -574,8 +567,7 @@ public class TeamcityTestListener {
     if (artifactDir == null) {
       return
     }
-    String fileName = "${testCounter.incrementAndGet()}.${trim(testName, MAX_TEST_NAME_LENGTH)}.log"
-            .replaceAll("[\\/\\\\\\?\\%\\*\\:\\|\\\"\\<\\>]", "") // not allowed characters in filename ['/', '\', '?', '%', '*', ':', '|', '"', '<', '>']
+    String fileName = "${testCounter.incrementAndGet()}.log"
     File artifactPath = new File(fileName, artifactDir)
 
     PrintStream logFilePrint
@@ -587,7 +579,7 @@ public class TeamcityTestListener {
       logFilePrint?.close()
     }
 
-    String artifactName = ".teamcity/gradle"
+    String artifactName = ".teamcity/gradle/${artifactDir.name}"
     def artifact = new PublishArtifacts("${artifactPath.canonicalPath} => ${artifactName}")
     artifact.setFlowId(flowId)
     logger.lifecycle(artifact.toString())
