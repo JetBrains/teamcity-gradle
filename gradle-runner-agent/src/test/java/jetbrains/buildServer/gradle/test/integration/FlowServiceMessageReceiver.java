@@ -1,10 +1,7 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,7 +56,7 @@ public class FlowServiceMessageReceiver extends GradleRunnerServiceMessageTest.S
   }
 
   private void addToFlow(final String group, final String text) {
-    List<String> list =  new LinkedList<String>();
+    List<String> list = Collections.synchronizedList(new ArrayList<String>());
     List<String> old = myFlows.putIfAbsent(group, list);
     if (null != old) {
       list = old;

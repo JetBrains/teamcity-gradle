@@ -60,11 +60,15 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_A_NAME = "projectA";
   public static final String PROJECT_B_NAME = "projectB";
   public static final String PROJECT_C_NAME = "projectC";
+  public static final String PROJECT_C2_NAME = "projectC2";
   public static final String PROJECT_D_NAME = "projectD";
+  public static final String PROJECT_D2_NAME = "projectD2";
   public static final String PROJECT_E_NAME = "projectE";
+  public static final String PROJECT_F_NAME = "projectF";
   public static final String PROJECT_I_NAME = "projectI";
   public static final String PROJECT_J_NAME = "projectJ";
   public static final String PROJECT_L_NAME = "projectL";
+  public static final String PROJECT_M_NAME = "projectM";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";

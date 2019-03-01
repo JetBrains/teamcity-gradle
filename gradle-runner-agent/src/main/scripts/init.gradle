@@ -134,9 +134,11 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   AtomicBoolean initScriptStartReported = new AtomicBoolean(false);
 
   def logger;
+  Class testTaskClass
 
-  public TeamcityPropertiesListener(Logger log) {
+  public TeamcityPropertiesListener(Logger log, Class testTaskClass) {
     logger = log
+    this.testTaskClass = testTaskClass
   }
 
   public void beforeEvaluate(Project project) {
@@ -155,9 +157,9 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
   private def loadTestJvmArgs(Project project) {
     String jvmArgs = (String) project.teamcity["gradle.test.jvmargs"]
-    TaskCollection<Test> testTasks = project.getTasks().withType(Test.class)
+    TaskCollection testTasks = project.getTasks().withType(testTaskClass)
     if (jvmArgs != null && testTasks != null) {
-      for (Test task: testTasks) {
+      for (def task: testTasks) {
         final String[] arguments = jvmArgs.split("\n");
         task.jvmArgs(arguments);
       }
@@ -390,7 +392,7 @@ public class TeamcityTestListener {
   private static final int MAX_TEST_NAME_LENGTH = Integer.getInteger("teamcity.gradle.testName.maxLength", 100)
   private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.minAttachedTestException", MAX_MESSAGE_SIZE)
   def logger
-  Test baseTask
+  def baseTask
   boolean isParallelBuild
   private String projectFlowId
   private ConcurrentMap<TestDescriptor, List> testOutputs = new ConcurrentHashMap()
@@ -790,14 +792,21 @@ try {
   logger.debug("Could not load TestOutputListener class. Test output will not be available")
 }
 
-gradle.addListener(new TeamcityPropertiesListener(logger))
+final AtomicLong testCounter = new AtomicLong(0);
+Class testTaskClass = null
+try {
+  testTaskClass = Class.forName("org.gradle.api.tasks.testing.AbstractTestTask")
+} catch (ClassNotFoundException ignore) {
+  testTaskClass =  Test.class
+}
+
+gradle.addListener(new TeamcityPropertiesListener(logger, testTaskClass))
 gradle.addListener(new TeamcityExceptionsListener(logger))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
-AtomicLong testCounter = new AtomicLong(0);
-gradle.projectsEvaluated {
-  new DependencyBasedTestRun(logger).configureGradle(it)
-  it.rootProject.allprojects { Project project ->
-    project.tasks.withType(Test.class).each { Test testTask ->
+gradle.projectsEvaluated { Gradle gradle ->
+  new DependencyBasedTestRun(logger).configureGradle(gradle)
+  gradle.rootProject.allprojects { Project project ->
+    project.tasks.withType(testTaskClass).each { def testTask ->
       def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter)
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
@@ -808,7 +817,7 @@ gradle.projectsEvaluated {
     }
   }
 
-  it.rootProject.allprojects.each { project ->
+  gradle.rootProject.allprojects.each { project ->
     project.getTasks().findByName("junitPlatformTest").each { task ->
       task.outputs.files.each { file ->
         def message = new ServiceMessage("importData", [ "type" : "junit", "path": "$file.absolutePath/*.xml".toString()])
