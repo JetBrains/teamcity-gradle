@@ -1,0 +1,3 @@
+teamcity-gradle:gradle-runner-common:unspecified
+org.jetbrains.teamcity:server-api:2017.2
+org.jetbrains.teamcity:tests-support:2017.2

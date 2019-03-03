@@ -1,0 +1,29 @@
+[
+    {
+        "namespace": "org.jetbrains.teamcity",
+        "qualifiers": null,
+        "type": "maven",
+        "version": "2017.2",
+        "subpath": null,
+        "name": "server-api",
+        "coordinates": "maven:org.jetbrains.teamcity:server-api:2017.2:null:null"
+    },
+    {
+        "namespace": "org.jetbrains.teamcity",
+        "qualifiers": null,
+        "type": "maven",
+        "version": "2017.2",
+        "subpath": null,
+        "name": "tests-support",
+        "coordinates": "maven:org.jetbrains.teamcity:tests-support:2017.2:null:null"
+    },
+    {
+        "namespace": "teamcity-gradle",
+        "qualifiers": null,
+        "type": "maven",
+        "version": "unspecified",
+        "subpath": null,
+        "name": "gradle-runner-common",
+        "coordinates": "maven:teamcity-gradle:gradle-runner-common:unspecified:null:null"
+    }
+]
