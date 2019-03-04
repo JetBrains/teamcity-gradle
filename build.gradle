@@ -30,7 +30,7 @@ subprojects {
     }
     maven { 
         name = "jetbrains-teamcity"
-        url = "http://download.jetbrains.com/teamcity-repository"
+        url = "https://download.jetbrains.com/teamcity-repository"
     }
     mavenCentral()
   }
