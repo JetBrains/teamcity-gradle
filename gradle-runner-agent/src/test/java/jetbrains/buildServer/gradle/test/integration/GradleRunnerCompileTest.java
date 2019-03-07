@@ -51,7 +51,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
   @Test(dataProvider = "gradle-version-provider")
   public void configureOnDemand(final String gradleVersion) throws Exception {
     if ("gradle-2.0".equals(gradleVersion)) {
-      return;
+      throw new SkipException("junit version 5 doesn't work on gradle version 2.0");
     }
     GradleRunConfiguration config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_A_NAME, BUILD_CMD + " -b sub-module1/build.gradle", "compileDemandMultiProjectABlockSequence.txt");
     config.setGradleVersion(gradleVersion);

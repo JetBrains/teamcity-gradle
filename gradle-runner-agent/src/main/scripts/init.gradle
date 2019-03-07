@@ -134,11 +134,9 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   AtomicBoolean initScriptStartReported = new AtomicBoolean(false);
 
   def logger;
-  Class testTaskClass
 
-  public TeamcityPropertiesListener(Logger log, Class testTaskClass) {
+  public TeamcityPropertiesListener(Logger log) {
     logger = log
-    this.testTaskClass = testTaskClass
   }
 
   public void beforeEvaluate(Project project) {
@@ -155,15 +153,14 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
     }
   }
 
-  private def loadTestJvmArgs(Project project) {
-    String jvmArgs = (String) project.teamcity["gradle.test.jvmargs"]
-    TaskCollection testTasks = project.getTasks().withType(testTaskClass)
-    if (jvmArgs != null && testTasks != null) {
-      for (def task: testTasks) {
-        final String[] arguments = jvmArgs.split("\n");
-        task.jvmArgs(arguments);
-      }
-    }
+  private void loadTestJvmArgs(Project project) {
+    final String jvmargs = (String) project.teamcity["gradle.test.jvmargs"]
+    if (jvmargs == null) return
+
+    final String[] arguments = jvmargs.split("\n")
+    project.tasks.withType(TestTaskWrapper.type)
+            .collect { def task -> new TestTaskWrapper(task) }
+            .each { TestTaskWrapper task -> task.jvmArgs(arguments) }
   }
 
 
@@ -391,7 +388,7 @@ public class TeamcityTestListener {
   private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 18 * 1024)
   private static final int MAX_TEST_NAME_LENGTH = Integer.getInteger("teamcity.gradle.testName.maxLength", 100)
   private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.minAttachedTestException", MAX_MESSAGE_SIZE)
-  def logger
+  Logger logger
   def baseTask
   boolean isParallelBuild
   private String projectFlowId
@@ -403,7 +400,7 @@ public class TeamcityTestListener {
   private final Project project
   private final AtomicLong testCounter;
 
-  public TeamcityTestListener(log, task, isParallel, Project project, AtomicLong testCounter) {
+  public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter) {
     this.project = project
     logger = log
     isParallelBuild = isParallel
@@ -783,6 +780,29 @@ ${DELIMITER}
   }
 }
 
+class TestTaskWrapper {
+  final static Class type
+  static {
+    try {
+      type = Class.forName("org.gradle.api.tasks.testing.AbstractTestTask")
+    } catch (ClassNotFoundException ignore) {
+      type = Test.class
+    }
+  }
+  private final def testTask
+
+  TestTaskWrapper(def testTask) { this.testTask = testTask }
+  void addTestListener(def listener) { testTask.addTestListener(listener) }
+  void addTestOutputListener(def listener) { testTask.addTestOutputListener(listener) }
+  Project getProject() { testTask.project }
+  TestTaskWrapper jvmArgs(Object... arguments) {
+    if (testTask instanceof Test) {
+      testTask.jvmArgs(arguments)
+    }
+    return this
+  }
+}
+
 def isParallelExec = (gradle.startParameter.hasProperty("parallelThreadCount") && gradle.startParameter.parallelThreadCount != 0) ||
                      (gradle.startParameter.hasProperty("parallelProjectExecutionEnabled") && gradle.startParameter.parallelProjectExecutionEnabled);
 def testOutputListenerClass = null
@@ -793,28 +813,24 @@ try {
 }
 
 final AtomicLong testCounter = new AtomicLong(0);
-Class testTaskClass = null
-try {
-  testTaskClass = Class.forName("org.gradle.api.tasks.testing.AbstractTestTask")
-} catch (ClassNotFoundException ignore) {
-  testTaskClass =  Test.class
-}
 
-gradle.addListener(new TeamcityPropertiesListener(logger, testTaskClass))
+gradle.addListener(new TeamcityPropertiesListener(logger))
 gradle.addListener(new TeamcityExceptionsListener(logger))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
   gradle.rootProject.allprojects { Project project ->
-    project.tasks.withType(testTaskClass).each { def testTask ->
-      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter)
-      testTask.addTestListener(testListener.testListenerDelegate as TestListener)
-      if (testOutputListenerClass != null) {
-        testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
-        testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
-        testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
-      }
-    }
+    project.tasks.withType(TestTaskWrapper.type)
+            .collect { new TestTaskWrapper(it) }
+            .each { TestTaskWrapper testTask ->
+              def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter)
+              testTask.addTestListener(testListener.testListenerDelegate as TestListener)
+              if (testOutputListenerClass != null) {
+                testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
+                testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
+                testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
+              }
+            }
   }
 
   gradle.rootProject.allprojects.each { project ->

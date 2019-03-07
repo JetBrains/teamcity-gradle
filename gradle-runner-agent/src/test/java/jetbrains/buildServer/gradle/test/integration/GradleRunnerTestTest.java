@@ -90,7 +90,8 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
                      ? PROJECT_D_NAME // before 4.4
                      : PROJECT_D2_NAME; // removed Test.setTestClassesDir and added Test.setTestClassesDirs
 
-    myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=valueAlpha\n-Dtest.property.bravo=valueBravo");
+    myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=valueAlpha\n" +
+                                                     "-Dtest.property.bravo=valueBravo");
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project,
                                                                                      "clean testParallel",null);
@@ -155,6 +156,8 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   public void customTestFramework(final String gradleVersion) throws Exception {
     // version 4.4 and later
     if ("gradle-4.4".compareTo(gradleVersion) <= 0) {
+      myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=ignored\n" +
+                                                       "-Dtest.property.bravo=ignored");
       testTest(PROJECT_M_NAME, "clean custom", "failedProjectMTest.txt", gradleVersion);
     } else {
       throw new SkipException("AbstractTestTask is not implemented until version 4.4");
