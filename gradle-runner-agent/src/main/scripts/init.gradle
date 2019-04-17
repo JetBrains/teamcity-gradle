@@ -155,12 +155,13 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
   private void loadTestJvmArgs(Project project) {
     final String jvmargs = (String) project.teamcity["gradle.test.jvmargs"]
-    if (jvmargs == null) return
-
-    final String[] arguments = jvmargs.split("\n")
+    final String[] arguments = jvmargs == null ? new String[0] : jvmargs.split("\n")
     project.tasks.withType(TestTaskWrapper.type)
             .collect { def task -> new TestTaskWrapper(task) }
-            .each { TestTaskWrapper task -> task.jvmArgs(arguments) }
+            .each { TestTaskWrapper task ->
+              task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"])
+                      .jvmArgs(arguments)
+            }
   }
 
 
@@ -798,6 +799,13 @@ class TestTaskWrapper {
   TestTaskWrapper jvmArgs(Object... arguments) {
     if (testTask instanceof Test) {
       testTask.jvmArgs(arguments)
+    }
+    return this
+  }
+  TestTaskWrapper setTmpDirectory(String path) {
+    if (testTask instanceof Test &&
+        path != null && path != "") {
+      testTask.systemProperty("java.io.tmpdir", path)
     }
     return this
   }

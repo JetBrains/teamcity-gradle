@@ -16,6 +16,7 @@
 
 package jetbrains.buildServer.gradle.test.integration;
 
+import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.util.VersionComparatorUtil;
@@ -162,5 +163,16 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     } else {
       throw new SkipException("AbstractTestTask is not implemented until version 4.4");
     }
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void tmpDirectoryTest(String gradleVersion) throws Exception {
+    File tempDirectory = new File(myTempFiles.getCurrentTempDir(), "my_test_directory");
+    tempDirectory.mkdirs();
+    myTempFiles.registerAsTempFile(tempDirectory);
+
+    myTeamCitySystemProps.put("teamcity.build.tempDir", tempDirectory.getPath());
+
+    testTest(PROJECT_N_NAME, "clean test", "projectNTest.txt", gradleVersion);
   }
 }

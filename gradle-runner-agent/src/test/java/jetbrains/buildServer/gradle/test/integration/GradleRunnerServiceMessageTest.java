@@ -75,8 +75,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
 
       String tempDir = myTeamCitySystemProps.get("teamcity.build.tempDir");
       if (tempDir != null) {
-        resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts[ \t]+')" + tempDir.replaceAll("\\\\", "/"),
-                                                 "$1##Build_temp_directory##"); // drop build tmp directory
+        resultMessage = resultMessage.replaceAll(tempDir.replaceAll("\\\\", "/"),
+                                                 "##Build_temp_directory##"); // drop build tmp directory
       }
       result.add(resultMessage);
     }
