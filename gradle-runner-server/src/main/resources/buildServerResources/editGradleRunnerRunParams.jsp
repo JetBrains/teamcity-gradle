@@ -18,7 +18,7 @@
             <props:textProperty name="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"  className="longField" maxlength="256">
                 <jsp:attribute name="afterTextField"><bs:vcsTree fieldId="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"/></jsp:attribute>
             </props:textProperty>
-            <span class="smallNote">Path to build file</span>
+            <span class="smallNote">Path to build file, relative to the working directory</span>
         </td>
     </tr>
     <tr class="advancedSetting">
