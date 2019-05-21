@@ -2,12 +2,12 @@
 <dsl-extension kind="buildStep" type="gradle-runner" generateDslJar="true">
   <class name="GradleBuildStep">
     <description>
-      A [build step](https://confluence.jetbrains.com/display/TCDL/Gradle) running gradle script
+      A [build step](https://www.jetbrains.com/help/teamcity/?Gradle) running gradle script
     </description>
   </class>
   <function name="gradle">
     <description>
-      Adds a [build step](https://confluence.jetbrains.com/display/TCDL/Gradle) running gradle script
+      Adds a [build step](https://www.jetbrains.com/help/teamcity/?Gradle) running gradle script
       @see GradleBuildStep
     </description>
   </function>
@@ -46,7 +46,7 @@
     </param>
     <param name="target.jdk.home" dslName="jdkHome">
       <description>
-        Custom [JDK](https://confluence.jetbrains.com/display/TCDL/Predefined+Build+Parameters#PredefinedBuildParameters-DefiningJava-relatedEnvironmentVariables) to use.
+        Custom [JDK](https://www.jetbrains.com/help/teamcity/?Predefined+Build+Parameters#PredefinedBuildParameters-DefiningJava-relatedEnvironmentVariables) to use.
         The default is JAVA_HOME environment variable or the agent's own Java.
       </description>
     </param>
