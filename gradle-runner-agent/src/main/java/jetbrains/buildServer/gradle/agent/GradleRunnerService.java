@@ -94,7 +94,10 @@ public class GradleRunnerService extends BuildServiceAdapter
     params.addAll(getParams());
 
     env.put("GRADLE_EXIT_CONSOLE", "true");
-    env.put(JavaRunnerConstants.JAVA_HOME, getJavaHome());
+
+    if (!getRunnerContext().isVirtualContext()) {
+      env.put(JavaRunnerConstants.JAVA_HOME, getJavaHome());
+    }
     env.put(GradleRunnerConstants.ENV_GRADLE_OPTS, appendTmpDir(buildGradleOpts(), getBuildTempDirectory()));
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
