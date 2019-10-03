@@ -720,11 +720,19 @@ class WrappedException extends Exception {
    * @param length max message length
    */
   WrappedException(Throwable th, int length) {
-    this.th = th
+    this.th = th ?: new Exception() {
+      @Override void printStackTrace(PrintWriter printWriter) { }
+      @Override void printStackTrace(PrintStream ps) { }
+      @Override void printStackTrace() { }
+      @Override Throwable fillInStackTrace() { this }
+      @Override StackTraceElement[] getStackTrace() { new StackTraceElement[0] }
+      @Override String toString() { "" }
+    }
+
     this.length = length
     int size = length / 1024
     DELIMITER = "***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded ${size} KB *****"
-    message = trim(th.toString(), length)
+    message = trim(this.th.toString(), length)
   }
 
   public boolean isEqualsOrigin() {
@@ -741,6 +749,7 @@ class WrappedException extends Exception {
   }
 
   public ServiceMessage getServiceMessage(String testName) {
+    if (th.toString() == "") return new TestFailed(testName, this);
     ComparisonFailureData cfd = ComparisonFailureUtil.extractComparisonFailure(th)
     if (cfd != null) {
       return new TestFailed(testName, this, trim(cfd.getActual(), length), trim(cfd.getExpected(), length));
@@ -771,7 +780,7 @@ class WrappedException extends Exception {
    * @return original message if str.length < length or split message with delimiter
    */
   private String trim(String str, int length) {
-    if (str.length() <= length) return str
+    if (str == null || str.length() <= length) return str
 
     return """${str.substring(0, (int)(length / 2))} ...
 
