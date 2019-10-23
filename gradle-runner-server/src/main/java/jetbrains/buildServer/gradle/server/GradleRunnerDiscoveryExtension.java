@@ -70,7 +70,7 @@ public class GradleRunnerDiscoveryExtension implements BuildRunnerDiscoveryExten
 
       final boolean isSubdirectory = !directory.getBrowser().getRoot().equals(directory);
       if (isSubdirectory) {
-        props.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, directory.getFullName() + "/" + pair.second);
+        props.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, directory.getFullName() + "/" + pair.second.getName());
       }
       if (!foundWrapperDirs.isEmpty()) {
         // Seems it's safe to choose first one
