@@ -35,6 +35,19 @@ initscript {
   }
 }
 
+def forAllTestTasks(TaskCollection taskCollection, Closure action) {
+  if (taskCollection.metaClass.respondsTo(taskCollection, 'configureEach')) {
+    taskCollection.configureEach { task ->
+      TestTaskWrapper wrapper = new TestTaskWrapper(task)
+      action(wrapper)
+    }
+  } else {
+    taskCollection
+      .collect { new TestTaskWrapper(it) }
+      .each(action)
+  }
+}
+
 public class DependencyBasedTestRun {
 
   def logger
@@ -156,12 +169,9 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   private void loadTestJvmArgs(Project project) {
     final String jvmargs = (String) project.teamcity["gradle.test.jvmargs"]
     final String[] arguments = jvmargs == null ? new String[0] : jvmargs.split("\n")
-    project.tasks.withType(TestTaskWrapper.type)
-            .collect { def task -> new TestTaskWrapper(task) }
-            .each { TestTaskWrapper task ->
-              task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"])
-                      .jvmArgs(arguments)
-            }
+    forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper task ->
+      task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"]).jvmArgs(arguments)
+    }
   }
 
 
@@ -837,17 +847,15 @@ gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
   gradle.rootProject.allprojects { Project project ->
-    project.tasks.withType(TestTaskWrapper.type)
-            .collect { new TestTaskWrapper(it) }
-            .each { TestTaskWrapper testTask ->
-              def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter)
-              testTask.addTestListener(testListener.testListenerDelegate as TestListener)
-              if (testOutputListenerClass != null) {
-                testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
-                testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
-                testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
-              }
-            }
+    forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper testTask ->
+      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter)
+      testTask.addTestListener(testListener.testListenerDelegate as TestListener)
+      if (testOutputListenerClass != null) {
+        testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
+        testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
+        testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
+      }
+    }
   }
 
   gradle.rootProject.allprojects.each { project ->
