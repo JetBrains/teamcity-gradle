@@ -161,7 +161,7 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
             .each { TestTaskWrapper task ->
               task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"])
                       .jvmArgs(arguments)
-            }
+    }
   }
 
 
@@ -851,11 +851,9 @@ gradle.projectsEvaluated { Gradle gradle ->
   }
 
   gradle.rootProject.allprojects.each { project ->
-    project.getTasks().findByName("junitPlatformTest").each { task ->
-      task.outputs.files.each { file ->
-        def message = new ServiceMessage("importData", [ "type" : "junit", "path": "$file.absolutePath/*.xml".toString()])
-        println(message.asString())
-      }
+    project.getTasks().findByName("junitPlatformTest")?.outputs?.files?.each { file ->
+      def message = new ServiceMessage("importData", ["type": "junit", "path": "$file.absolutePath/*.xml".toString()])
+      println(message.asString())
     }
   }
 }
