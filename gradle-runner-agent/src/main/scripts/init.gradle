@@ -834,9 +834,10 @@ class TestTaskWrapper {
       }
     } else {
       // Fallback
-      taskCollection
-          .collect { new TestTaskWrapper(it) }
-          .each(action)
+      taskCollection.all { task ->
+        TestTaskWrapper wrapper = new TestTaskWrapper(task)
+        action(wrapper)
+      }
     }
   }
 }
