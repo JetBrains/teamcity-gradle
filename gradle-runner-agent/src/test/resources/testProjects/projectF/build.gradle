@@ -1,7 +1,13 @@
 apply plugin: 'java'
 
 repositories {
-    mavenCentral()
+    if (gradle.gradleVersion <= "2.0") {
+        maven {
+            url "https://repo.maven.apache.org/maven2/"
+        }
+    } else {
+        mavenCentral()
+    }
 }
 
 dependencies {
