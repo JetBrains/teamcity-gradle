@@ -5,8 +5,8 @@ import org.gradle.api.internal.tasks.testing.*
 task custom(type: CustomTask) {
   binResultsDir = new File("build")
   reports {
-    html.enabled = true
-    junitXml.enabled = true
+    html.enabled = false
+    junitXml.enabled = false
     reports.junitXml.destination = new File('build')
     reports.html.destination = new File('build')
   }
@@ -21,10 +21,14 @@ class CustomTestExecutionSpec implements TestExecutionSpec { }
 
 class CustomTestExecuter implements TestExecuter<CustomTestExecutionSpec>{
   void execute(CustomTestExecutionSpec testExecutionSpec, TestResultProcessor testResultProcessor) {
+    testResultProcessor.started(new DefaultTestSuiteDescriptor("suite", "suite"), new TestStartEvent(100L))
+
     def name = "testName"
     testResultProcessor.started(new DefaultTestDescriptor(name, "Foo", "bar"), new TestStartEvent(100L))
     testResultProcessor.failure(name, new RuntimeException("custom error", null, true, false))
     testResultProcessor.completed(name, new TestCompleteEvent(200L))
+
+    testResultProcessor.completed("suite", new TestCompleteEvent(200L))
   }
   void stopNow() { }
 }

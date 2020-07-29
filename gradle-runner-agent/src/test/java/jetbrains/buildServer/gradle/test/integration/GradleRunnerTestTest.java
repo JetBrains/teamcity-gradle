@@ -55,16 +55,14 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void failedAndSkippedTestNGTest(final String gradleVersion) throws Exception {
-    String project = ("gradle-4.4".compareTo(gradleVersion) > 0)
+    String project = (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") < 0)
                      ? PROJECT_C_NAME // before 4.4
                      : PROJECT_C2_NAME; // removed Test.setTestClassesDir and added Test.setTestClassesDirs
     testTest(project, "clean testng", versionSpecific("failedProjectCTestNGSequence.txt", gradleVersion), gradleVersion);
   }
 
   private String versionSpecific(@NotNull final String fileName, @NotNull final String gradleVersion) {
-    final String directoryName = "gradle-";
-    final String versionSuffix = gradleVersion.substring(gradleVersion.lastIndexOf(directoryName) + directoryName.length());
-    if (VersionComparatorUtil.compare(versionSuffix, "2.0") > 0) {
+    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "2.0") > 0) {
       return getNameWithoutExtension(fileName) + "_2." + getExtension(fileName);
     }
     return fileName;
@@ -87,7 +85,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void parallelTestSuiteTest(final String gradleVersion) throws RunBuildException, IOException {
-    String project = ("gradle-4.4".compareTo(gradleVersion) > 0)
+    String project = (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") < 0)
                      ? PROJECT_D_NAME // before 4.4
                      : PROJECT_D2_NAME; // removed Test.setTestClassesDir and added Test.setTestClassesDirs
 
@@ -113,7 +111,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void parallelTestNgTests(final String gradleVersion) throws RunBuildException, IOException {
-    if ("gradle-4.4".compareTo(gradleVersion) <= 0) {
+    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") >= 0) {
       throw new SkipException("concurrent test close does not work after version 4.4"); // TODO fix
     }
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(PROJECT_F_NAME,
@@ -154,7 +152,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   @Test(dataProvider = "gradle-version-provider")
   public void customTestFramework(final String gradleVersion) throws Exception {
     // version 4.4 and later
-    if ("gradle-4.4".compareTo(gradleVersion) <= 0) {
+    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") >= 0) {
       myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=ignored\n" +
                                                        "-Dtest.property.bravo=ignored");
       testTest(PROJECT_M_NAME, "clean custom", "failedProjectMTest.txt", gradleVersion);
@@ -172,5 +170,9 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     myTeamCitySystemProps.put("teamcity.build.tempDir", tempDirectory.getPath());
 
     testTest(PROJECT_N_NAME, "clean test", "projectNTest.txt", gradleVersion);
+  }
+
+  private static String getGradleVersionFromPath(@NotNull final String path) {
+    return path.substring(path.lastIndexOf("gradle-") + "gradle-".length());
   }
 }
