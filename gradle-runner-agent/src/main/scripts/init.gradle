@@ -406,24 +406,20 @@ public class TeamcityTestListener {
     this.testCounter = testCounter;
   }
 
-  String getFlowId(TestDescriptor descriptor) {
-    return projectFlowId + "-" + System.identityHashCode(descriptor);
-  }
-
   /**
    * Called before a test suite is started.
    * @param suite The suite whose tests are about to be executed.
    */
   public void beforeSuite(TestDescriptor suite) {
-    if (suite.getParent() == null) return;
-    if (shouldBeIgnored(suite)) return;
+    if (suite.getParent() == null) return
+    if (shouldBeIgnored(suite)) return
 
-    def flowId = getFlowId(suite);
-    startFlowIfNotStarted(flowId, suite);
+    String flowId = new TestDescriptorWrapper(suite).getFlowId(projectFlowId)
+    startFlowIfNotStarted(flowId, suite)
 
-    ServiceMessage msg = new TestSuiteStarted(suite.getName());
-    msg.setFlowId(flowId);
-    logger.lifecycle(msg.asString());
+    ServiceMessage msg = new TestSuiteStarted(suite.getName())
+    msg.setFlowId(flowId)
+    logger.lifecycle(msg.asString())
   }
 
   private boolean shouldBeIgnored(TestDescriptor suite) {
@@ -435,7 +431,7 @@ public class TeamcityTestListener {
       def parentFlowId = projectFlowId;
       def parentSuite = suite.getParent()
       if (parentSuite != null && !shouldBeIgnored(parentSuite)) {
-        parentFlowId = getFlowId(parentSuite);
+        parentFlowId = new TestDescriptorWrapper(parentSuite).getFlowId(projectFlowId)
       }
 
       logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${parentFlowId}']");
@@ -451,7 +447,7 @@ public class TeamcityTestListener {
     if (suite.getParent() == null) return;
     if (shouldBeIgnored(suite)) return;
 
-    def flowId = getFlowId(suite);
+    String flowId = new TestDescriptorWrapper(suite).getFlowId(projectFlowId);
     ServiceMessage msg = new TestSuiteFinished(suite.getName());
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
@@ -472,13 +468,13 @@ public class TeamcityTestListener {
    */
   public void beforeTest(TestDescriptor testDescriptor) {
     def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
-    def flowId = getFlowId(testDescriptor);
-    startFlowIfNotStarted(flowId, testDescriptor);
+    String flowId = descriptorWrapper.getFlowId(projectFlowId)
+    startFlowIfNotStarted(flowId, testDescriptor)
 
     String testName = descriptorWrapper.testName
-    ServiceMessage msg = new TestStarted(testName, false, null);
-    msg.setFlowId(flowId);
-    logger.lifecycle(msg.asString());
+    ServiceMessage msg = new TestStarted(testName, false, null)
+    msg.setFlowId(flowId)
+    logger.lifecycle(msg.asString())
   }
 
   /**
@@ -489,12 +485,12 @@ public class TeamcityTestListener {
   public void afterTest(TestDescriptor testDescriptor, TestResult result) {
     def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
     String testName = descriptorWrapper.testName
-    def flowId = getFlowId(testDescriptor);
+    String flowId = descriptorWrapper.getFlowId(projectFlowId)
 
     def outputs = testOutputs.remove(testDescriptor);
     if (outputs != null) {
       synchronized (outputs) {
-        flushOutputs(testDescriptor, outputs);
+        flushOutputs(testDescriptor, outputs)
       }
     }
 
@@ -619,7 +615,7 @@ public class TeamcityTestListener {
   private void flushOutputs(TestDescriptor testDescriptor, List outputs) {
     def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
     String testName = descriptorWrapper.testName
-    def flowId = getFlowId(testDescriptor)
+    String flowId = descriptorWrapper.getFlowId(projectFlowId)
 
     StringBuilder stdout = new StringBuilder()
     StringBuilder stderr = new StringBuilder()
@@ -627,10 +623,10 @@ public class TeamcityTestListener {
     for (oe in outputs) {
       switch (oe.getDestination()) {
         case TestOutputEvent.Destination.StdErr:
-          if (!skipStdErr) stderr.append(oe.message);
+          if (!skipStdErr) stderr.append(oe.message)
           break
         case TestOutputEvent.Destination.StdOut:
-          if (!skipStdOut) stdout.append(oe.message);
+          if (!skipStdOut) stdout.append(oe.message)
           break
       }
     }
@@ -695,6 +691,10 @@ public class TestDescriptorWrapper {
       methodName = descriptor.getName()
     }
     return "${className}.${methodName}"
+  }
+
+  String getFlowId(String parentFlowId) {
+    "$parentFlowId-${System.identityHashCode(descriptor)}"
   }
 }
 
