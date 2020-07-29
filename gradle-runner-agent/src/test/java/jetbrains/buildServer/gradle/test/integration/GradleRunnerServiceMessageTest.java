@@ -176,7 +176,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     }
 
     public String getSequenceFileName() {
-      return myGradleVersion.startsWith("gradle-3.") || myGradleVersion.startsWith("gradle-4.") ?
+      return myGradleVersion.startsWith("gradle-3.") || myGradleVersion.startsWith("gradle-4.") || myGradleVersion.startsWith("gradle-5.") || myGradleVersion.startsWith("gradle-6.") ?
              FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName)
                                                      : mySequenceFileName;
     }
