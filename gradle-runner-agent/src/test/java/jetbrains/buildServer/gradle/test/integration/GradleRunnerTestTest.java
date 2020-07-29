@@ -130,6 +130,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     }};
 
     runTest(gatherServiceMessage, ctx);
+    gatherMessage.validateTestFlows(15);
   }
 
   @Test(dataProvider = "gradle-version-provider")
