@@ -172,6 +172,16 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     testTest(PROJECT_N_NAME, "clean test", "projectNTest.txt", gradleVersion);
   }
 
+  @Test(dataProvider = "gradle-version-provider")
+  public void testDisplayName(final String gradleVersion) throws Exception {
+    // version 4.7 and later
+    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.7") >= 0) {
+      testTest(PROJECT_O_NAME, "clean custom", "failedProjectOTest.txt", gradleVersion);
+    } else {
+      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
+    }
+  }
+
   private static String getGradleVersionFromPath(@NotNull final String path) {
     return path.substring(path.lastIndexOf("gradle-") + "gradle-".length());
   }

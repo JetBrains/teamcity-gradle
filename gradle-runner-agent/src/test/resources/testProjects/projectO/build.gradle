@@ -1,0 +1,38 @@
+apply plugin: "java"
+
+import org.gradle.api.internal.tasks.testing.*
+
+task custom(type: CustomTask) {
+  binResultsDir = new File("build")
+  reports {
+    html.enabled = true
+    junitXml.enabled = true
+    reports.junitXml.destination = new File('build')
+    reports.html.destination = new File('build')
+  }
+}
+
+class CustomTask extends AbstractTestTask {
+  protected CustomTestExecutionSpec createTestExecutionSpec() { new CustomTestExecutionSpec() }
+  protected CustomTestExecuter createTestExecuter() { new CustomTestExecuter() }
+}
+
+class CustomTestExecutionSpec implements TestExecutionSpec { }
+
+class CustomTestExecuter implements TestExecuter<CustomTestExecutionSpec>{
+  void execute(CustomTestExecutionSpec testExecutionSpec, TestResultProcessor testResultProcessor) {
+    testResultProcessor.started(new DefaultTestSuiteDescriptor("suite", "suite"), new TestStartEvent(100L))
+    def name = "testName1"
+    testResultProcessor.started(new DefaultTestDescriptor(name, "Foo1", "bar1", "Foo display name 1", "bar display name 1"), new TestStartEvent(100L))
+    testResultProcessor.failure(name, new RuntimeException("custom error 1", null, true, false))
+    testResultProcessor.completed(name, new TestCompleteEvent(200L))
+
+    name = "testName2"
+    testResultProcessor.started(new DefaultTestDescriptor(name, "Foo2", "bar2"), new TestStartEvent(200L))
+    testResultProcessor.failure(name, new RuntimeException("custom error 2", null, true, false))
+    testResultProcessor.completed(name, new TestCompleteEvent(400L))
+
+    testResultProcessor.completed("suite", new TestCompleteEvent(400L))
+  }
+  void stopNow() { }
+}

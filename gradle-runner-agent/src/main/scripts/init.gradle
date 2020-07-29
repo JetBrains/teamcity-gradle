@@ -471,10 +471,11 @@ public class TeamcityTestListener {
    * @param testDescriptor The test which is about to be executed.
    */
   public void beforeTest(TestDescriptor testDescriptor) {
+    def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
     def flowId = getFlowId(testDescriptor);
     startFlowIfNotStarted(flowId, testDescriptor);
 
-    String testName = getTestName(testDescriptor)
+    String testName = descriptorWrapper.testName
     ServiceMessage msg = new TestStarted(testName, false, null);
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
@@ -486,7 +487,8 @@ public class TeamcityTestListener {
    * @param result The test result.
    */
   public void afterTest(TestDescriptor testDescriptor, TestResult result) {
-    String testName = getTestName(testDescriptor);
+    def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
+    String testName = descriptorWrapper.testName
     def flowId = getFlowId(testDescriptor);
 
     def outputs = testOutputs.remove(testDescriptor);
@@ -615,7 +617,8 @@ public class TeamcityTestListener {
   }
 
   private void flushOutputs(TestDescriptor testDescriptor, List outputs) {
-    def testName = getTestName(testDescriptor)
+    def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
+    String testName = descriptorWrapper.testName
     def flowId = getFlowId(testDescriptor)
 
     StringBuilder stdout = new StringBuilder()
@@ -647,10 +650,6 @@ public class TeamcityTestListener {
     }
   }
 
-  private String getTestName(TestDescriptor testDescriptor) {
-    return testDescriptor.getClassName() + "." + testDescriptor.getName()
-  }
-
   def testListenerDelegate = [
           beforeSuite: { suite ->
             this.beforeSuite(suite)
@@ -673,6 +672,30 @@ public class TeamcityTestListener {
             this.onOutput(testDescriptor, outputEvent)
           }]
 
+}
+
+public class TestDescriptorWrapper {
+  final TestDescriptor descriptor
+
+  public TestDescriptorWrapper(TestDescriptor descriptor) {
+    this.descriptor = descriptor
+  }
+
+  String getTestName() {
+    String className
+    if(descriptor.metaClass.respondsTo(descriptor, "getClassDisplayName")) {
+      className = descriptor.getClassDisplayName()
+    } else {
+      className = descriptor.getClassName()
+    }
+    String methodName
+    if (descriptor.metaClass.respondsTo(descriptor, "getDisplayName")) {
+      methodName = descriptor.getDisplayName()
+    } else {
+      methodName = descriptor.getName()
+    }
+    return "${className}.${methodName}"
+  }
 }
 
 public class TeamcityExceptionsListener extends BuildAdapter {
