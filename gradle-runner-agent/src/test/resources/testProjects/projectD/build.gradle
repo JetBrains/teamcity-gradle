@@ -16,7 +16,11 @@ task testParallel(type: Test) {
   include '**/TestSuiteAlpha.class'
   include '**/TestSuiteBravo.class'
   include '**/TestSuiteCharlie.class'
-  setTestClassesDir(test.getTestClassesDir())
+  if(gradle.gradleVersion < "4") {
+    setTestClassesDir(test.getTestClassesDir())
+  } else {
+    setTestClassesDirs(test.getTestClassesDirs())
+  }
   setClasspath(test.getClasspath())
 }
 

@@ -4,7 +4,17 @@ dependencies {
     testCompile files('../lib/junit-4.8.1.jar')
 }
 
-task printProperties << {
+ext.createTask = { name, fun ->
+  if(gradle.gradleVersion < "4") {
+    task "$name" << fun
+  } else {
+    task "$name" {
+      doLast fun
+    }
+  }
+}
+
+createTask("printProperties", {
   project.getProperties().each { key, val ->
     println "##gradle-property name='${key}' value='${val}'"
   }
@@ -12,12 +22,12 @@ task printProperties << {
   teamcity.each { key, val ->
     println "##tc-property name='${key}' value='${val}'"
   }
-}
+})
 
-task printTcProperty << {
+createTask("printTcProperty", {
   println "##tc-property ${teamcity["test_teamcity_property"]}"
-}
+})
 
-task printSystemProperty << {
+createTask("printSystemProperty", {
   println "##system-property ${test_system_property}"
-}
+})

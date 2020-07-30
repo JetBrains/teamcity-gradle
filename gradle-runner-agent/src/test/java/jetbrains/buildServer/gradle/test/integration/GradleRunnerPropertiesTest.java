@@ -18,7 +18,7 @@ public class GradleRunnerPropertiesTest extends GradleRunnerServiceMessageTest {
   @Test(dataProvider = "gradle-version-provider")
   public void simpleTeamCityPropertiesTest(String gradleVersion) throws Exception {
     myTeamCitySystemProps.put("test_teamcity_property", "test_value");
-    GradleRunConfiguration config = new GradleRunConfiguration("projectA", "clean printTcProperty", "testTeamcityProperty.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_A_NAME, "clean printTcProperty", "testTeamcityProperty.txt");
     config.setPatternStr("##tc-property(.*)");
     config.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(config);
@@ -27,7 +27,7 @@ public class GradleRunnerPropertiesTest extends GradleRunnerServiceMessageTest {
   @Test(dataProvider = "gradle-version-provider")
   public void simpleTCSystemPropertiesTest(String gradleVersion) throws Exception {
     myTeamCitySystemProps.put("test_system_property", "test_value");
-    GradleRunConfiguration config = new GradleRunConfiguration("projectA", "clean printSystemProperty", "testSystemProperty.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_A_NAME, "clean printSystemProperty", "testSystemProperty.txt");
     config.setPatternStr("##system-property(.*)");
     config.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(config);

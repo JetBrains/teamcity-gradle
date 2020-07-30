@@ -83,7 +83,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     if (gradleVersion.startsWith("gradle-2.")) throw new SkipException("This test is for Gradle version > 2.x");
     GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "failedCompilationParallel.txt");
     config.setGradleVersion(gradleVersion);
-    config.setPatternStr("##teamcity\\[message(.*?)(?<!\\|)\\]");
+    config.setPatternStr("##teamcity\\[message text='[^:](.*?)(?<!\\|)\\]");
     runAndCheckServiceMessages(config);
   }
 

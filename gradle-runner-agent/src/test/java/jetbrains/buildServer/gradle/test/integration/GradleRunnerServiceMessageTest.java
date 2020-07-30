@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
+import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -176,9 +177,9 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     }
 
     public String getSequenceFileName() {
-      return myGradleVersion.startsWith("gradle-3.") || myGradleVersion.startsWith("gradle-4.") || myGradleVersion.startsWith("gradle-5.") || myGradleVersion.startsWith("gradle-6.") ?
-             FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName)
-                                                     : mySequenceFileName;
+      return VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "3") >= 0
+             ? FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName)
+             : mySequenceFileName;
     }
 
     public String getGradleVersion() {

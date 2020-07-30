@@ -13,6 +13,10 @@ task testng(type: Test) {
   useTestNG() {
      suites new File('src/test/resources/test.xml')
   }
-  setTestClassesDir(test.getTestClassesDir())
+  if(gradle.gradleVersion < "4") {
+    setTestClassesDir(test.getTestClassesDir())
+  } else {
+    setTestClassesDirs(test.getTestClassesDirs())
+  }
   setClasspath(test.getClasspath())
 }

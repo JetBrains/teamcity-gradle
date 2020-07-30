@@ -55,10 +55,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void failedAndSkippedTestNGTest(final String gradleVersion) throws Exception {
-    String project = (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") < 0)
-                     ? PROJECT_C_NAME // before 4.4
-                     : PROJECT_C2_NAME; // removed Test.setTestClassesDir and added Test.setTestClassesDirs
-    testTest(project, "clean testng", versionSpecific("failedProjectCTestNGSequence.txt", gradleVersion), gradleVersion);
+    testTest(PROJECT_C_NAME, "clean testng", versionSpecific("failedProjectCTestNGSequence.txt", gradleVersion), gradleVersion);
   }
 
   private String versionSpecific(@NotNull final String fileName, @NotNull final String gradleVersion) {
@@ -85,14 +82,10 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void parallelTestSuiteTest(final String gradleVersion) throws RunBuildException, IOException {
-    String project = (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") < 0)
-                     ? PROJECT_D_NAME // before 4.4
-                     : PROJECT_D2_NAME; // removed Test.setTestClassesDir and added Test.setTestClassesDirs
-
     myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=valueAlpha\n" +
                                                      "-Dtest.property.bravo=valueBravo");
 
-    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project,
+    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(PROJECT_D_NAME,
                                                                                      "clean testParallel",null);
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
@@ -180,9 +173,5 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     } else {
       throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
     }
-  }
-
-  private static String getGradleVersionFromPath(@NotNull final String path) {
-    return path.substring(path.lastIndexOf("gradle-") + "gradle-".length());
   }
 }
