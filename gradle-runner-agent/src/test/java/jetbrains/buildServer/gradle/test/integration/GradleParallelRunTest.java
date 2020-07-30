@@ -1,6 +1,5 @@
 package jetbrains.buildServer.gradle.test.integration;
 
-import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
 import org.jmock.Expectations;

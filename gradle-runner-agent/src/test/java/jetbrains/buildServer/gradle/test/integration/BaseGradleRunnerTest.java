@@ -60,9 +60,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_A_NAME = "projectA";
   public static final String PROJECT_B_NAME = "projectB";
   public static final String PROJECT_C_NAME = "projectC";
-  public static final String PROJECT_C2_NAME = "projectC2";
   public static final String PROJECT_D_NAME = "projectD";
-  public static final String PROJECT_D2_NAME = "projectD2";
   public static final String PROJECT_E_NAME = "projectE";
   public static final String PROJECT_F_NAME = "projectF";
   public static final String PROJECT_I_NAME = "projectI";
@@ -166,8 +164,8 @@ public class BaseGradleRunnerTest {
     Collections.sort(versionNames, new Comparator<String[]>() {
       @Override
       public int compare(final String[] o1, final String[] o2) {
-        final String v1 = o1[0].substring("gradle-".length());
-        final String v2 = o2[0].substring("gradle-".length());
+        final String v1 = getGradleVersionFromPath(o1[0]);
+        final String v2 = getGradleVersionFromPath(o2[0]);
         return VersionComparatorUtil.compare(v1, v2);
       }
     });
@@ -181,7 +179,7 @@ public class BaseGradleRunnerTest {
   private static boolean versionFitsCurrentJdk(final File gradleDir) {
     if (IS_JRE_8) {
       try {
-        final String versionString = gradleDir.getName().substring("gradle-".length());
+        final String versionString = getGradleVersionFromPath(gradleDir.getName());
         return VersionComparatorUtil.compare(versionString, "1.11") >= 0;
       } catch (NumberFormatException e) {
         return false;
@@ -329,5 +327,7 @@ public class BaseGradleRunnerTest {
     return context;
   }
 
-
+  protected static String getGradleVersionFromPath(@NotNull final String path) {
+    return path.substring(path.lastIndexOf("gradle-") + "gradle-".length());
+  }
 }
