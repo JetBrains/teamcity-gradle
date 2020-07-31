@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /*
-* Copyright 2000-2013 JetBrains s.r.o.
+* Copyright 2000-2020 JetBrains s.r.o.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -410,28 +410,29 @@ public class TeamcityTestListener {
    * Called before a test suite is started.
    * @param suite The suite whose tests are about to be executed.
    */
-  public void beforeSuite(TestDescriptor suite) {
-    if (suite.getParent() == null) return
+  public void beforeSuite(TestDescriptorWrapper suite) {
+    if (suite.parent == null) return
+
     if (shouldBeIgnored(suite)) return
 
-    String flowId = new TestDescriptorWrapper(suite).getFlowId(projectFlowId)
+    String flowId = suite.getFlowId(projectFlowId)
     startFlowIfNotStarted(flowId, suite)
 
-    ServiceMessage msg = new TestSuiteStarted(suite.getName())
+    ServiceMessage msg = new TestSuiteStarted(suite.name)
     msg.setFlowId(flowId)
     logger.lifecycle(msg.asString())
   }
 
-  private boolean shouldBeIgnored(TestDescriptor suite) {
-    suite.getName().startsWith("Gradle Test Executor") || suite.getName().startsWith("Gradle Test Run")
+  private boolean shouldBeIgnored(TestDescriptorWrapper suite) {
+    suite.name.startsWith("Gradle Test Executor") || suite.name.startsWith("Gradle Test Run")
   }
 
-  private void startFlowIfNotStarted(String flowId, TestDescriptor suite) {
+  private void startFlowIfNotStarted(String flowId, TestDescriptorWrapper suite) {
     if (startedFlowIds.put(flowId, true) == null) {
       def parentFlowId = projectFlowId;
-      def parentSuite = suite.getParent()
+      def parentSuite = suite.parent
       if (parentSuite != null && !shouldBeIgnored(parentSuite)) {
-        parentFlowId = new TestDescriptorWrapper(parentSuite).getFlowId(projectFlowId)
+        parentFlowId = parentSuite.getFlowId(projectFlowId)
       }
 
       logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${parentFlowId}']");
@@ -443,12 +444,13 @@ public class TeamcityTestListener {
    * @param suite The suite whose tests have finished being executed.
    * @param result The aggregate result for the suite.
    */
-  public void afterSuite(TestDescriptor suite, TestResult result) {
-    if (suite.getParent() == null) return;
+  public void afterSuite(TestDescriptorWrapper suite, TestResult result) {
+    if (suite.parent == null) return;
+
     if (shouldBeIgnored(suite)) return;
 
-    String flowId = new TestDescriptorWrapper(suite).getFlowId(projectFlowId);
-    ServiceMessage msg = new TestSuiteFinished(suite.getName());
+    String flowId = suite.getFlowId(projectFlowId);
+    ServiceMessage msg = new TestSuiteFinished(suite.name);
     msg.setFlowId(flowId);
     logger.lifecycle(msg.asString());
 
@@ -464,33 +466,30 @@ public class TeamcityTestListener {
 
   /**
    * Called before a test is started.
-   * @param testDescriptor The test which is about to be executed.
+   * @param test The test which is about to be executed.
    */
-  public void beforeTest(TestDescriptor testDescriptor) {
-    def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
-    String flowId = descriptorWrapper.getFlowId(projectFlowId)
-    startFlowIfNotStarted(flowId, testDescriptor)
+  public void beforeTest(TestDescriptorWrapper test) {
+    String flowId = test.getFlowId(projectFlowId)
+    startFlowIfNotStarted(flowId, test)
 
-    String testName = descriptorWrapper.testName
-    ServiceMessage msg = new TestStarted(testName, false, null)
+    ServiceMessage msg = new TestStarted(test.testName, false, null)
     msg.setFlowId(flowId)
     logger.lifecycle(msg.asString())
   }
 
   /**
    * Called after a test is finished.
-   * @param testDescriptor The test which has finished executing.
+   * @param test The test which has finished executing.
    * @param result The test result.
    */
-  public void afterTest(TestDescriptor testDescriptor, TestResult result) {
-    def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
-    String testName = descriptorWrapper.testName
-    String flowId = descriptorWrapper.getFlowId(projectFlowId)
+  public void afterTest(TestDescriptorWrapper test, TestResult result) {
+    String testName = test.testName
+    String flowId = test.getFlowId(projectFlowId)
 
-    def outputs = testOutputs.remove(testDescriptor);
+    def outputs = testOutputs.remove(test.descriptor);
     if (outputs != null) {
       synchronized (outputs) {
-        flushOutputs(testDescriptor, outputs)
+        flushOutputs(test, outputs)
       }
     }
 
@@ -587,16 +586,16 @@ public class TeamcityTestListener {
     logger.lifecycle(metadata.toString())
   }
 
-  public void onOutput(testDescriptor, outputEvent) {
-    if (testDescriptor.getClassName() == null) {
+  public void onOutput(TestDescriptorWrapper test, outputEvent) {
+    if (test.className == null) {
       // this is not a real test output
       return;
     }
 
-    def outputs = testOutputs.get(testDescriptor);
+    def outputs = testOutputs[test.descriptor];
     if (outputs == null) {
       outputs = [];
-      def prev = testOutputs.putIfAbsent(testDescriptor, outputs)
+      def prev = testOutputs.putIfAbsent(test.descriptor, outputs)
       if (prev != null) {
         outputs = prev
       }
@@ -606,16 +605,15 @@ public class TeamcityTestListener {
       outputs.add(outputEvent);
 
       if (outputs.size() > 100) {
-        flushOutputs(testDescriptor, outputs)
+        flushOutputs(descriptor, outputs)
         outputs.clear();
       }
     }
   }
 
-  private void flushOutputs(TestDescriptor testDescriptor, List outputs) {
-    def descriptorWrapper = new TestDescriptorWrapper(testDescriptor)
-    String testName = descriptorWrapper.testName
-    String flowId = descriptorWrapper.getFlowId(projectFlowId)
+  private void flushOutputs(TestDescriptorWrapper descriptor, List outputs) {
+    String testName = descriptor.testName
+    String flowId = descriptor.getFlowId(projectFlowId)
 
     StringBuilder stdout = new StringBuilder()
     StringBuilder stderr = new StringBuilder()
@@ -648,24 +646,24 @@ public class TeamcityTestListener {
 
   def testListenerDelegate = [
           beforeSuite: { suite ->
-            this.beforeSuite(suite)
+            this.beforeSuite(new TestDescriptorWrapper(suite))
           },
 
           afterSuite: { suite, result ->
-            this.afterSuite(suite, result)
+            this.afterSuite(new TestDescriptorWrapper(suite), result)
           },
 
           beforeTest: { testDescriptor ->
-            this.beforeTest(testDescriptor)
+            this.beforeTest(new TestDescriptorWrapper(testDescriptor))
           },
 
           afterTest: { testDescriptor, result ->
-            this.afterTest(testDescriptor, result)
+            this.afterTest(new TestDescriptorWrapper(testDescriptor), result)
           }]
 
   def testOutputDelegate = [
           onOutput: { testDescriptor, outputEvent ->
-            this.onOutput(testDescriptor, outputEvent)
+            this.onOutput(new TestDescriptorWrapper(testDescriptor), outputEvent)
           }]
 
 }
@@ -678,19 +676,27 @@ public class TestDescriptorWrapper {
   }
 
   String getTestName() {
-    String className
+    "${className}.${name}"
+  }
+
+  String getClassName() {
     if(descriptor.metaClass.respondsTo(descriptor, "getClassDisplayName")) {
-      className = descriptor.getClassDisplayName()
-    } else {
-      className = descriptor.getClassName()
+      return descriptor.getClassDisplayName()
     }
-    String methodName
-    if (descriptor.metaClass.respondsTo(descriptor, "getDisplayName")) {
-      methodName = descriptor.getDisplayName()
-    } else {
-      methodName = descriptor.getName()
+    return descriptor.getClassName()
+  }
+
+  String getName() {
+    if(descriptor.metaClass.respondsTo(descriptor, "getDisplayName")) {
+      return descriptor.getDisplayName()
     }
-    return "${className}.${methodName}"
+    return descriptor.getName()
+  }
+
+  TestDescriptorWrapper getParent() {
+    def parent = descriptor.parent
+    if (parent != null) return new TestDescriptorWrapper(parent)
+    return null
   }
 
   String getFlowId(String parentFlowId) {
