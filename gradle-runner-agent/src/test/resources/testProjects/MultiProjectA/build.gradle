@@ -17,6 +17,7 @@ allprojects {
 
   createTask("printProperties", {
     teamcity.each { key, val ->
+      if (key == "teamcity.configuration.properties.file") val = "tmp directory path"
       println "##tc-property name='${key}' value='${val}'"
     }
   })

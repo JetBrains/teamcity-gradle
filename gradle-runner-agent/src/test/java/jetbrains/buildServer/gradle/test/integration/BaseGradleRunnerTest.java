@@ -128,6 +128,7 @@ public class BaseGradleRunnerTest {
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
   protected Map<String, String> myTeamCitySystemProps = new ConcurrentHashMap<String,String>();
+  protected Map<String, String> myTeamCityConfigParameters = new ConcurrentHashMap<String,String>();
   protected boolean myVirtualContext = false;
   private final TestLogger myTestLogger = new TestLogger();
 
@@ -280,8 +281,14 @@ public class BaseGradleRunnerTest {
       System.out.println("Failed to find java home!");
     }
 
+    final Properties configProperties = new Properties();
+    configProperties.putAll(myTeamCityConfigParameters);
+    final File configFile = myTempFiles.createTempFile();
+    configProperties.store(new FileOutputStream(configFile), null);
+
     final Properties systemProperties = new Properties();
     systemProperties.putAll(myTeamCitySystemProps);
+    systemProperties.put(AgentRuntimeProperties.AGENT_CONFIGURATION_PARAMS_FILE_PROP, configFile.getCanonicalPath());
     final File propertiesFile = myTempFiles.createTempFile();
     systemProperties.store(new FileOutputStream(propertiesFile), null);
     myBuildEnvVars.put("TEAMCITY_BUILD_PROPERTIES_FILE", propertiesFile.getAbsolutePath());

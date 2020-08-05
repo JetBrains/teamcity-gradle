@@ -19,6 +19,7 @@ package jetbrains.buildServer.gradle.test.integration;
 import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
+import jetbrains.buildServer.util.TestFor;
 import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
@@ -166,10 +167,24 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   }
 
   @Test(dataProvider = "gradle-version-provider")
+  @TestFor(issues = "TW-60728")
   public void testDisplayName(final String gradleVersion) throws Exception {
     // version 4.7 and later
+    myTeamCityConfigParameters.put("teamcity.internal.gradle.testNameFormat", "displayName");
     if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.7") >= 0) {
-      testTest(PROJECT_O_NAME, "clean custom", "failedProjectOTest.txt", gradleVersion);
+      testTest(PROJECT_O_NAME, "clean custom", "testProjectOTestDisplayName.txt", gradleVersion);
+    } else {
+      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
+    }
+  }
+
+  @Test(dataProvider = "gradle-version-provider")
+  @TestFor(issues = "TW-60728")
+  public void testWithoutDisplayName(final String gradleVersion) throws Exception {
+    // version 4.7 and later
+    myTeamCityConfigParameters.put("teamcity.internal.gradle.testNameFormat", "name");
+    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.7") >= 0) {
+      testTest(PROJECT_O_NAME, "clean custom", "testProjectOTestMethodName.txt", gradleVersion);
     } else {
       throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
     }
