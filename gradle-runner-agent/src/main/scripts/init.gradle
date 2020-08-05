@@ -668,7 +668,7 @@ public class TeamcityTestListener {
 public enum TestNameDescriptor {
   DEFAULT {
     String getTestName(TestDescriptorWrapper descriptor) {
-      return NAME.getTestName(descriptor)
+      return DISPLAY_NAME.getTestName(descriptor)
     }
   },
   NAME {
