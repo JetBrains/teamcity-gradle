@@ -1,6 +1,0 @@
-##teamcity[testStarted name='Foo display name 1.bar display name 1' flowId='##Flow_ID##']
-##teamcity[testFailed name='Foo display name 1.bar display name 1' message='java.lang.RuntimeException: custom error 1' details='java.lang.RuntimeException: custom error 1|n' flowId='##Flow_ID##']
-##teamcity[testFinished name='Foo display name 1.bar display name 1' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testStarted name='Foo2.bar2' flowId='##Flow_ID##']
-##teamcity[testFailed name='Foo2.bar2' message='java.lang.RuntimeException: custom error 2' details='java.lang.RuntimeException: custom error 2|n' flowId='##Flow_ID##']
-##teamcity[testFinished name='Foo2.bar2' duration='##Duration##' flowId='##Flow_ID##']

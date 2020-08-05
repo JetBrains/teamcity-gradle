@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 /*
 * Copyright 2000-2020 JetBrains s.r.o.
@@ -133,10 +134,12 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
   AtomicBoolean initScriptStartReported = new AtomicBoolean(false);
 
-  def logger;
+  Logger logger;
+  Closure doAfterEvaluate;
 
-  public TeamcityPropertiesListener(Logger log) {
+  public TeamcityPropertiesListener(Logger log, Closure doAfterEvaluate) {
     logger = log
+    this.doAfterEvaluate = doAfterEvaluate
   }
 
   public void beforeEvaluate(Project project) {
@@ -148,19 +151,32 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   }
 
   public void afterEvaluate(Project project, ProjectState projectState) {
-    if (project.hasProperty("teamcity")) {
-      loadTestJvmArgs(project);
+    if (project.hasProperty("teamcity") && doAfterEvaluate != null) {
+      doAfterEvaluate(project)
     }
   }
 
-  private void loadTestJvmArgs(Project project) {
-    final String jvmargs = (String) project.teamcity["gradle.test.jvmargs"]
-    final String[] arguments = jvmargs == null ? new String[0] : jvmargs.split("\n")
-    TestTaskWrapper.forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper task ->
-      task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"]).jvmArgs(arguments)
-    }
-  }
+  static Properties getProps(Project project, Logger logger, String file) {
+    File propsFile = project.file(file)
+    Properties props = new Properties()
+    InputStream input
 
+    try {
+      input = new FileInputStream(propsFile)
+      props.load(input)
+    } catch (FileNotFoundException e) {
+      logger.error(e.getMessage(), e)
+    } catch (IOException e) {
+      logger.error(e.getMessage(), e)
+    } finally {
+      try {
+        input?.close()
+      } catch (IOException e) {
+        Logger.log(LogLevel.ERROR, "Failed to close file stream!", e)
+      }
+    }
+    return props
+  }
 
   private void loadProps(Project p) {
     String propsFilePath = System.getProperty(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_PROP);
@@ -169,27 +185,7 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
     }
 
     if (null != propsFilePath) {
-      File propsFile = p.file(propsFilePath);
-      Properties props = new Properties();
-      InputStream inStream = null;
-
-      try {
-        inStream = new FileInputStream(propsFile);
-        props.load(inStream);
-      } catch (FileNotFoundException e) {
-        logger.error(e.getMessage(), e);
-      } catch (IOException e) {
-        logger.error(e.getMessage(), e);
-      } finally {
-        if (null != inStream) {
-          try {
-            inStream.close();
-          } catch (IOException e) {
-            Logger.log(LogLevel.ERROR, "Failed to close file stream!", e);
-          }
-        }
-      }
-
+      Properties props = getProps(p, logger, propsFilePath)
       addCustomProperties(p, props)
     } else {
       addCustomProperties(p, new HashMap())
@@ -395,15 +391,17 @@ public class TeamcityTestListener {
 
   boolean skipStdErr = false
   boolean skipStdOut = false
+  AtomicReference<TestNameDescriptor> testNameDescriptor
   private final Project project
   private final AtomicLong testCounter;
 
-  public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter) {
+  public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter, AtomicReference<TestNameDescriptor> testNameDescriptor) {
     this.project = project
     logger = log
     isParallelBuild = isParallel
     projectFlowId = TeamcityTaskListener.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode())
-    this.testCounter = testCounter;
+    this.testCounter = testCounter
+    this.testNameDescriptor = testNameDescriptor
   }
 
   /**
@@ -462,7 +460,6 @@ public class TeamcityTestListener {
       logger.lifecycle("##teamcity[flowFinished flowId='${flowId}']");
     }
   }
-
 
   /**
    * Called before a test is started.
@@ -646,57 +643,116 @@ public class TeamcityTestListener {
 
   def testListenerDelegate = [
           beforeSuite: { suite ->
-            this.beforeSuite(new TestDescriptorWrapper(suite))
+            this.beforeSuite(new TestDescriptorWrapper(suite, testNameDescriptor.get()))
           },
 
           afterSuite: { suite, result ->
-            this.afterSuite(new TestDescriptorWrapper(suite), result)
+            this.afterSuite(new TestDescriptorWrapper(suite, testNameDescriptor.get()), result)
           },
 
           beforeTest: { testDescriptor ->
-            this.beforeTest(new TestDescriptorWrapper(testDescriptor))
+            this.beforeTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor.get()))
           },
 
           afterTest: { testDescriptor, result ->
-            this.afterTest(new TestDescriptorWrapper(testDescriptor), result)
+            this.afterTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor.get()), result)
           }]
 
   def testOutputDelegate = [
           onOutput: { testDescriptor, outputEvent ->
-            this.onOutput(new TestDescriptorWrapper(testDescriptor), outputEvent)
+            this.onOutput(new TestDescriptorWrapper(testDescriptor, testNameDescriptor.get()), outputEvent)
           }]
 
 }
 
+public enum TestNameDescriptor {
+  DEFAULT {
+    String getTestName(TestDescriptorWrapper descriptor) {
+      return NAME.getTestName(descriptor)
+    }
+  },
+  NAME {
+    String getTestName(TestDescriptorWrapper descriptor) {
+      return super.getTestName(descriptor)
+    }
+  },
+  DISPLAY_NAME {
+    String getTestName(TestDescriptorWrapper descriptor) {
+      String methodName = getMethodName(descriptor.name)
+      if (descriptor.displayName.startsWith(methodName)) {
+        methodName = descriptor.displayName
+      } else {
+        methodName = "$methodName(${descriptor.displayName})"
+      }
+      if (methodName == "${descriptor.name}()") {
+        methodName = descriptor.name
+      }
+      return "${descriptor.className}.$methodName"
+    }
+
+    private final List<Character> BRACKETS = [(char)'(', (char)'[', (char)'{', (char)'<']
+
+    private String getMethodName(String name) {
+      for (int i = 0; i < name.length(); i++) {
+        if (name.charAt(i) in BRACKETS) return name.substring(0, i)
+      }
+      return name
+    }
+  }
+
+  public String getTestName(TestDescriptorWrapper descriptor) {
+    "${descriptor.className}.${descriptor.name}"
+  }
+
+  static TestNameDescriptor of(String param) {
+    if (param == null) return DEFAULT
+    switch (param) {
+      case "name": return NAME
+      case "displayName": return DISPLAY_NAME
+      default: return DEFAULT
+    }
+  }
+}
+
 public class TestDescriptorWrapper {
+  final TestNameDescriptor testNameDescriptor
   final TestDescriptor descriptor
 
-  public TestDescriptorWrapper(TestDescriptor descriptor) {
+  TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor) {
     this.descriptor = descriptor
+    this.testNameDescriptor = testNameDescriptor
   }
 
   String getTestName() {
-    "${className}.${name}"
+    testNameDescriptor?.getTestName(this) ?: TestNameDescriptor.DEFAULT.getTestName(this)
   }
 
   String getClassName() {
-    if(descriptor.metaClass.respondsTo(descriptor, "getClassDisplayName")) {
-      return descriptor.getClassDisplayName()
-    }
     return descriptor.getClassName()
   }
 
   String getName() {
-    if(descriptor.metaClass.respondsTo(descriptor, "getDisplayName")) {
-      return descriptor.getDisplayName()
-    }
     return descriptor.getName()
   }
 
   TestDescriptorWrapper getParent() {
     def parent = descriptor.parent
-    if (parent != null) return new TestDescriptorWrapper(parent)
+    if (parent != null) return new TestDescriptorWrapper(parent, testNameDescriptor)
     return null
+  }
+
+  String getClassDisplayName() {
+    if(descriptor.metaClass.respondsTo(descriptor, "getClassDisplayName")) {
+      return descriptor.getClassDisplayName() ?: descriptor.getClassName()
+    }
+    return descriptor.getClassName()
+  }
+
+  String getDisplayName() {
+    if(descriptor.metaClass.respondsTo(descriptor, "getDisplayName")) {
+      return descriptor.getDisplayName() ?: descriptor.getName()
+    }
+    return descriptor.getName()
   }
 
   String getFlowId(String parentFlowId) {
@@ -881,15 +937,32 @@ try {
 }
 
 final AtomicLong testCounter = new AtomicLong(0);
+final AtomicReference<TestNameDescriptor> testNameDescriptor = new AtomicReference<TestNameDescriptor>(null)
 
-gradle.addListener(new TeamcityPropertiesListener(logger))
+gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
+  // init jvm args
+  final String jvmargs = (String)project.teamcity["gradle.test.jvmargs"]
+  final String[] arguments = jvmargs == null ? new String[0] : jvmargs.split("\n")
+  TestTaskWrapper.forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper task ->
+    task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"]).jvmArgs(arguments)
+  }
+  // init test name format
+  TestNameDescriptor descriptor = TestNameDescriptor.DEFAULT
+  String tcConfigFile = project.teamcity[AgentRuntimeProperties.AGENT_CONFIGURATION_PARAMS_FILE_PROP]
+  if (tcConfigFile != null && new File(tcConfigFile).exists()) {
+    Properties tcConfig = TeamcityPropertiesListener.getProps(project, logger, tcConfigFile)
+    descriptor = TestNameDescriptor.of(tcConfig["teamcity.internal.gradle.testNameFormat"])
+  }
+  testNameDescriptor.compareAndSet(null, descriptor)
+}))
+
 gradle.addListener(new TeamcityExceptionsListener(logger))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
   gradle.rootProject.allprojects { Project project ->
     TestTaskWrapper.forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper testTask ->
-      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter)
+      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter, testNameDescriptor)
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))

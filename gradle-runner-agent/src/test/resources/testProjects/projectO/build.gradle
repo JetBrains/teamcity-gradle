@@ -14,25 +14,73 @@ task custom(type: CustomTask) {
 
 class CustomTask extends AbstractTestTask {
   protected CustomTestExecutionSpec createTestExecutionSpec() { new CustomTestExecutionSpec() }
+
   protected CustomTestExecuter createTestExecuter() { new CustomTestExecuter() }
 }
 
-class CustomTestExecutionSpec implements TestExecutionSpec { }
+class CustomTestExecutionSpec implements TestExecutionSpec {}
 
-class CustomTestExecuter implements TestExecuter<CustomTestExecutionSpec>{
+class CustomTestExecuter implements TestExecuter<CustomTestExecutionSpec> {
   void execute(CustomTestExecutionSpec testExecutionSpec, TestResultProcessor testResultProcessor) {
-    testResultProcessor.started(new DefaultTestSuiteDescriptor("suite", "suite"), new TestStartEvent(100L))
-    def name = "testName1"
-    testResultProcessor.started(new DefaultTestDescriptor(name, "Foo1", "bar1", "Foo display name 1", "bar display name 1"), new TestStartEvent(100L))
-    testResultProcessor.failure(name, new RuntimeException("custom error 1", null, true, false))
-    testResultProcessor.completed(name, new TestCompleteEvent(200L))
+    def time = new TestTime()
+    testResultProcessor.started(new DefaultTestSuiteDescriptor("suite", "org.jetbrains"), new TestStartEvent(time.next))
+    [
+            [
+                    className       : "Foo1",
+                    name            : "bar1",
+                    classDisplayName: "Foo display name 1",
+                    displayName     : "bar display name 1"
+            ], [
+                    className       : "org.jetbrains.Foo2",
+                    name            : "bar2",
+                    classDisplayName: "Foo display name 2",
+                    displayName     : "bar display name 2"
+            ], [
+                    className       : "Foo3",
+                    name            : "bar3()",
+                    classDisplayName: "Foo display name 3",
+                    displayName     : "bar display name 3"
+            ], [
+                    className       : "Foo4",
+                    name            : "bar4(String)[1]",
+                    classDisplayName: "Foo display name 4",
+                    displayName     : "bar display name 4"
+            ], [
+                    className       : "Foo5",
+                    name            : "bar5",
+                    classDisplayName: "Foo display name 5",
+                    displayName     : "bar5()"
+            ], [
+                    className       : "Foo6",
+                    name            : "bar6"
+            ], [
+                    className       : "Foo7",
+                    name            : "bar7()",
+                    classDisplayName: "Foo display name 7",
+                    displayName     : "param1, param2"
+            ], [
+                    className       : "Foo8",
+                    name            : "bar8()",
+                    classDisplayName: "Foo display name 8",
+                    displayName     : "test()"
+            ]
+    ].forEach { test ->
+      testResultProcessor.with {
+        started(new DefaultTestDescriptor(test.className, test.className, test.name, test.classDisplayName, test.displayName ?: test.name), new TestStartEvent(time.next))
+        completed(test.className, new TestCompleteEvent(time.next))
+      }
+    }
 
-    name = "testName2"
-    testResultProcessor.started(new DefaultTestDescriptor(name, "Foo2", "bar2"), new TestStartEvent(200L))
-    testResultProcessor.failure(name, new RuntimeException("custom error 2", null, true, false))
-    testResultProcessor.completed(name, new TestCompleteEvent(400L))
-
-    testResultProcessor.completed("suite", new TestCompleteEvent(400L))
+    testResultProcessor.completed("suite", new TestCompleteEvent(time.next))
   }
-  void stopNow() { }
+
+  void stopNow() {}
+
+  class TestTime {
+    long time
+
+    long getNext() {
+      time += 100
+    }
+  }
 }
