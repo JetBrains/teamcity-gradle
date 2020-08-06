@@ -189,4 +189,13 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
       throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
     }
   }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void manyLinesOfOutput(final String gradleVersion) throws Exception {
+    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.7") >= 0) {
+      testTest(PROJECT_P_NAME, "clean custom", "testProjectP.txt", gradleVersion);
+    } else {
+      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
+    }
+  }
 }
