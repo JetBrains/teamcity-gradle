@@ -33,6 +33,7 @@ import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
+import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
@@ -73,6 +74,7 @@ public class BaseGradleRunnerTest {
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
+  protected static final String MULTI_PROJECT_E_NAME = "MultiProjectE";
   protected static final String DEMAND_MULTI_PROJECT_A_NAME = "demandMultiProjectA";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
 
@@ -130,6 +132,7 @@ public class BaseGradleRunnerTest {
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
   protected Map<String, String> myTeamCitySystemProps = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myTeamCityConfigParameters = new ConcurrentHashMap<String,String>();
+  protected Map<Option<?>, Object> myBuildTypeOptionValue = new HashMap<Option<?>, Object>();
   protected boolean myVirtualContext = false;
   private final TestLogger myTestLogger = new TestLogger();
 
@@ -297,6 +300,20 @@ public class BaseGradleRunnerTest {
     final File workingDir = new File(myCoDir, projectName);
 
     final Expectations initMockingCtx = new Expectations() {{
+      //myBuildTypeOptionValue.entrySet().forEach(entry -> {
+      //  allowing(myMockBuild).getBuildTypeOptionValue(entry.getKey()); will(returnValue(entry.getValue()));
+      //});
+      allowing(myMockBuild).getBuildTypeOptionValue(with(any(Option.class))); will(new CustomAction("proxy Option") {
+        @Override
+        public Object invoke(Invocation invocation) throws Throwable {
+          final Option key = (Option)invocation.getParameter(0);
+          if (myBuildTypeOptionValue.containsKey(key)) {
+            return myBuildTypeOptionValue.get(key);
+          } else {
+            return key.getDefaultValue();
+          }
+        }
+      });
       allowing(myMockBuild).getBuildLogger(); will(returnValue(myMockLogger));
       allowing(myMockBuild).getCheckoutDirectory(); will(returnValue(myCoDir));
       allowing(myMockBuild).getBuildTempDirectory(); will(returnValue(myTempDir));

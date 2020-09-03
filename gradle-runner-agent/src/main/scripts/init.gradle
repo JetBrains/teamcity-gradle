@@ -112,7 +112,7 @@ public class DependencyBasedTestRun {
   }
 
   private def readChangedFiles(Map TCProps) {
-    String filename = TCProps["teamcity.build.changedFiles.file"]
+    String filename = TCProps[AgentRuntimeProperties.CHANGED_FILES_FILE_PARAM]
 
     def lines = new File(filename).readLines()
     def personalMatch = /(.*):(.*):<personal>/
@@ -391,11 +391,11 @@ public class TeamcityTestListener {
 
   boolean skipStdErr = false
   boolean skipStdOut = false
-  AtomicReference<TestNameDescriptor> testNameDescriptor
+  TestNameDescriptor testNameDescriptor
   private final Project project
   private final AtomicLong testCounter;
 
-  public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter, AtomicReference<TestNameDescriptor> testNameDescriptor) {
+  public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter, TestNameDescriptor testNameDescriptor) {
     this.project = project
     logger = log
     isParallelBuild = isParallel
@@ -540,7 +540,7 @@ public class TeamcityTestListener {
       return new File(path)
     }
 
-    final String rootTmpDirectory = getProjectProperty("teamcity.build.tempDir") ?: project.getBuildDir().path
+    final String rootTmpDirectory = getProjectProperty(AgentRuntimeProperties.BUILD_TEMP_DIR) ?: project.getBuildDir().path
     File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages${File.separator}${System.nanoTime()}")
     if (resultDir.mkdirs()) {
       setProjectProperty("teamcity.build.stacktraceLogDir", resultDir.path)
@@ -643,24 +643,24 @@ public class TeamcityTestListener {
 
   def testListenerDelegate = [
           beforeSuite: { suite ->
-            this.beforeSuite(new TestDescriptorWrapper(suite, testNameDescriptor.get()))
+            this.beforeSuite(new TestDescriptorWrapper(suite, testNameDescriptor))
           },
 
           afterSuite: { suite, result ->
-            this.afterSuite(new TestDescriptorWrapper(suite, testNameDescriptor.get()), result)
+            this.afterSuite(new TestDescriptorWrapper(suite, testNameDescriptor), result)
           },
 
           beforeTest: { testDescriptor ->
-            this.beforeTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor.get()))
+            this.beforeTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor))
           },
 
           afterTest: { testDescriptor, result ->
-            this.afterTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor.get()), result)
+            this.afterTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor), result)
           }]
 
   def testOutputDelegate = [
           onOutput: { testDescriptor, outputEvent ->
-            this.onOutput(new TestDescriptorWrapper(testDescriptor, testNameDescriptor.get()), outputEvent)
+            this.onOutput(new TestDescriptorWrapper(testDescriptor, testNameDescriptor), outputEvent)
           }]
 
 }
@@ -760,6 +760,50 @@ public class TestDescriptorWrapper {
   }
 }
 
+public class TeamcityRerunTestsListener extends  BuildAdapter {
+  Logger logger
+  AtomicReference<Properties> config;
+  boolean defaultOption = false;
+  boolean newOption = false;
+
+  public TeamcityRerunTestsListener(Logger log, AtomicReference<Properties> tcConfigurationParameters) {
+    logger = log
+    config = tcConfigurationParameters
+  }
+
+  @Override
+  void projectsEvaluated(Gradle gradle) {
+    defaultOption = System.getenv(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY).toBoolean();
+    if (defaultOption == true) return
+    def conf = config.get()
+    if (conf != null && conf[GradleRunnerConstants.GRADLE_USE_TEST_RETRY_PLUGIN] == "false") return
+
+    gradle.taskGraph.whenReady { graph ->
+      for (Task task : graph.allTasks) {
+        if (!TestTaskWrapper.type.isAssignableFrom(task.class)) continue
+        if (!task.project.plugins.hasPlugin("org.gradle.test-retry")) continue
+        def wrapper = new TestTaskWrapper(task)
+        def plugin = wrapper.getExtensions()?.findByName("retry")
+        if (plugin == null) continue
+        if (!plugin.metaClass.respondsTo(plugin, "getMaxRetries")) continue
+        def retries = plugin.getMaxRetries()
+        if (!retries.metaClass.respondsTo(retries, "getOrNull")) continue
+        if (retries.getOrNull() ?: 0 > 0) {
+          newOption = true
+          logger.lifecycle(new ServiceMessage("testRetrySupport", ["enabled": "true"]).asString())
+          break
+        }
+      }
+    }
+  }
+
+  @Override
+  void buildFinished(BuildResult result) {
+    if (defaultOption == true || defaultOption == newOption) return
+    logger.lifecycle(new ServiceMessage("testRetrySupport", ["enabled": defaultOption.toString()]).asString())
+  }
+}
+
 public class TeamcityExceptionsListener extends BuildAdapter {
   def logger
 
@@ -767,6 +811,7 @@ public class TeamcityExceptionsListener extends BuildAdapter {
     logger = log
   }
 
+  @Override
   void buildFinished(BuildResult result) {
     def failure = result.getFailure()
     if (failure != null) {
@@ -905,6 +950,13 @@ class TestTaskWrapper {
     return this
   }
 
+  def getExtensions() {
+    if(testTask.metaClass.respondsTo(testTask, 'getExtensions')) {
+      return testTask.extensions
+    }
+    return null
+  }
+
   /**
    * Creates an instance of the {@link TestTaskWrapper} for every instance of the Test in the TaskCollection.
    * Attempts to lazily evaluate the Closure action against all instances lazily if the version of Gradle supports it.
@@ -937,7 +989,7 @@ try {
 }
 
 final AtomicLong testCounter = new AtomicLong(0);
-final AtomicReference<TestNameDescriptor> testNameDescriptor = new AtomicReference<TestNameDescriptor>(null)
+final AtomicReference<Properties> tcConfigurationParameters = new AtomicReference<Properties>(new Properties())
 
 gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
   // init jvm args
@@ -946,23 +998,24 @@ gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
   TestTaskWrapper.forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper task ->
     task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"]).jvmArgs(arguments)
   }
-  // init test name format
-  TestNameDescriptor descriptor = TestNameDescriptor.DEFAULT
+  // read teamcity configuration parameters
   String tcConfigFile = project.teamcity[AgentRuntimeProperties.AGENT_CONFIGURATION_PARAMS_FILE_PROP]
   if (tcConfigFile != null && new File(tcConfigFile).exists()) {
-    Properties tcConfig = TeamcityPropertiesListener.getProps(project, logger, tcConfigFile)
-    descriptor = TestNameDescriptor.of(tcConfig["teamcity.internal.gradle.testNameFormat"])
+    tcConfigurationParameters.set(TeamcityPropertiesListener.getProps(project, logger, tcConfigFile))
   }
-  testNameDescriptor.compareAndSet(null, descriptor)
 }))
 
 gradle.addListener(new TeamcityExceptionsListener(logger))
+gradle.addListener(new TeamcityRerunTestsListener(logger, tcConfigurationParameters))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
   gradle.rootProject.allprojects { Project project ->
     TestTaskWrapper.forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper testTask ->
-      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter, testNameDescriptor)
+      Properties tcConfigParams = tcConfigurationParameters.get()
+      def descriptor = TestNameDescriptor.of(tcConfigParams[GradleRunnerConstants.GRADLE_TEST_NAME_FORMAT])
+
+      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter, descriptor)
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))

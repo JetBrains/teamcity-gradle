@@ -44,9 +44,13 @@ public class GradleRunnerConstants
   public static final String GRADLE_CD_MODE = "create-cd";
   public static final String ENV_GRADLE_OPTS = "GRADLE_OPTS";
   public static final String ENV_TEAMCITY_BUILD_INIT_PATH = "TEAMCITY_BUILD_INIT_PATH";
+  public static final String ENV_SUPPORT_TEST_RETRY = "TEAMCITY_SUPPORT_TEST_RETRY";
 
   public static final String INIT_SCRIPT_NAME = "init.gradle";
   public static final String INIT_SCRIPT_SUFFIX = "scripts/"+INIT_SCRIPT_NAME;
   public static final String STARTING_TEAMCITY_BUILD_PREFIX = "Starting Gradle in TeamCity build ";
   public static final String GRADLE_BUILD_PROBLEM_TYPE = "gradleBuildProblem";
+
+  public static final String GRADLE_USE_TEST_RETRY_PLUGIN = "teamcity.internal.gradle.useTestRetryPlugin";
+  public static final String GRADLE_TEST_NAME_FORMAT = "teamcity.internal.gradle.testNameFormat";
 }

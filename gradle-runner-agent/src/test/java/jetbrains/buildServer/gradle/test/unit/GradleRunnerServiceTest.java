@@ -35,9 +35,12 @@ import jetbrains.buildServer.gradle.agent.GradleRunnerService;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.agent.GradleToolProvider;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
+import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
+import org.jmock.api.Invocation;
+import org.jmock.lib.action.CustomAction;
 import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -86,6 +89,12 @@ public class GradleRunnerServiceTest {
       allowing(myBuildPrarams).getAllParameters();        will(returnValue(myBuildParams));
       allowing(myBuildPrarams).getEnvironmentVariables(); will(returnValue(myEnvVars));
       allowing(myBuildPrarams).getSystemProperties();     will(returnValue(mySystemProps));
+      allowing(myBuild).getBuildTypeOptionValue(with(any(Option.class))); will(new CustomAction("proxy Option") {
+        @Override
+        public Object invoke(Invocation invocation) {
+          return ((Option)invocation.getParameter(0)).getDefaultValue();
+        }
+      });
     }});
     myService = (GradleRunnerService) new GradleRunnerServiceFactory().createService();
   }
