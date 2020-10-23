@@ -1,6 +1,5 @@
 package jetbrains.buildServer.gradle.server;
 
-import com.intellij.openapi.util.Pair;
 import java.util.*;
 import java.util.function.BiPredicate;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
@@ -41,11 +40,11 @@ public class GradleRunnerDiscoveryExtension implements BuildRunnerDiscoveryExten
 
   @NotNull
   private List<DiscoveredObject> scan(@NotNull Element dir) {
-    final List<Pair<Element, Element>> foundBuildFiles = new ArrayList<>(0);
+    final List<FileElement> foundBuildFiles = new ArrayList<>(0);
 
     traverse(dir, (d, child) -> {
       if (child.isLeaf() && ourBuildFileSupportedNames.contains(child.getName())) {
-        foundBuildFiles.add(Pair.create(d, child));
+        foundBuildFiles.add(new FileElement(d, child));
         return false;
       }
       return true;
@@ -63,14 +62,12 @@ public class GradleRunnerDiscoveryExtension implements BuildRunnerDiscoveryExten
 
     final List<DiscoveredObject> res = new ArrayList<DiscoveredObject>(foundBuildFiles.size());
 
-    for (Pair<Element, Element> pair : foundBuildFiles) {
-      final Element directory = pair.first;
+    for (FileElement file : foundBuildFiles) {
       final Map<String, String> props = new HashMap<String, String>();
       props.put(GradleRunnerConstants.GRADLE_TASKS, "clean build");
 
-      final boolean isSubdirectory = !directory.getBrowser().getRoot().equals(directory);
-      if (isSubdirectory) {
-        props.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, directory.getFullName() + "/" + pair.second.getName());
+      if (file.isSubdirectory()) {
+        props.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, file.getPath());
       }
       if (!foundWrapperDirs.isEmpty()) {
         // Seems it's safe to choose first one
@@ -126,5 +123,24 @@ public class GradleRunnerDiscoveryExtension implements BuildRunnerDiscoveryExten
       }
     }
     return discovered;
+  }
+
+  private static class FileElement {
+    @NotNull private final Element myDirectory;
+    @NotNull private final Element myFile;
+
+    private FileElement(@NotNull Element parent, @NotNull Element file) {
+      myDirectory = parent;
+      myFile = file;
+    }
+
+    public boolean isSubdirectory() {
+      return !myDirectory.getBrowser().getRoot().equals(myDirectory);
+    }
+
+    @NotNull
+    public String getPath() {
+      return myDirectory.getFullName() + "/" + myFile.getName();
+    }
   }
 }
