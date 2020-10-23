@@ -17,7 +17,6 @@
 package jetbrains.buildServer.gradle.server;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
@@ -71,10 +70,7 @@ public class GradleRunType extends RunType {
 
   @Override
   public Map<String, String> getDefaultRunnerProperties() {
-    final Map<String, String> map = new HashMap<String, String>();
-    map.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "build.gradle");
-    map.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true");
-    return map;
+    return Collections.singletonMap(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true");
   }
 
   @NotNull
