@@ -79,7 +79,7 @@ public class GradleRunType extends RunType {
 
     StringBuilder result = new StringBuilder();
 
-    if (Boolean.valueOf(parameters.get(GradleRunnerConstants.IS_INCREMENTAL))) {
+    if (Boolean.parseBoolean(parameters.get(GradleRunnerConstants.IS_INCREMENTAL))) {
       result.append("Run incremental builds using :buildDependents");
     } else {
       result.append("Gradle tasks: ");
@@ -92,7 +92,7 @@ public class GradleRunType extends RunType {
     }
     result.append('\n');
     result.append("Use wrapper script: ");
-    if (Boolean.valueOf(parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))) {
+    if (Boolean.parseBoolean(parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))) {
       result.append("yes");
     } else {
       result.append("no");
@@ -104,7 +104,7 @@ public class GradleRunType extends RunType {
   @NotNull
   @Override
   public List<Requirement> getRunnerSpecificRequirements(@NotNull final Map<String, String> runParameters) {
-    if(!Boolean.valueOf(runParameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))
+    if(!Boolean.parseBoolean(runParameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG))
        && StringUtil.isEmptyOrSpaces(runParameters.get(GradleRunnerConstants.GRADLE_HOME))) {
       return Collections.singletonList(new Requirement("env.GRADLE_HOME", null, RequirementType.EXISTS));
     } else {
