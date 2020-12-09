@@ -7,15 +7,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jmock.api.Invocation;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
 * Created by Nikita.Skvortsov
 * Date: 4/2/13, 1:17 PM
 */
 public class FlowServiceMessageReceiver extends GradleRunnerServiceMessageTest.ServiceMessageReceiver {
-  private final ConcurrentHashMap<String, List<String>> myFlows = new ConcurrentHashMap<String, List<String>>();
+  private final Map<String, List<String>> myFlows = new ConcurrentHashMap<>();
   private final Pattern flowIdPattern = Pattern.compile("flowId='(.*?)'");
 
   public FlowServiceMessageReceiver() {
@@ -56,7 +55,7 @@ public class FlowServiceMessageReceiver extends GradleRunnerServiceMessageTest.S
   }
 
   private void addToFlow(final String group, final String text) {
-    List<String> list = Collections.synchronizedList(new ArrayList<String>());
+    List<String> list = Collections.synchronizedList(new ArrayList<>());
     List<String> old = myFlows.putIfAbsent(group, list);
     if (null != old) {
       list = old;
@@ -64,19 +63,15 @@ public class FlowServiceMessageReceiver extends GradleRunnerServiceMessageTest.S
     list.add(text);
   }
 
-  public Map<String,List<String>> getFlows() {
-    return myFlows;
-  }
-
   protected void validateTestFlows(int totalTestCount) {
       int testCount = 0;
       Pattern testMsg = Pattern.compile("##teamcity\\[(\\w+?)(Started|Finished|Ignored)\\s+name='(.*?)'.*(?<!\\|)\\]");
 
-      assertTrue(myFlows.size() > 0, "Have zero flows to validate!");
+      assertFalse(myFlows.isEmpty(), "Have zero flows to validate!");
 
       for (Map.Entry<String, List<String>> flow : myFlows.entrySet()) {
 
-        List<String> tests = new ArrayList<String>((flow.getValue().size() / 2) + 1);
+        List<String> tests = new ArrayList<>((flow.getValue().size() / 2) + 1);
 
         // check only one testStarted per flow
         int testStarted = 0;
@@ -110,9 +105,9 @@ public class FlowServiceMessageReceiver extends GradleRunnerServiceMessageTest.S
             }
           }
         }
-        assertTrue(tests.size() == 0, "Some 'Started' messages are not closed: " + tests.toString());
+        assertTrue(tests.isEmpty(), "Some 'Started' messages are not closed: " + tests.toString());
       }
-      assertEquals(testCount, totalTestCount, "Wrong number of tests reported");
+      assertEquals(testCount, totalTestCount, "Wrong number of tests reported [expected = " + totalTestCount + ", actual = " + testCount + "]");
     }
 
 }

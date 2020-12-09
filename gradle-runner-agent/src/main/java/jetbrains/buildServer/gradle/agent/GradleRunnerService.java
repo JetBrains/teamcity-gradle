@@ -35,35 +35,40 @@ import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.serverSide.BuildTypeOptions;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
+import jetbrains.buildServer.util.impl.Lazy;
 import org.jetbrains.annotations.NotNull;
 
 public class GradleRunnerService extends BuildServiceAdapter
 {
   private final String exePath;
   private final String wrapperName;
-  private List<ProcessListener> myListenerList;
+  private final Lazy<List<ProcessListener>> listeners;
 
   public GradleRunnerService(final String exePath, final String wrapperName) {
     this.exePath = exePath;
     this.wrapperName = wrapperName;
+    listeners = new Lazy<List<ProcessListener>>() {
+      @Override
+      protected List<ProcessListener> createValue() {
+        return Collections.singletonList(new GradleLoggingListener(getLogger()));
+      }
+    };
   }
 
   @Override
-  @NotNull public ProgramCommandLine makeProgramCommandLine() throws RunBuildException
-  {
+  @NotNull public ProgramCommandLine makeProgramCommandLine() throws RunBuildException {
     boolean useWrapper = ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(),
                                                                     GradleRunnerConstants.GRADLE_WRAPPER_FLAG);
 
-    List<String> params = new ArrayList<String>();
-    Map<String,String> env = new HashMap<String,String>(getEnvironmentVariables());
+    List<String> params = new ArrayList<>();
+    Map<String,String> env = new HashMap<>(getEnvironmentVariables());
     File gradleExe;
     String exePath = "gradle";
 
     if (!useWrapper) {
       if (getRunnerContext().isVirtualContext()) {
         getLogger().message("Step is running in a virtual context, skip detecting GRADLE_HOME");
-      }
-      else {
+      } else {
         File gradleHome = getGradleHome();
         gradleExe = new File(gradleHome, this.exePath);
         exePath = gradleExe.getAbsolutePath();
@@ -76,7 +81,6 @@ public class GradleRunnerService extends BuildServiceAdapter
         env.put("GRADLE_HOME", gradleHome.getAbsolutePath());
       }
     } else {
-
       String relativeGradleWPath = ConfigurationParamsUtil.getGradleWPath(getRunnerParameters());
 
       gradleExe = new File(getWorkingDirectory(), relativeGradleWPath + File.separator + wrapperName);
@@ -118,7 +122,6 @@ public class GradleRunnerService extends BuildServiceAdapter
 
   @NotNull
   private String buildGradleOpts() {
-    final String envGradleOpts = getEnvironmentVariables().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
     final String runnerGradleOpts = getRunnerParameters().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
     final String runnerJavaArguments = getJavaArgs();
 
@@ -127,12 +130,12 @@ public class GradleRunnerService extends BuildServiceAdapter
     } else if (!StringUtil.isEmpty(runnerGradleOpts)) {
       return runnerGradleOpts;
     } else {
-      return StringUtil.emptyIfNull(envGradleOpts);
+      return getEnvironmentVariables().getOrDefault(GradleRunnerConstants.ENV_GRADLE_OPTS, StringUtil.EMPTY);
     }
   }
 
   private String getIncrementalMode() {
-    boolean incrementalOptionEnabled = Boolean.valueOf(getRunnerParameters().get(GradleRunnerConstants.IS_INCREMENTAL));
+    boolean incrementalOptionEnabled = Boolean.parseBoolean(getRunnerParameters().get(GradleRunnerConstants.IS_INCREMENTAL));
     boolean internalFullBuildOverride = !IncrementalBuild.isEnabled();
     if (incrementalOptionEnabled) {
       if (internalFullBuildOverride) {
@@ -150,8 +153,7 @@ public class GradleRunnerService extends BuildServiceAdapter
                                                   getBuildParameters().getAllParameters(),
                                                   AgentRuntimeProperties.getCheckoutDir(getRunnerParameters()));
     if (javaHome == null) throw new RunBuildException("Unable to find Java home");
-    javaHome = FileUtil.getCanonicalFile(new File(javaHome)).getPath();
-    return javaHome;
+    return FileUtil.getCanonicalFile(new File(javaHome)).getPath();
   }
 
   private File getGradleHome() throws RunBuildException {
@@ -169,9 +171,8 @@ public class GradleRunnerService extends BuildServiceAdapter
     return ConfigurationParamsUtil.getJavaArgs(getRunnerParameters());
   }
 
-  private List<String> getParams()
-  {
-    List<String> params = new ArrayList<String>();
+  private List<String> getParams() {
+    final List<String> params = new ArrayList<>();
 
     params.addAll(getInitScriptParams());
     params.addAll(ConfigurationParamsUtil.getGradleParams(getRunnerParameters()));
@@ -218,7 +219,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     final String scriptPath = ConfigurationParamsUtil.getGradleInitScript(getRunnerParameters());
     File initScript;
 
-    if (scriptPath.length() > 0) {
+    if (!scriptPath.isEmpty()) {
       initScript = new File(scriptPath);
     } else {
       File pluginsDirectory = getBuild().getAgentConfiguration().getAgentPluginsDirectory();
@@ -247,10 +248,7 @@ public class GradleRunnerService extends BuildServiceAdapter
   @NotNull
   @Override
   public List<ProcessListener> getListeners() {
-    if (null == myListenerList) {
-      myListenerList = Collections.<ProcessListener>singletonList(new GradleLoggingListener(getLogger()));
-    }
-    return myListenerList;
+    return listeners.getValue();
   }
 
 }

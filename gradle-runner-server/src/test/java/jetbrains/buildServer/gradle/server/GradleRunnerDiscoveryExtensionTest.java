@@ -59,7 +59,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     final Map<String,String> parameters = discovered.get(0).getParameters();
     assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
-    assertEquals(null, parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
+    assertNull(parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
   }
 
   @Test
@@ -86,7 +86,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
     assertEquals("true", parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
     final String wrapperPath = parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_PATH);
-    assertTrue(wrapperPath == null || wrapperPath.length() == 0);
+    assertTrue("wrapper path found", wrapperPath == null || wrapperPath.length() == 0);
   }
 
   @Test
@@ -120,10 +120,12 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
   @Test // TW-47404
   public void testDetectedWrapperIsResetBetweenInvocations() {
     final List<DiscoveredObject> discoveredWrapper = myExtension.discover(new MockBuildType(), new FileSystemBrowser(new File(myRoot, "wrappedProjectA")));
+    assert discoveredWrapper != null;
     assertEquals("true", discoveredWrapper.get(0).getParameters().get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
 
     final List<DiscoveredObject> discoveredNoWrapper = myExtension.discover(new MockBuildType(), new FileSystemBrowser(new File(myRoot, "projectA")));
-    assertEquals(null, discoveredNoWrapper.get(0).getParameters().get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
+    assert discoveredNoWrapper != null;
+    assertNull(discoveredNoWrapper.get(0).getParameters().get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
   }
 
   @TestFor(issues = "TW-55155")
@@ -136,7 +138,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     final Map<String, String> parameters = discovered.get(0).getParameters();
     assertEquals("clean build", parameters.get(GradleRunnerConstants.GRADLE_TASKS));
     assertEquals(GradleRunnerConstants.RUNNER_TYPE, discovered.get(0).getType());
-    assertEquals(null, parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
+    assertNull(parameters.get(GradleRunnerConstants.GRADLE_WRAPPER_FLAG));
   }
 
   @Test

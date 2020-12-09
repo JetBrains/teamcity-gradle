@@ -1,7 +1,7 @@
 package jetbrains.buildServer.gradle.agent;
 
 import java.io.File;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +26,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   private static final Pattern UNZIP_PATTERN = Pattern.compile("Unzipping (\\S*wrapper\\S*.zip) to.*");
 
   private final BuildProgressLogger myBuildLogger;
-  final private List<String> myErrorMessages = new LinkedList<String>();
+  private final List<String> myErrorMessages = new ArrayList<>();
   volatile private boolean myCollectErrors = false;
   private String myWrapperDistPath;
 
@@ -68,7 +68,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   @Override
   public void processFinished(final int exitCode) {
     if (exitCode != 0 ) {
-      if (myErrorMessages.size() > 0) {
+      if (!myErrorMessages.isEmpty()) {
         myBuildLogger.activityStarted("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
         flushErrorMessages();
         myBuildLogger.activityFinished("Gradle failure report", DefaultMessagesInfo.BLOCK_TYPE_TARGET);
@@ -89,9 +89,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   }
 
   private void flushErrorMessages() {
-    for (String errorMessage : myErrorMessages) {
-      myBuildLogger.warning(errorMessage);
-    }
+    myErrorMessages.forEach(msg -> myBuildLogger.warning(msg));
     myErrorMessages.clear();
   }
 
