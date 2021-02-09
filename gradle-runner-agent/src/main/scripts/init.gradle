@@ -433,7 +433,7 @@ public class TeamcityTestListener {
         parentFlowId = parentSuite.getFlowId(projectFlowId)
       }
 
-      logger.lifecycle("##teamcity[flowStarted flowId='${flowId}' parent='${parentFlowId}']");
+      logger.lifecycle(new ServiceMessage("flowStarted", ["flowId": flowId, "parent": parentFlowId]).asString())
     }
   }
 
@@ -457,7 +457,7 @@ public class TeamcityTestListener {
 
   private void finishStartedFlow(String flowId) {
     if (startedFlowIds.remove(flowId) != null) {
-      logger.lifecycle("##teamcity[flowFinished flowId='${flowId}']");
+      logger.lifecycle(new ServiceMessage("flowFinished", ["flowId": flowId]).asString())
     }
   }
 
