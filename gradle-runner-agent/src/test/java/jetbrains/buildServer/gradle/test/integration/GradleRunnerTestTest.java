@@ -25,7 +25,6 @@ import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import static jetbrains.buildServer.util.FileUtil.getExtension;
@@ -104,11 +103,9 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     gatherMessage.validateTestFlows(PROJECT_D_TEST_COUNT);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  // concurrent test close does not work after version 4.4 // TODO fix
+  @Test(dataProvider = "gradle-version-provider<4.4")
   public void parallelTestNgTests(final String gradleVersion) throws RunBuildException, IOException {
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") >= 0) {
-      throw new SkipException("concurrent test close does not work after version 4.4"); // TODO fix
-    }
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(PROJECT_F_NAME,
                                                                                      "clean test",null);
     gradleRunConfiguration.setPatternStr("##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
@@ -144,16 +141,11 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
              "##teamcity\\[(test|message|publishArtifacts)(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=4.4")
   public void customTestFramework(final String gradleVersion) throws Exception {
-    // version 4.4 and later
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.4") >= 0) {
-      myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=ignored\n" +
-                                                       "-Dtest.property.bravo=ignored");
-      testTest(PROJECT_M_NAME, "clean custom", "failedProjectMTest.txt", gradleVersion);
-    } else {
-      throw new SkipException("AbstractTestTask is not implemented until version 4.4");
-    }
+    myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=ignored\n" +
+                                                     "-Dtest.property.bravo=ignored");
+    testTest(PROJECT_M_NAME, "clean custom", "failedProjectMTest.txt", gradleVersion);
   }
 
   @Test(dataProvider = "gradle-version-provider")
@@ -167,92 +159,58 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     testTest(PROJECT_N_NAME, "clean test", "projectNTest.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=4.7")
   @TestFor(issues = "TW-60728")
   public void testDisplayName(final String gradleVersion) throws Exception {
-    // version 4.7 and later
     myTeamCityConfigParameters.put("teamcity.internal.gradle.testNameFormat", "displayName");
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.7") >= 0) {
-      testTest(PROJECT_O_NAME, "clean custom", "testProjectOTestDisplayName.txt", gradleVersion);
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    testTest(PROJECT_O_NAME, "clean custom", "testProjectOTestDisplayName.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=4.7")
   @TestFor(issues = "TW-60728")
   public void testWithoutDisplayName(final String gradleVersion) throws Exception {
-    // version 4.7 and later
     myTeamCityConfigParameters.put("teamcity.internal.gradle.testNameFormat", "name");
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.7") >= 0) {
-      testTest(PROJECT_O_NAME, "clean custom", "testProjectOTestMethodName.txt", gradleVersion);
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    testTest(PROJECT_O_NAME, "clean custom", "testProjectOTestMethodName.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=4.7")
   public void manyLinesOfOutput(final String gradleVersion) throws Exception {
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "4.7") >= 0) {
-      testTest(PROJECT_P_NAME, "clean custom", "testProjectP.txt", gradleVersion);
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    testTest(PROJECT_P_NAME, "clean custom", "testProjectP.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=5.0")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsWithEnabledSetting(final String gradleVersion) throws Exception {
-    // version 5 and later
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "5.0") >= 0) {
-      myBuildTypeOptionValue.put(BuildTypeOptions.BT_SUPPORT_TEST_RETRY, Boolean.TRUE);
-      testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=2", "testMultiProjectEWithEnabledSetting.txt", gradleVersion, "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    myBuildTypeOptionValue.put(BuildTypeOptions.BT_SUPPORT_TEST_RETRY, Boolean.TRUE);
+    testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=2", "testMultiProjectEWithEnabledSetting.txt", gradleVersion,
+             "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=5.0")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsOnlySubmoduleWithPlugin(final String gradleVersion) throws Exception {
-    // version 5 and later
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "5.0") >= 0) {
-      testTest(MULTI_PROJECT_E_NAME, "clean test -b projectA/build.gradle -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithPlugin.txt", gradleVersion, "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    testTest(MULTI_PROJECT_E_NAME, "clean test -b projectA/build.gradle -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithPlugin.txt", gradleVersion,
+             "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=5.0")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsOnlySubmoduleWithoutPlugin(final String gradleVersion) throws Exception {
-    // version 5 and later
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "5.0") >= 0) {
-      testTest(MULTI_PROJECT_E_NAME, "clean test -b projectB/build.gradle -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithoutPlugin.txt", gradleVersion, "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    testTest(MULTI_PROJECT_E_NAME, "clean test -b projectB/build.gradle -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithoutPlugin.txt", gradleVersion,
+             "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=5.0")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsAllModulesWithOnePlugin(final String gradleVersion) throws Exception {
-    // version 5 and later
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "5.0") >= 0) {
-      testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=2", "testMultiProjectEAllModulesWithOnePlugin.txt", gradleVersion, "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=2", "testMultiProjectEAllModulesWithOnePlugin.txt", gradleVersion,
+             "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=5.0")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsAllModulesDisabledPlugin(final String gradleVersion) throws Exception {
-    // version 5 and later
-    if (VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "5.0") >= 0) {
-      testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=0", "testMultiProjectEAllModulesDisabledPlugin.txt", gradleVersion, "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
-    } else {
-      throw new SkipException("DefaultTestDescriptor#getDisplayName and DefaultTestDescriptor#getClassDisplayName is not implemented until version 4.7");
-    }
+    testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=0", "testMultiProjectEAllModulesDisabledPlugin.txt", gradleVersion,
+             "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 }

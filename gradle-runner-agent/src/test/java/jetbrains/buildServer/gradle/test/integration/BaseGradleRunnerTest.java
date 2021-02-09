@@ -141,22 +141,65 @@ public class BaseGradleRunnerTest {
 
   @DataProvider(name = "gradle-version-provider")
   public static Iterator<String[]> getGradlePaths() {
-    Iterator<String[]> result;
+    return generateGradlePaths().iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>2.0")
+  public static Iterator<String[]> getGradlePaths20() {
+    return generateGradlePaths().stream()
+                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "2.0") > 0)
+                    .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>=3.0")
+  public static Iterator<String[]> getGradlePaths30() {
+    return generateGradlePaths().stream()
+                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "3.0") >= 0)
+                    .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>=4.4")
+  public static Iterator<String[]> getGradlePaths44() {
+    return generateGradlePaths().stream()
+                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.4") >= 0)
+                    .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>=4.7")
+  public static Iterator<String[]> getGradlePaths47() {
+    return generateGradlePaths().stream()
+                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.7") >= 0)
+                    .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>=5.0")
+  public static Iterator<String[]> getGradlePaths50() {
+    return generateGradlePaths().stream()
+                           .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "5.0") >= 0)
+                           .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider<4.4")
+  public static Iterator<String[]> getGradlePathsLess44() {
+    return generateGradlePaths().stream()
+                           .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.4") < 0)
+                           .iterator();
+  }
+
+  public static List<String[]> generateGradlePaths() {
     if (ourProjectRoot == null) {
       ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
     File gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH);
     Reporter.log(gradleDir.getAbsolutePath());
     if (gradleDir.exists() && gradleDir.isDirectory()) {
-      result = listAvailableVersions(gradleDir);
+      return listAvailableVersions(gradleDir);
     } else {
-      final String propsGradleHome = System.getProperty(PROPERTY_GRADLE_RUNTIME);
-      result = Collections.singleton(new String[]{propsGradleHome}).iterator();
+      return Collections.singletonList(new String[]{System.getProperty(PROPERTY_GRADLE_RUNTIME)});
     }
-    return result;
   }
 
-  private static Iterator<String[]> listAvailableVersions(final @NotNull File gradleDir) {
+  private static List<String[]> listAvailableVersions(final @NotNull File gradleDir) {
     final File[] versions = gradleDir.listFiles();
     assertNotNull(versions);
 
@@ -174,7 +217,7 @@ public class BaseGradleRunnerTest {
         return VersionComparatorUtil.compare(v1, v2);
       }
     });
-    return versionNames.iterator();
+    return versionNames;
   }
 
   private static boolean looksLikeGradleDir(final File version) {

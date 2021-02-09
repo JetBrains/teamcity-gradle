@@ -17,7 +17,6 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.fail;
@@ -48,11 +47,9 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  // junit version 5 doesn't work on gradle version 2.0
+  @Test(dataProvider = "gradle-version-provider>2.0")
   public void configureOnDemand(final String gradleVersion) throws Exception {
-    if ("gradle-2.0".equals(gradleVersion)) {
-      throw new SkipException("junit version 5 doesn't work on gradle version 2.0");
-    }
     GradleRunConfiguration config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_A_NAME, BUILD_CMD + " -b sub-module1/build.gradle", "compileDemandMultiProjectABlockSequence.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
@@ -78,9 +75,8 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=3.0")
   public void failedParallelCompileTest(final String gradleVersion) throws Exception {
-    if (gradleVersion.startsWith("gradle-2.")) throw new SkipException("This test is for Gradle version > 2.x");
     GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "failedCompilationParallel.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("##teamcity\\[message text='[^:](.*?)(?<!\\|)\\]");
