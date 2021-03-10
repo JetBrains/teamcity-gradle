@@ -773,7 +773,9 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
 
   @Override
   void projectsEvaluated(Gradle gradle) {
-    defaultOption = System.getenv(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY).toBoolean();
+    def envOption = System.getenv(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY)
+    envOption = envOption == null ? "false" : envOption
+    defaultOption = envOption.toBoolean()
     if (defaultOption == true) return
     def conf = config.get()
     if (conf != null && conf[GradleRunnerConstants.GRADLE_USE_TEST_RETRY_PLUGIN] == "false") return
