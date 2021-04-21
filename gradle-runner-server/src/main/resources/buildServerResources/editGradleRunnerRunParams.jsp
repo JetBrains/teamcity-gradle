@@ -8,14 +8,14 @@
 <l:settingsGroup title="Gradle Parameters">
     <tr>
         <th><label for="ui.gradleRunner.gradle.tasks.names">Gradle tasks: </label></th>
-        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_TASKS%>"  className="longField" maxlength="256"/>
+        <td><props:textProperty name="<%=GradleRunnerConstants.GRADLE_TASKS%>"  className="longField"/>
             <span class="smallNote">Enter task names separated by spaces, leave blank to use the 'default' task.<br/>Example: ':myproject:clean :myproject:build' or 'clean build'.</span>
         </td>
     </tr>
      <tr>
         <th><label for="ui.gradleRUnner.gradle.build.file">Gradle build file: </label></th>
         <td>
-            <props:textProperty name="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"  className="longField" maxlength="256">
+            <props:textProperty name="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"  className="longField">
                 <jsp:attribute name="afterTextField"><bs:vcsTree fieldId="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"/></jsp:attribute>
             </props:textProperty>
             <span class="smallNote">Path to build file, relative to the working directory</span>
@@ -54,7 +54,7 @@
     <tr id="ui.gradleRunner.gradle.wrapper.path.tr">
         <th><label for="ui.gradleRunner.gradle.wrapper.path">Path to Wrapper script: </label></th>
         <td>
-            <props:textProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>"  className="longField" maxlength="256">
+            <props:textProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>"  className="longField">
                 <jsp:attribute name="afterTextField"><bs:vcsTree fieldId="<%=GradleRunnerConstants.GRADLE_WRAPPER_PATH%>"/></jsp:attribute>
             </props:textProperty>
             <span class="smallNote">Optional path to the Gradle wrapper script relative to the working directory</span>
