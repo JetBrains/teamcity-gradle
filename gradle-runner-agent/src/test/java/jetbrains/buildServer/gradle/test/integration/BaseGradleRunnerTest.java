@@ -71,6 +71,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_N_NAME = "projectN";
   public static final String PROJECT_O_NAME = "projectO";
   public static final String PROJECT_P_NAME = "projectP";
+  public static final String PROJECT_Q_NAME = "projectQ";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
@@ -184,6 +185,14 @@ public class BaseGradleRunnerTest {
     return generateGradlePaths().stream()
                            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.4") < 0)
                            .iterator();
+  }
+
+  @DataProvider(name = "gradle-last-version-provider")
+  public static Iterator<String[]> getGradlePathsLast() {
+    return generateGradlePaths().stream()
+      .max((a,b) -> VersionComparatorUtil.compare(getGradleVersionFromPath(a[0]), getGradleVersionFromPath(b[0])))
+      .map(path -> Collections.singletonList(path).iterator())
+      .orElseGet(Collections::emptyIterator);
   }
 
   public static List<String[]> generateGradlePaths() {

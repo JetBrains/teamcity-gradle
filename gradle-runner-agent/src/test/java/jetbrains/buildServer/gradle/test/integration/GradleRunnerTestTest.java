@@ -213,4 +213,9 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=0", "testMultiProjectEAllModulesDisabledPlugin.txt", gradleVersion,
              "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
+
+  @Test(dataProvider = "gradle-last-version-provider")
+  public void testIgnoreDefaultDistributionSuiteNames(final String gradleVersion) throws Exception {
+    testTest(PROJECT_Q_NAME, "clean test", "testIgnoreDefaultDistributionSuiteNames.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+  }
 }

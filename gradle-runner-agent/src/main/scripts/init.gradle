@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import java.util.regex.Pattern
 
 /*
 * Copyright 2000-2020 JetBrains s.r.o.
@@ -394,6 +395,7 @@ public class TeamcityTestListener {
   TestNameDescriptor testNameDescriptor
   private final Project project
   private final AtomicLong testCounter;
+  private final Pattern partiotion = ~/^Partition \d+ on /
 
   public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter, TestNameDescriptor testNameDescriptor) {
     this.project = project
@@ -422,7 +424,8 @@ public class TeamcityTestListener {
   }
 
   private boolean shouldBeIgnored(TestDescriptorWrapper suite) {
-    suite.name.startsWith("Gradle Test Executor") || suite.name.startsWith("Gradle Test Run")
+    suite.name.startsWith("Gradle Test Executor") || suite.name.startsWith("Gradle Test Run") ||
+    (suite.name.startsWith("Partition ") && partiotion.matcher(suite.name) )
   }
 
   private void startFlowIfNotStarted(String flowId, TestDescriptorWrapper suite) {
