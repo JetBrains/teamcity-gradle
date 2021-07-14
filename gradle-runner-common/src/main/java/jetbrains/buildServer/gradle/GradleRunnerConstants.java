@@ -53,4 +53,5 @@ public class GradleRunnerConstants
 
   public static final String GRADLE_USE_TEST_RETRY_PLUGIN = "teamcity.internal.gradle.useTestRetryPlugin";
   public static final String GRADLE_TEST_NAME_FORMAT = "teamcity.internal.gradle.testNameFormat";
+  public static final String GRADLE_IGNORED_SUITE_FORMAT = "teamcity.internal.gradle.ignoredSuiteFormat";
 }

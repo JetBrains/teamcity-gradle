@@ -391,14 +391,16 @@ public class TeamcityTestListener {
   private final TestNameDescriptor testNameDescriptor
   private final ProjectPropertyStorage project
   private final AtomicLong testCounter;
+  private final Pattern ignoredSuiteFormat
 
-  public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter, TestNameDescriptor testNameDescriptor) {
+  public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter, TestNameDescriptor testNameDescriptor, String ignoredSuiteFormat) {
     this.project = new ProjectPropertyStorage(project)
     logger = log
     isParallelBuild = isParallel
     flow = new FlowWrapper(TeamcityTaskListener.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode()))
     this.testCounter = testCounter
     this.testNameDescriptor = testNameDescriptor
+    this.ignoredSuiteFormat = ignoredSuiteFormat == null ? null : Pattern.compile(ignoredSuiteFormat)
   }
 
   /**
@@ -487,24 +489,24 @@ public class TeamcityTestListener {
 
   def testListenerDelegate = [
           beforeSuite: { suite ->
-            this.beforeSuite(new SuiteDescriptorWrapper(suite, flow))
+            this.beforeSuite(new SuiteDescriptorWrapper(suite, flow, ignoredSuiteFormat))
           },
 
           afterSuite: { suite, result ->
-            this.afterSuite(new SuiteDescriptorWrapper(suite, flow), result)
+            this.afterSuite(new SuiteDescriptorWrapper(suite, flow, ignoredSuiteFormat), result)
           },
 
           beforeTest: { test ->
-            this.beforeTest(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project))
+            this.beforeTest(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project, ignoredSuiteFormat))
           },
 
           afterTest: { test, result ->
-            this.afterTest(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project), result)
+            this.afterTest(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project, ignoredSuiteFormat), result)
           }]
 
   def testOutputDelegate = [
           onOutput: { test, event ->
-            this.onOutput(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project), event)
+            this.onOutput(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project, ignoredSuiteFormat), event)
           }]
 
 }
@@ -610,8 +612,8 @@ public class FlowWrapper {
 public class SuiteDescriptorWrapper extends DescriptorWrapper {
   private static final Pattern partition = ~/^Partition \d+ on /
 
-  SuiteDescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow) {
-    super(descriptor, flow)
+  SuiteDescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow, Pattern ignore) {
+    super(descriptor, flow, ignore)
   }
 
   void start(Closure action) {
@@ -631,9 +633,14 @@ public class SuiteDescriptorWrapper extends DescriptorWrapper {
   }
 
   boolean isIgnored() {
-    return descriptor.parent == null ||
-    descriptor.name.startsWith("Gradle Test Executor") || descriptor.name.startsWith("Gradle Test Run") ||
-    (descriptor.name.startsWith("Partition ") && partition.matcher(descriptor.name) )
+    if (descriptor.parent == null) return true
+    if (descriptor.name.startsWith("Gradle Test Executor")) return true
+    if (descriptor.name.startsWith("Gradle Test Run")) return true
+    if (ignoreSuite != null) {
+      return ignoreSuite.matcher(descriptor.name)
+    } else {
+      return descriptor.name.startsWith("Partition ") && partition.matcher(descriptor.name)
+    }
   }
 }
 
@@ -641,8 +648,8 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
   private final TestNameDescriptor testNameDescriptor
   private final ProjectPropertyStorage project
 
-  TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, ProjectPropertyStorage project) {
-    super(descriptor, flow)
+  TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, ProjectPropertyStorage project, Pattern ignoreSuite) {
+    super(descriptor, flow, ignoreSuite)
     this.testNameDescriptor = testNameDescriptor
     this.project = project
   }
@@ -803,15 +810,17 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
 class DescriptorWrapper {
   protected final TestDescriptor descriptor
   protected final FlowWrapper flow
+  protected final Pattern ignoreSuite
 
-  DescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow) {
+  DescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow, Pattern ignoreSuite) {
     this.descriptor = descriptor
     this.flow = flow
+    this.ignoreSuite = ignoreSuite
   }
 
   protected SuiteDescriptorWrapper getParent() {
     def parent = descriptor.parent
-    if (parent != null) return new SuiteDescriptorWrapper(parent, flow).with { suite -> suite.ignored ? null : suite }
+    if (parent != null) return new SuiteDescriptorWrapper(parent, flow, ignoreSuite).with { suite -> suite.ignored ? null : suite }
     return null
   }
 
@@ -1090,7 +1099,7 @@ gradle.projectsEvaluated { Gradle gradle ->
       Properties tcConfigParams = tcConfigurationParameters.get()
       def descriptor = TestNameDescriptor.of(tcConfigParams[GradleRunnerConstants.GRADLE_TEST_NAME_FORMAT])
 
-      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter, descriptor)
+      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter, descriptor, tcConfigParams[GradleRunnerConstants.GRADLE_IGNORED_SUITE_FORMAT])
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))

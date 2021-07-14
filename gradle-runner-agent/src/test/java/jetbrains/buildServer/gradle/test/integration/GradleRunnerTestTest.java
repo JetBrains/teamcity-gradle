@@ -218,4 +218,10 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   public void testIgnoreDefaultDistributionSuiteNames(final String gradleVersion) throws Exception {
     testTest(PROJECT_Q_NAME, "clean test", "testIgnoreDefaultDistributionSuiteNames.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
+
+  @Test(dataProvider = "gradle-last-version-provider")
+  public void testIgnoreCustomSuiteNames(final String gradleVersion) throws Exception {
+    myTeamCityConfigParameters.put("teamcity.internal.gradle.ignoredSuiteFormat", "(ignored)|(42)");
+    testTest(PROJECT_Q_NAME, "clean test", "testIgnoreCustomSuiteNames.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+  }
 }
