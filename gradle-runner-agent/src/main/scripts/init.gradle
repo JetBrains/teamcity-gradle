@@ -380,28 +380,23 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
 }
 
 public class TeamcityTestListener {
-  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 18 * 1024)
   private static final int MAX_TEST_NAME_LENGTH = Integer.getInteger("teamcity.gradle.testName.maxLength", 100)
-  private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.minAttachedTestException", MAX_MESSAGE_SIZE)
-  Logger logger
-  def baseTask
-  boolean isParallelBuild
-  private String projectFlowId
-  private ConcurrentMap<TestDescriptor, List> testOutputs = new ConcurrentHashMap()
-  private Map<String, Boolean> startedFlowIds = new ConcurrentHashMap();
+  private final Logger logger
+  private boolean isParallelBuild
+  private final ConcurrentMap<TestDescriptorWrapper, List> testOutputs = new ConcurrentHashMap()
+  private final FlowWrapper flow
 
-  boolean skipStdErr = false
-  boolean skipStdOut = false
-  TestNameDescriptor testNameDescriptor
-  private final Project project
+  private boolean skipStdErr = false
+  private boolean skipStdOut = false
+  private final TestNameDescriptor testNameDescriptor
+  private final ProjectPropertyStorage project
   private final AtomicLong testCounter;
-  private final Pattern partiotion = ~/^Partition \d+ on /
 
   public TeamcityTestListener(Logger log, TestTaskWrapper task, boolean isParallel, Project project, AtomicLong testCounter, TestNameDescriptor testNameDescriptor) {
-    this.project = project
+    this.project = new ProjectPropertyStorage(project)
     logger = log
     isParallelBuild = isParallel
-    projectFlowId = TeamcityTaskListener.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode())
+    flow = new FlowWrapper(TeamcityTaskListener.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode()))
     this.testCounter = testCounter
     this.testNameDescriptor = testNameDescriptor
   }
@@ -410,33 +405,10 @@ public class TeamcityTestListener {
    * Called before a test suite is started.
    * @param suite The suite whose tests are about to be executed.
    */
-  public void beforeSuite(TestDescriptorWrapper suite) {
-    if (suite.parent == null) return
-
-    if (shouldBeIgnored(suite)) return
-
-    String flowId = suite.getFlowId(projectFlowId)
-    startFlowIfNotStarted(flowId, suite)
-
-    ServiceMessage msg = new TestSuiteStarted(suite.name)
-    msg.setFlowId(flowId)
-    logger.lifecycle(msg.asString())
-  }
-
-  private boolean shouldBeIgnored(TestDescriptorWrapper suite) {
-    suite.name.startsWith("Gradle Test Executor") || suite.name.startsWith("Gradle Test Run") ||
-    (suite.name.startsWith("Partition ") && partiotion.matcher(suite.name) )
-  }
-
-  private void startFlowIfNotStarted(String flowId, TestDescriptorWrapper suite) {
-    if (startedFlowIds.put(flowId, true) == null) {
-      def parentFlowId = projectFlowId;
-      def parentSuite = suite.parent
-      if (parentSuite != null && !shouldBeIgnored(parentSuite)) {
-        parentFlowId = parentSuite.getFlowId(projectFlowId)
-      }
-
-      logger.lifecycle(new ServiceMessage("flowStarted", ["flowId": flowId, "parent": parentFlowId]).asString())
+  public void beforeSuite(SuiteDescriptorWrapper suite) {
+    suite.start { flow, msg ->
+      if (flow != null) this.logger.lifecycle(flow.asString())
+      this.logger.lifecycle(msg.asString())
     }
   }
 
@@ -445,22 +417,10 @@ public class TeamcityTestListener {
    * @param suite The suite whose tests have finished being executed.
    * @param result The aggregate result for the suite.
    */
-  public void afterSuite(TestDescriptorWrapper suite, TestResult result) {
-    if (suite.parent == null) return;
-
-    if (shouldBeIgnored(suite)) return;
-
-    String flowId = suite.getFlowId(projectFlowId);
-    ServiceMessage msg = new TestSuiteFinished(suite.name);
-    msg.setFlowId(flowId);
-    logger.lifecycle(msg.asString());
-
-    finishStartedFlow(flowId);
-  }
-
-  private void finishStartedFlow(String flowId) {
-    if (startedFlowIds.remove(flowId) != null) {
-      logger.lifecycle(new ServiceMessage("flowFinished", ["flowId": flowId]).asString())
+  public void afterSuite(SuiteDescriptorWrapper suite, TestResult result) {
+    suite.finish { flow, msg ->
+      this.logger.lifecycle(msg.asString());
+      if (flow != null ) this.logger.lifecycle(flow.asString())
     }
   }
 
@@ -469,12 +429,10 @@ public class TeamcityTestListener {
    * @param test The test which is about to be executed.
    */
   public void beforeTest(TestDescriptorWrapper test) {
-    String flowId = test.getFlowId(projectFlowId)
-    startFlowIfNotStarted(flowId, test)
-
-    ServiceMessage msg = new TestStarted(test.testName, false, null)
-    msg.setFlowId(flowId)
-    logger.lifecycle(msg.asString())
+    test.start { flow, msg ->
+      if (flow != null) this.logger.lifecycle(flow.asString())
+      this.logger.lifecycle(msg.asString())
+    }
   }
 
   /**
@@ -483,189 +441,100 @@ public class TeamcityTestListener {
    * @param result The test result.
    */
   public void afterTest(TestDescriptorWrapper test, TestResult result) {
-    String testName = test.testName
-    String flowId = test.getFlowId(projectFlowId)
+    test.finish(result) { flow, msg ->
+      test.flush(testOutputs.remove(test)) { out -> this.logger.lifecycle(out.asString()) }
+      test.result(result, testCounter) { messages -> messages.each{ message -> this.logger.lifecycle(message.asString()) } }
 
-    def outputs = testOutputs.remove(test.descriptor);
-    if (outputs != null) {
-      synchronized (outputs) {
-        flushOutputs(test, outputs)
-      }
-    }
-
-    ServiceMessage msg;
-    switch (result.getResultType()) {
-      case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
-        WrappedException exception = new WrappedException(result.getException(), MAX_MESSAGE_SIZE)
-        msg = exception.getServiceMessage(testName)
-        attacheBigFailTestMessage(testName, exception, flowId);
-
-        msg.setFlowId(flowId);
-        logger.lifecycle(msg.asString());
-        break;
-      case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
-        msg = new TestIgnored(testName, "");
-        msg.setFlowId(flowId);
-        logger.lifecycle(msg.asString());
-        break;
-    };
-
-    final int duration = (int) (result.getEndTime() - result.getStartTime());
-    msg = new TestFinished(testName, duration);
-    msg.setFlowId(flowId);
-    logger.lifecycle(msg.asString());
-
-    finishStartedFlow(flowId);
-  }
-
-  private String getProjectProperty(String propertyName) {
-    if (project.hasProperty("ext")) {
-      return project.ext.teamcity[propertyName]
-    } else {
-      return project.property(propertyName)
+      this.logger.lifecycle(msg.asString());
+      if (flow != null) this.logger.lifecycle(flow.asString())
     }
   }
 
-  private setProjectProperty(String propertyName, String propertyValue) {
-    if (project.hasProperty("ext")) {
-      project.ext.teamcity[propertyName] = propertyValue
-    } else {
-      Map props = project.property("teamcity")
-      props[propertyName] = propertyValue
-
-      project.setProperty("teamcity", props)
-    }
-  }
-
-  synchronized private File createBigStacktracesDir() {
-    String path = null;
-    if ((path = getProjectProperty("teamcity.build.stacktraceLogDir")) != null) {
-      return new File(path)
-    }
-
-    final String rootTmpDirectory = getProjectProperty(AgentRuntimeProperties.BUILD_TEMP_DIR) ?: project.getBuildDir().path
-    File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages${File.separator}${System.nanoTime()}")
-    if (resultDir.mkdirs()) {
-      setProjectProperty("teamcity.build.stacktraceLogDir", resultDir.path)
-      return resultDir
-    }
-    return null
-  }
-
-  private void attacheBigFailTestMessage(String testName, WrappedException exception, String flowId) {
-    if (MIN_ATTACHED_MESSAGE_SIZE == -1) return
-    if (MIN_ATTACHED_MESSAGE_SIZE > exception.size) return
-    if (exception.equalsOrigin) return
-
-    File artifactDir = createBigStacktracesDir()
-    if (artifactDir == null) {
+  public void onOutput(TestDescriptorWrapper test, def event) {
+    if (test.ignored) {
+      // this is not a real test output
       return
     }
-    String fileName = "${testCounter.incrementAndGet()}.log"
-    File artifactPath = new File(fileName, artifactDir)
 
-    PrintStream logFilePrint
-    try {
-      artifactPath.delete()
-      logFilePrint = new PrintStream(new FileOutputStream(artifactPath))
-      exception.th.printStackTrace(logFilePrint)
-    } finally {
-      logFilePrint?.close()
+    switch (event.destination) {
+      case TestOutputEvent.Destination.StdErr:
+        if (skipStdErr) return
+        break
+      case TestOutputEvent.Destination.StdOut:
+        if (skipStdOut) return
+        break
+      default: return
     }
 
-    String artifactName = ".teamcity/gradle/${artifactDir.name}"
-    def artifact = new PublishArtifacts("${artifactPath.canonicalPath} => ${artifactName}")
-    artifact.setFlowId(flowId)
-    logger.lifecycle(artifact.toString())
-
-    ServiceMessage metadata = new ServiceMessage(ServiceMessageTypes.TEST_METADATA, [testName: testName,
-                                                                                     type    : 'artifact',
-                                                                                     value   : "${artifactName}/${fileName}" as String,
-                                                                                     name    : 'teamcity.test.output'])
-    metadata.setFlowId(flowId)
-    logger.lifecycle(metadata.toString())
-  }
-
-  public void onOutput(TestDescriptorWrapper test, outputEvent) {
-    if (test.className == null) {
-      // this is not a real test output
-      return;
-    }
-
-    def outputs = testOutputs[test.descriptor];
+    List outputs = testOutputs[test];
     if (outputs == null) {
       outputs = [];
-      def prev = testOutputs.putIfAbsent(test.descriptor, outputs)
+      def prev = testOutputs.putIfAbsent(test, outputs)
       if (prev != null) {
         outputs = prev
       }
     }
 
     synchronized (outputs) {
-      outputs.add(outputEvent);
+      outputs.add(event);
 
       if (outputs.size() > 100) {
-        flushOutputs(test, outputs)
+        test.flush(outputs) { msg -> this.logger.lifecycle(msg.asString()) }
         outputs.clear();
       }
     }
   }
 
-  private void flushOutputs(TestDescriptorWrapper descriptor, List outputs) {
-    String testName = descriptor.testName
-    String flowId = descriptor.getFlowId(projectFlowId)
-
-    StringBuilder stdout = new StringBuilder()
-    StringBuilder stderr = new StringBuilder()
-
-    for (oe in outputs) {
-      switch (oe.getDestination()) {
-        case TestOutputEvent.Destination.StdErr:
-          if (!skipStdErr) stderr.append(oe.message)
-          break
-        case TestOutputEvent.Destination.StdOut:
-          if (!skipStdOut) stdout.append(oe.message)
-          break
-      }
-    }
-
-    if (stdout.length() > 0) {
-      def msg = new TestStdOut(testName, stdout.toString() - ~/\r?\n\z/)
-      msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
-      msg.setFlowId(flowId)
-      logger.lifecycle(msg.asString())
-    }
-
-    if (stderr.length() > 0) {
-      def msg = new TestStdErr(testName, stderr.toString() - ~/\r?\n\z/)
-      msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
-      msg.setFlowId(flowId)
-      logger.lifecycle(msg.asString())
-    }
-  }
-
   def testListenerDelegate = [
           beforeSuite: { suite ->
-            this.beforeSuite(new TestDescriptorWrapper(suite, testNameDescriptor))
+            this.beforeSuite(new SuiteDescriptorWrapper(suite, flow))
           },
 
           afterSuite: { suite, result ->
-            this.afterSuite(new TestDescriptorWrapper(suite, testNameDescriptor), result)
+            this.afterSuite(new SuiteDescriptorWrapper(suite, flow), result)
           },
 
-          beforeTest: { testDescriptor ->
-            this.beforeTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor))
+          beforeTest: { test ->
+            this.beforeTest(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project))
           },
 
-          afterTest: { testDescriptor, result ->
-            this.afterTest(new TestDescriptorWrapper(testDescriptor, testNameDescriptor), result)
+          afterTest: { test, result ->
+            this.afterTest(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project), result)
           }]
 
   def testOutputDelegate = [
-          onOutput: { testDescriptor, outputEvent ->
-            this.onOutput(new TestDescriptorWrapper(testDescriptor, testNameDescriptor), outputEvent)
+          onOutput: { test, event ->
+            this.onOutput(new TestDescriptorWrapper(test, testNameDescriptor, flow, this.project), event)
           }]
 
+}
+
+class ProjectPropertyStorage {
+  private final Project project
+  ProjectPropertyStorage(Project project) {
+    this.project = project
+  }
+
+  String getAt(String name) {
+    if (project.hasProperty("ext")) {
+      return project.ext.teamcity[name]
+    } else {
+      return project.property(name)
+    }
+  }
+
+  void putAt(String name, Object value) {
+    if (project.hasProperty("ext")) {
+      project.ext.teamcity[name] = value
+    } else {
+      Map props = project.property("teamcity")
+      props[name] = value
+
+      project.setProperty("teamcity", props)
+    }
+  }
+
+  File getBuildDir() { project.buildDir }
 }
 
 public enum TestNameDescriptor {
@@ -717,16 +586,136 @@ public enum TestNameDescriptor {
   }
 }
 
-public class TestDescriptorWrapper {
-  final TestNameDescriptor testNameDescriptor
-  final TestDescriptor descriptor
+public class FlowWrapper {
+  private final String project
+  private Set<String> started = Collections.newSetFromMap(new ConcurrentHashMap());
 
-  TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor) {
-    this.descriptor = descriptor
-    this.testNameDescriptor = testNameDescriptor
+  FlowWrapper(String projectFlowId) {
+    this.project = projectFlowId
   }
 
-  String getTestName() {
+  ServiceMessage start(DescriptorWrapper descriptor, SuiteDescriptorWrapper suite) {
+    return started.add(descriptor.flowId) ? new ServiceMessage("flowStarted", ["flowId": descriptor.flowId, "parent": suite?.flowId ?: id]) : null
+  }
+
+  ServiceMessage finish(DescriptorWrapper descriptor) {
+    return started.remove(descriptor.flowId) ? new ServiceMessage("flowFinished", ["flowId": descriptor.flowId]) : null
+  }
+
+  String getId() {
+    return project
+  }
+}
+
+public class SuiteDescriptorWrapper extends DescriptorWrapper {
+  private static final Pattern partition = ~/^Partition \d+ on /
+
+  SuiteDescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow) {
+    super(descriptor, flow)
+  }
+
+  void start(Closure action) {
+    if (ignored) return
+    ServiceMessage msg = new TestSuiteStarted(descriptor.name)
+    msg.setFlowId(flowId)
+
+    action(flow.start(this, parent), msg)
+  }
+
+  void finish(Closure action) {
+    if (ignored) return
+    ServiceMessage msg = new TestSuiteFinished(descriptor.name)
+    msg.setFlowId(flowId)
+
+    action(flow.finish(this), msg)
+  }
+
+  boolean isIgnored() {
+    return descriptor.parent == null ||
+    descriptor.name.startsWith("Gradle Test Executor") || descriptor.name.startsWith("Gradle Test Run") ||
+    (descriptor.name.startsWith("Partition ") && partition.matcher(descriptor.name) )
+  }
+}
+
+public class TestDescriptorWrapper extends DescriptorWrapper {
+  private final TestNameDescriptor testNameDescriptor
+  private final ProjectPropertyStorage project
+
+  TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, ProjectPropertyStorage project) {
+    super(descriptor, flow)
+    this.testNameDescriptor = testNameDescriptor
+    this.project = project
+  }
+
+  void start(Closure action) {
+    ServiceMessage msg = new TestStarted(testName, false, null)
+    msg.setFlowId(flowId)
+
+    action(flow.start(this, parent), msg)
+  }
+
+  void finish(TestResult result, Closure action) {
+    ServiceMessage msg = new TestFinished(testName, (int)(result.endTime - result.startTime))
+    msg.setFlowId(flowId)
+
+    action(flow.finish(this), msg)
+  }
+
+  boolean isIgnored() {
+    className == null
+  }
+
+  void result(TestResult result, AtomicLong testCounter, Closure action) {
+    switch (result?.getResultType() ?: org.gradle.api.tasks.testing.TestResult.ResultType.SUCCESS) {
+      case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
+        WrappedException exception = new WrappedException(result.getException())
+        List<ServiceMessage> messages = attacheBigFailTestMessage(exception, testCounter)
+        ServiceMessage failure = exception.getServiceMessage(testName)
+        failure.setFlowId(flowId)
+        action([*messages, failure])
+        break
+      case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
+        ServiceMessage skipped = new TestIgnored(testName, "")
+        skipped.setFlowId(flowId)
+        action([skipped])
+        break
+    };
+  }
+
+  void flush(List outputs, Closure action) {
+    if (outputs == null) return
+    StringBuilder stdout = new StringBuilder()
+    StringBuilder stderr = new StringBuilder()
+
+    synchronized (outputs) {
+      for (oe in outputs) {
+        switch (oe.destination) {
+          case TestOutputEvent.Destination.StdErr:
+            stderr.append(oe.message)
+            break
+          case TestOutputEvent.Destination.StdOut:
+            stdout.append(oe.message)
+            break
+        }
+      }
+
+      if (stdout.length() > 0) {
+        def msg = new TestStdOut(testName, stdout.toString() - ~/\r?\n\z/)
+        msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
+        msg.setFlowId(flowId)
+        action(msg)
+      }
+
+      if (stderr.length() > 0) {
+        def msg = new TestStdErr(testName, stderr.toString() - ~/\r?\n\z/)
+        msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
+        msg.setFlowId(flowId)
+        action(msg)
+      }
+    }
+  }
+
+  private String getTestName() {
     testNameDescriptor?.getTestName(this) ?: TestNameDescriptor.DEFAULT.getTestName(this)
   }
 
@@ -736,12 +725,6 @@ public class TestDescriptorWrapper {
 
   String getName() {
     return descriptor.getName()
-  }
-
-  TestDescriptorWrapper getParent() {
-    def parent = descriptor.parent
-    if (parent != null) return new TestDescriptorWrapper(parent, testNameDescriptor)
-    return null
   }
 
   String getClassDisplayName() {
@@ -758,8 +741,82 @@ public class TestDescriptorWrapper {
     return descriptor.getName()
   }
 
-  String getFlowId(String parentFlowId) {
-    "$parentFlowId-${System.identityHashCode(descriptor)}"
+  private List<ServiceMessage> attacheBigFailTestMessage(WrappedException exception, AtomicLong testCounter) {
+    if(exception.small) return []
+
+    File artifactDir = createBigStacktracesDir()
+    if (artifactDir == null) {
+      return []
+    }
+    String fileName = "${testCounter.incrementAndGet()}.log"
+    File artifactPath = new File(fileName, artifactDir)
+
+    PrintStream logFilePrint
+    try {
+      artifactPath.delete()
+      logFilePrint = new PrintStream(new FileOutputStream(artifactPath))
+      exception.th.printStackTrace(logFilePrint)
+    } finally {
+      logFilePrint?.close()
+    }
+
+    String artifactName = ".teamcity/gradle/${artifactDir.name}"
+    def artifact = new PublishArtifacts("${artifactPath.canonicalPath} => ${artifactName}")
+    artifact.setFlowId(flowId)
+
+    ServiceMessage metadata = new ServiceMessage(ServiceMessageTypes.TEST_METADATA, [testName: testName,
+                                                                                     type    : 'artifact',
+                                                                                     value   : "${artifactName}/${fileName}" as String,
+                                                                                     name    : 'teamcity.test.output'])
+    metadata.setFlowId(flowId)
+    return [artifact, metadata]
+  }
+
+  synchronized private File createBigStacktracesDir() {
+    String path = null;
+    if ((path = project["teamcity.build.stacktraceLogDir"]) != null) {
+      return new File(path)
+    }
+
+    final String rootTmpDirectory = project[AgentRuntimeProperties.BUILD_TEMP_DIR] ?: project.getBuildDir().path
+    File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages${File.separator}${System.nanoTime()}")
+    if (resultDir.mkdirs()) {
+      project["teamcity.build.stacktraceLogDir"] = resultDir.path
+      return resultDir
+    }
+    return null
+  }
+
+  @Override
+  boolean equals(Object obj) {
+    return obj != null &&
+           obj.class == TestDescriptorWrapper.class &&
+           descriptor.equals(((TestDescriptorWrapper)obj).descriptor)
+  }
+
+  @Override
+  int hashCode() {
+    return descriptor.hashCode()
+  }
+}
+
+class DescriptorWrapper {
+  protected final TestDescriptor descriptor
+  protected final FlowWrapper flow
+
+  DescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow) {
+    this.descriptor = descriptor
+    this.flow = flow
+  }
+
+  protected SuiteDescriptorWrapper getParent() {
+    def parent = descriptor.parent
+    if (parent != null) return new SuiteDescriptorWrapper(parent, flow).with { suite -> suite.ignored ? null : suite }
+    return null
+  }
+
+  protected String getFlowId() {
+    return "${flow.id}-${System.identityHashCode(descriptor)}"
   }
 }
 
@@ -776,7 +833,7 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
 
   @Override
   void projectsEvaluated(Gradle gradle) {
-    defaultOption = System.getenv(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY).toBoolean();
+    defaultOption = System.getenv(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY).toBoolean()
     if (defaultOption == true) return
     def conf = config.get()
     if (conf != null && conf[GradleRunnerConstants.GRADLE_USE_TEST_RETRY_PLUGIN] == "false") return
@@ -840,16 +897,27 @@ public class TeamcityExceptionsListener extends BuildAdapter {
  * Use WrappedException if you need to make a error message shorter
  */
 class WrappedException extends Exception {
+  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 18 * 1024)
+  private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.minAttachedTestException", MAX_MESSAGE_SIZE)
+
   final Throwable th
-  private final int length
+  private final int maxLength
   private final String DELIMITER
-  private final String message;
+  private final String message
+  private final String thMessage
+
+  /**
+   * @param th original exception
+   */
+  WrappedException(Throwable th) {
+    this(th, MAX_MESSAGE_SIZE)
+  }
 
   /**
    * @param th     original exception
    * @param length max message length
    */
-  WrappedException(Throwable th, int length) {
+  WrappedException(Throwable th, int maxLength) {
     this.th = th ?: new Exception() {
       @Override void printStackTrace(PrintWriter printWriter) { }
       @Override void printStackTrace(PrintStream ps) { }
@@ -859,30 +927,34 @@ class WrappedException extends Exception {
       @Override String toString() { "" }
     }
 
-    this.length = length
-    int size = length / 1024
+    this.maxLength = maxLength
+    int size = maxLength / 1024
     DELIMITER = "***** A part of the stacktrace was cut by TeamCity build agent because the stacktrace size exceeded ${size} KB *****"
-    message = trim(this.th.toString(), length)
+    thMessage = this.th.toString()
+    message = trim(thMessage, maxLength)
   }
 
-  public boolean isEqualsOrigin() {
-    return size <= length
-  }
-
-  public int getSize() {
-    return th.toString().length()
+  private int getSize() {
+    return thMessage.length()
   }
 
   @Override
   public String toString() {
-    return trim(th.toString(), length)
+    return message
+  }
+
+  public boolean isSmall() {
+    if (MIN_ATTACHED_MESSAGE_SIZE == -1) return true
+    if (MIN_ATTACHED_MESSAGE_SIZE > size) return true
+    if (size <= maxLength) return true
+    return false
   }
 
   public ServiceMessage getServiceMessage(String testName) {
-    if (th.toString() == "") return new TestFailed(testName, this);
+    if (thMessage == "") return new TestFailed(testName, this);
     ComparisonFailureData cfd = ComparisonFailureUtil.extractComparisonFailure(th)
     if (cfd != null) {
-      return new TestFailed(testName, this, trim(cfd.getActual(), length), trim(cfd.getExpected(), length));
+      return new TestFailed(testName, this, trim(cfd.getActual(), maxLength), trim(cfd.getExpected(), maxLength));
     } else {
       return new TestFailed(testName, this);
     }
@@ -909,14 +981,14 @@ class WrappedException extends Exception {
    * @param length       max length
    * @return original message if str.length < length or split message with delimiter
    */
-  private String trim(String str, int length) {
-    if (str == null || str.length() <= length) return str
+  private String trim(String str, int maxLength) {
+    if (str == null || str.length() <= maxLength) return str
 
-    return """${str.substring(0, (int)(length / 2))} ...
+    return """${str.substring(0, (int)(maxLength / 2))} ...
 
 ${DELIMITER}
 
-... ${str.substring(str.length() - (int)(length / 2))}"""
+... ${str.substring(str.length() - (int)(maxLength / 2))}"""
   }
 }
 
