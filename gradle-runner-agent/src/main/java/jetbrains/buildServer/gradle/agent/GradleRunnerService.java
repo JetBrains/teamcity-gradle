@@ -125,29 +125,27 @@ public class GradleRunnerService extends BuildServiceAdapter
     final String runnerGradleOpts = getRunnerParameters().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
     final String runnerJavaArguments = getJavaArgs();
 
-    if (!StringUtil.isEmpty(runnerJavaArguments)) {
+    if (StringUtil.isNotEmpty(runnerJavaArguments)) {
       return runnerJavaArguments;
-    } else if (!StringUtil.isEmpty(runnerGradleOpts)) {
+    } else if (StringUtil.isNotEmpty(runnerGradleOpts)) {
       return runnerGradleOpts;
     } else {
       return getEnvironmentVariables().getOrDefault(GradleRunnerConstants.ENV_GRADLE_OPTS, StringUtil.EMPTY);
     }
   }
 
+  @NotNull
   private String getIncrementalMode() {
     boolean incrementalOptionEnabled = Boolean.parseBoolean(getRunnerParameters().get(GradleRunnerConstants.IS_INCREMENTAL));
+    if (!incrementalOptionEnabled) return Boolean.FALSE.toString();
+
     boolean internalFullBuildOverride = !IncrementalBuild.isEnabled();
-    if (incrementalOptionEnabled) {
-      if (internalFullBuildOverride) {
-        return GradleRunnerConstants.ENV_INCREMENTAL_VALUE_SKIP;
-      } else {
-        return GradleRunnerConstants.ENV_INCREMENTAL_VALUE_PROCEED;
-      }
-    } else {
-      return  Boolean.FALSE.toString();
-    }
+    if (internalFullBuildOverride) return GradleRunnerConstants.ENV_INCREMENTAL_VALUE_SKIP;
+
+    return GradleRunnerConstants.ENV_INCREMENTAL_VALUE_PROCEED;
   }
 
+  @NotNull
   private String getJavaHome() throws RunBuildException {
     String javaHome = JavaRunnerUtil.findJavaHome(getRunnerParameters().get(JavaRunnerConstants.TARGET_JDK_HOME),
                                                   getBuildParameters().getAllParameters(),
@@ -156,6 +154,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     return FileUtil.getCanonicalFile(new File(javaHome)).getPath();
   }
 
+  @NotNull
   private File getGradleHome() throws RunBuildException {
     try {
       final String gradlePath = getRunnerContext().getToolPath(GradleToolProvider.GRADLE_TOOL);
@@ -167,10 +166,12 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
   }
 
+  @NotNull
   private String getJavaArgs() {
     return ConfigurationParamsUtil.getJavaArgs(getRunnerParameters());
   }
 
+  @NotNull
   private List<String> getParams() {
     final List<String> params = new ArrayList<>();
 
