@@ -400,7 +400,7 @@ public class TeamcityTestListener {
     flow = new FlowWrapper(TeamcityTaskListener.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode()))
     this.testCounter = testCounter
     this.testNameDescriptor = testNameDescriptor
-    this.ignoredSuiteFormat = ignoredSuiteFormat == null ? null : Pattern.compile(ignoredSuiteFormat)
+    this.ignoredSuiteFormat = ignoredSuiteFormat?.trim() ? Pattern.compile(ignoredSuiteFormat) : null
   }
 
   /**
