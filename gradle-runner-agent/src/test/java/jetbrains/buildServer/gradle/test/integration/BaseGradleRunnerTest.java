@@ -297,6 +297,7 @@ public class BaseGradleRunnerTest {
 
   @BeforeMethod
   public void setUp() throws Exception {
+    myTeamCityConfigParameters.clear();
     myTestLogger.onTestStart();
   }
 
