@@ -610,7 +610,7 @@ public class FlowWrapper {
 }
 
 public class SuiteDescriptorWrapper extends DescriptorWrapper {
-  private static final Pattern partition = ~/^Partition \d+ on /
+  private static final Pattern partition = ~/^Partition \d+ on .*/
 
   SuiteDescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow, Pattern ignore) {
     super(descriptor, flow, ignore)
@@ -639,7 +639,7 @@ public class SuiteDescriptorWrapper extends DescriptorWrapper {
     if (ignoreSuite != null) {
       return ignoreSuite.matcher(descriptor.name)
     } else {
-      return descriptor.name.startsWith("Partition ") && partition.matcher(descriptor.name)
+      return descriptor.name.startsWith("Partition ") && partition.matcher(descriptor.name).matches()
     }
   }
 }
