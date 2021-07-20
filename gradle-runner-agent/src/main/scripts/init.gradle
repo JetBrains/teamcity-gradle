@@ -610,7 +610,7 @@ public class FlowWrapper {
 }
 
 public class SuiteDescriptorWrapper extends DescriptorWrapper {
-  private static final Pattern partition = ~/^Partition \d+ on .*/
+  private static final Pattern partition = ~/^Partition \d+ .*/
 
   SuiteDescriptorWrapper(TestDescriptor descriptor, FlowWrapper flow, Pattern ignore) {
     super(descriptor, flow, ignore)

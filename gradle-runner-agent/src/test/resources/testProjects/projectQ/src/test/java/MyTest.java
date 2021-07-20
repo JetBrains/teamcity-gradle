@@ -7,4 +7,6 @@ public class MyTest {
     @Test public void test4() {}
     @Test public void test5() {}
     @Test public void test6() {}
+    @Test public void test7() {}
+    @Test public void test8() {}
 }

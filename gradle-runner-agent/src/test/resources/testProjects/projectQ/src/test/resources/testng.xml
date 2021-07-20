@@ -36,7 +36,7 @@
             </class>
         </classes>
     </test>
-    <test name="Custom name">
+    <test name="Partition 1 in session 2 on localhost-executor-1">
         <classes>
             <class name="MyTest">
                 <methods>
@@ -45,11 +45,29 @@
             </class>
         </classes>
     </test>
-    <test name="Will be ignored">
+    <test name="Partition 42 in session 24 on localhost-executor-118">
         <classes>
             <class name="MyTest">
                 <methods>
                     <include name="test6" />
+                </methods>
+            </class>
+        </classes>
+    </test>
+    <test name="Custom name">
+        <classes>
+            <class name="MyTest">
+                <methods>
+                    <include name="test7" />
+                </methods>
+            </class>
+        </classes>
+    </test>
+    <test name="Will be ignored">
+        <classes>
+            <class name="MyTest">
+                <methods>
+                    <include name="test8" />
                 </methods>
             </class>
         </classes>
