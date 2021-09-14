@@ -1041,6 +1041,14 @@ class TestTaskWrapper {
     return null
   }
 
+  TestFilterWrapper getFilter() {
+    if(testTask.metaClass.respondsTo(testTask, 'getFilter')) {
+      return new TestFilterWrapper(testTask.filter)
+    } else {
+      return new TestFilterWrapper(null)
+    }
+  }
+
   /**
    * Creates an instance of the {@link TestTaskWrapper} for every instance of the Test in the TaskCollection.
    * Attempts to lazily evaluate the Closure action against all instances lazily if the version of Gradle supports it.
@@ -1060,6 +1068,35 @@ class TestTaskWrapper {
         action(wrapper)
       }
     }
+  }
+}
+
+class TestFilterWrapper {
+  final def filter
+  TestFilterWrapper(def filter) {
+    if (filter == null) {
+      this.filter = null
+    } else if (filter.metaClass.respondsTo(filter, 'includeTestsMatching') && filter.metaClass.respondsTo(filter, 'excludeTestsMatching')) {
+      this.filter = filter
+    } else {
+      this.filter = null
+    }
+  }
+
+  void includeTestsMatching(String mask) {
+    filter?.includeTestsMatching(mask)
+  }
+
+  void excludeTestsMatching(String mask) {
+    filter?.excludeTestsMatching(mask)
+  }
+
+  void setFailOnNoMatchingTests(boolean failOnNoMatchingTests) {
+    filter?.setFailOnNoMatchingTests(failOnNoMatchingTests)
+  }
+
+  boolean isSupported() {
+    return filter != null
   }
 }
 
@@ -1105,6 +1142,25 @@ gradle.projectsEvaluated { Gradle gradle ->
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
         testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
         testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
+      }
+      // add executable tests
+      def executableTestsFile = tcConfigParams["teamcity.build.parallelTests.testsPart.artifactPath"]//System.getenv(GradleRunnerConstants.ENV_TEST_GROUP_PATH)
+      if (testTask.filter.supported && executableTestsFile != null && new File(executableTestsFile).exists()) {
+        // todo log "use filter"
+        testTask.filter.setFailOnNoMatchingTests(false)
+        new File(executableTestsFile).eachLine { mask ->
+          if (mask.length() > 1) {
+            def name = mask.substring(2).with {name -> name + (name == "" ? "*" : ".*") }
+            switch (mask.substring(0, 2)) {
+              case "+:": testTask.filter.includeTestsMatching(name)
+                logger.lifecycle("include $name")
+                break
+              case "-:": testTask.filter.excludeTestsMatching(name)
+                logger.lifecycle("exclude $name")
+                break
+            }
+          }
+        }
       }
     }
   }
