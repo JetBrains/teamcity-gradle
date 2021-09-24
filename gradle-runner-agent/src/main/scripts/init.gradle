@@ -1,8 +1,8 @@
 import jetbrains.buildServer.ComparisonFailureData
 import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
-import jetbrains.buildServer.gradle.GradleRunnerConstants
 import jetbrains.buildServer.gradle.GradleBuildProblem
+import jetbrains.buildServer.gradle.GradleRunnerConstants
 import jetbrains.buildServer.messages.serviceMessages.*
 
 import java.util.concurrent.ConcurrentHashMap
@@ -1144,22 +1144,33 @@ gradle.projectsEvaluated { Gradle gradle ->
         testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
       }
       // add executable tests
-      def executableTestsFile = tcConfigParams["teamcity.build.parallelTests.testsPart.artifactPath"]//System.getenv(GradleRunnerConstants.ENV_TEST_GROUP_PATH)
+      def executableTestsFile = System.getenv(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH)
       if (testTask.filter.supported && executableTestsFile != null && new File(executableTestsFile).exists()) {
         // todo log "use filter"
         testTask.filter.setFailOnNoMatchingTests(false)
-        new File(executableTestsFile).eachLine { mask ->
-          if (mask.length() > 1) {
-            def name = mask.substring(2).with {name -> name + (name == "" ? "*" : ".*") }
-            switch (mask.substring(0, 2)) {
-              case "+:": testTask.filter.includeTestsMatching(name)
-                logger.lifecycle("include $name")
-                break
-              case "-:": testTask.filter.excludeTestsMatching(name)
-                logger.lifecycle("exclude $name")
-                break
-            }
+
+        File filtering = new File(executableTestsFile)
+        String filterType = "INCLUDE ALL";
+        filtering.withReader { filterType = it.readLine().trim() }
+        switch (filterType) {
+          case "INCLUDE ALL": testTask.filter.includeTestsMatching("*")
+            logger.lifecycle("include all tests")
+            break
+          case "EXCLUDE ALL": testTask.filter.excludeTestsMatching("*")
+            logger.lifecycle("exclude all tests")
+            break
+          case "INCLUDE": filtering.eachLine { name, number ->
+            if (number == 1) return
+            testTask.filter.includeTestsMatching("${name.trim()}.*")
+            logger.lifecycle("include ${name}")
           }
+            break
+          case "EXCLUDE": filtering.eachLine { name, number ->
+            if (number == 1) return
+            testTask.filter.excludeTestsMatching("${name.trim()}.*")
+            logger.lifecycle("exclude ${name}")
+          }
+            break
         }
       }
     }
