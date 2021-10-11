@@ -18,6 +18,8 @@ package jetbrains.buildServer.gradle.agent;
 
 import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import jetbrains.buildServer.ComparisonFailureUtil;
@@ -33,6 +35,7 @@ import jetbrains.buildServer.messages.ErrorData;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.serverSide.BuildTypeOptions;
+import jetbrains.buildServer.util.ArchiveUtil;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.util.impl.Lazy;
@@ -107,7 +110,16 @@ public class GradleRunnerService extends BuildServiceAdapter
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
     env.put(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY, getBuild().getBuildTypeOptionValue(BuildTypeOptions.BT_SUPPORT_TEST_RETRY).toString());
-    env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, getRunnerContext().getBuildParameters().getSystemProperties().get("teamcity.build.parallelTests.testsPart.artifactPath"));
+    final String tests = getRunnerContext().getBuildParameters().getSystemProperties().get("teamcity.build.parallelTests.testsPart.artifactPath");
+    if (tests != null && new File(tests).exists()) {
+      try {
+        final File testsPart = File.createTempFile("testsPart", ".txt", getBuildTempDirectory());
+        ArchiveUtil.unpackStream(new FileOutputStream(testsPart), new FileInputStream(tests));
+        env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, testsPart.getCanonicalPath());
+      } catch (IOException e) {
+        getLogger().warning("Unpuck " + tests + " failed. " + e.getMessage());
+      }
+    }
 
     return new SimpleProgramCommandLine(env, getWorkingDirectory().getPath(), exePath, params);
   }
