@@ -114,8 +114,10 @@ public class GradleRunnerService extends BuildServiceAdapter
     if (tests != null && new File(tests).exists()) {
       try {
         final File testsPart = File.createTempFile("testsPart", ".txt", getBuildTempDirectory());
-        ArchiveUtil.unpackStream(new FileOutputStream(testsPart), new FileInputStream(tests));
-        env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, testsPart.getCanonicalPath());
+        try(final FileOutputStream out = new FileOutputStream(testsPart); final FileInputStream in = new FileInputStream(tests)) {
+          ArchiveUtil.unpackStream(out, in);
+          env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, testsPart.getCanonicalPath());
+        }
       } catch (IOException e) {
         getLogger().warning("Unpuck " + tests + " failed. " + e.getMessage());
       }
