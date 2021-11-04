@@ -756,7 +756,7 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
       return []
     }
     String fileName = "${testCounter.incrementAndGet()}.log"
-    File artifactPath = new File(fileName, artifactDir)
+    File artifactPath = new File(artifactDir, fileName)
 
     PrintStream logFilePrint
     try {
