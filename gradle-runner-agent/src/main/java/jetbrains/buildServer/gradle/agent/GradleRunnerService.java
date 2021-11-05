@@ -119,7 +119,7 @@ public class GradleRunnerService extends BuildServiceAdapter
           env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, testsPart.getCanonicalPath());
         }
       } catch (IOException e) {
-        getLogger().warning("Unpuck " + tests + " failed. " + e.getMessage());
+        getLogger().warning("Failed to unpack the file with parallel tests data [" + tests + "], all tests will be run." + e.getMessage());
       }
     }
 
