@@ -34,6 +34,7 @@ import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.Option;
+import jetbrains.buildServer.util.PasswordReplacer;
 import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
@@ -373,6 +374,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockBuild).getFailBuildOnExitCode(); will(returnValue(true));
       allowing(myMockBuild).getSharedConfigParameters(); will(returnValue(Collections.<String, String>emptyMap()));
       allowing(myMockBuild).getBuildNumber(); will(returnValue("12345"));
+      allowing(myMockBuild).getPasswordReplacer(); will(returnValue(new NoOpPasswordReplacer()));
 
       allowing(myMockRunner).getId(); will(returnValue("myRunnerId"));
       allowing(myMockRunner).getName(); will(returnValue("myRunnerName"));
@@ -407,5 +409,29 @@ public class BaseGradleRunnerTest {
 
   protected static String getGradleVersionFromPath(@NotNull final String path) {
     return path.substring(path.lastIndexOf("gradle-") + "gradle-".length());
+  }
+
+  private class NoOpPasswordReplacer implements PasswordReplacer {
+    @NotNull
+    @Override
+    public String replacePasswords(@NotNull final String text) {
+      return text;
+    }
+
+    @Override
+    public boolean hasPasswords() {
+      return false;
+    }
+
+    @NotNull
+    @Override
+    public Set<String> getPasswords() {
+      return Collections.emptySet();
+    }
+
+    @Override
+    public boolean addPassword(@NotNull final String password) {
+      return false;
+    }
   }
 }
