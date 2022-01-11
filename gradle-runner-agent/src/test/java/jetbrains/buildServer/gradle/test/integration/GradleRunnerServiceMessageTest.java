@@ -41,8 +41,6 @@ import static org.testng.Assert.*;
  * Date: Sep 20, 2010
  */
 public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTest {
-
-
   protected static final String SEQENCE_FILES_ENCODING = "utf-8";
   protected static final String DEFAULT_MSG_PATTERN = "##teamcity\\[(.*?)(?<!\\|)\\]";
 
@@ -81,7 +79,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       }
       result.add(resultMessage);
     }
-
     return result;
   }
 
@@ -98,9 +95,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     } catch (IOException e) {
       throw new RunBuildException(e);
     }
-
     return expected.split("\\r\\n?|\\n");
-
   }
 
   protected void writeReportSequence(final File sequenceFile, List<String> data) throws IOException {
@@ -133,8 +128,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       }
       assertServiceMessages(gatherMessage.getMessages(), sequence);
     } else {
-
-
       final Expectations gatherServiceMessage = new Expectations() {{
         allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
         allowing(myMockLogger).warning(with(any(String.class))); will(gatherMessage);
@@ -151,7 +144,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       fail("Writing a report always causes test failure");
     }
   }
-
 
   public static class GradleRunConfiguration {
     private final String myProject;

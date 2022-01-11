@@ -73,7 +73,6 @@ public class GradleToolProviderTest {
   };
   private Map<String,String> myRunnerParams;
 
-
   private ToolProvider getToolProvider() {
     return registeredProvider;
   }
@@ -157,6 +156,4 @@ public class GradleToolProviderTest {
     final String path = myToolProvider.getPath(GradleToolProvider.GRADLE_TOOL, build, runner);
     assertEquals(path, new File(myWorkingDir, expectedPath).getAbsolutePath(), "Wrong env provided gradle path");
   }
-
-
 }

@@ -115,8 +115,6 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
-
-
   private String createFileWithChanges(final String changesList) throws IOException {
     File changedFilesFile = myTempFiles.createTempFile(changesList);
     return changedFilesFile.getAbsolutePath().replaceAll("\\\\", "/");

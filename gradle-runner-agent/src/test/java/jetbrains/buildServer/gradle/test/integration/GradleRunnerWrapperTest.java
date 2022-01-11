@@ -25,8 +25,6 @@ import org.testng.annotations.Test;
  * Date: Oct 11, 2010
  */
 public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
-
-
   @Override
   @BeforeMethod
   public void setUp() throws Exception {
