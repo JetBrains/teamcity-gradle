@@ -1,0 +1,2 @@
+##teamcity[blockOpened name=':test']
+##teamcity[blockClosed name=':test']

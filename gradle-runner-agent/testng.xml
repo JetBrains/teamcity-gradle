@@ -10,6 +10,7 @@
       <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerServiceTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleParallelRunTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerPropertiesTest"/>
+      <class name="jetbrains.buildServer.gradle.test.integration.FilterTests"/>
     </classes>
   </test>
 </suite>

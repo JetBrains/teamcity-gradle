@@ -169,9 +169,11 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     }
 
     public String getSequenceFileName() {
-      return myGradleVersion.startsWith("gradle-") && VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "3") >= 0
+      String gradle3FileName = myGradleVersion.startsWith("gradle-") && VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "3") >= 0
              ? FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName)
              : mySequenceFileName;
+      if (new File(gradle3FileName).exists()) return gradle3FileName;
+      return mySequenceFileName;
     }
 
     public String getGradleVersion() {
@@ -239,5 +241,16 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     public void printTrace() {
       printTrace(System.out);
     }
+  }
+
+  protected void testTest(String project, String command, String seqFile, String gradleVersion) throws Exception {
+    testTest(project, command, seqFile, gradleVersion, "##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
+  }
+
+  protected void testTest(String project, String command, String seqFile, String gradleVersion, String pattern) throws Exception {
+    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project, command, seqFile);
+    gradleRunConfiguration.setPatternStr(pattern);
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
+    runAndCheckServiceMessages(gradleRunConfiguration);
   }
 }

@@ -38,17 +38,6 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   private static final int PROJECT_D_TEST_COUNT = 39;
 
-  private void testTest(String project, String command, String seqFile, String gradleVersion) throws Exception {
-    testTest(project, command, seqFile, gradleVersion, "##teamcity\\[(test|message)(.*?)(?<!\\|)\\]");
-  }
-
-  private void testTest(String project, String command, String seqFile, String gradleVersion, String pattern) throws Exception {
-    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project, command, seqFile);
-    gradleRunConfiguration.setPatternStr(pattern);
-    gradleRunConfiguration.setGradleVersion(gradleVersion);
-    runAndCheckServiceMessages(gradleRunConfiguration);
-  }
-
   @Test(dataProvider = "gradle-version-provider")
   public void failedAndSkippedJUnitTest(final String gradleVersion) throws Exception {
     testTest(PROJECT_C_NAME, "clean test", "failedProjectCJUnitSequence.txt", gradleVersion);

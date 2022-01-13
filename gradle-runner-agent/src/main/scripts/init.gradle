@@ -3,6 +3,7 @@ import jetbrains.buildServer.ComparisonFailureUtil
 import jetbrains.buildServer.agent.AgentRuntimeProperties
 import jetbrains.buildServer.gradle.GradleBuildProblem
 import jetbrains.buildServer.gradle.GradleRunnerConstants
+import jetbrains.buildServer.gradle.filter.GradleTestFilter
 import jetbrains.buildServer.messages.serviceMessages.*
 
 import java.util.concurrent.ConcurrentHashMap
@@ -1076,7 +1077,12 @@ class TestFilterWrapper {
   TestFilterWrapper(def filter) {
     if (filter == null) {
       this.filter = null
-    } else if (filter.metaClass.respondsTo(filter, 'includeTestsMatching') && filter.metaClass.respondsTo(filter, 'excludeTestsMatching')) {
+    } else if (filter.metaClass.respondsTo(filter, 'includeTestsMatching') &&
+               filter.metaClass.respondsTo(filter, 'excludeTestsMatching') &&
+               filter.metaClass.respondsTo(filter, 'getIncludePatterns') &&
+               filter.metaClass.respondsTo(filter, 'getExcludePatterns') &&
+               filter.metaClass.respondsTo(filter, 'setIncludePatterns') &&
+               filter.metaClass.respondsTo(filter, 'setExcludePatterns')) {
       this.filter = filter
     } else {
       this.filter = null
@@ -1093,6 +1099,36 @@ class TestFilterWrapper {
 
   void setFailOnNoMatchingTests(boolean failOnNoMatchingTests) {
     filter?.setFailOnNoMatchingTests(failOnNoMatchingTests)
+  }
+
+  Set<String> getIncludePatterns() {
+    return this.filter?.getIncludePatterns() ?: Collections.emptySet()
+  }
+
+  Set<String> getExcludePatterns() {
+    return this.filter?.getExcludePatterns() ?: Collections.emptySet()
+  }
+
+  Set<String> getCommandLineIncludePatterns() {
+    if (isSupported() && this.filter.metaClass.respondsTo(this.filter, 'getCommandLineIncludePatterns')) {
+      return this.filter.getCommandLineIncludePatterns() ?: Collections.emptySet()
+    } else {
+      return Collections.emptySet()
+    }
+  }
+
+  void setIncludePatterns(String... masks) {
+    this.filter?.setIncludePatterns(masks)
+  }
+
+  void setExcludePatterns(String... masks) {
+    this.filter?.setExcludePatterns(masks)
+  }
+
+  void setCommandLineIncludePatterns(String... masks) {
+    if (isSupported() && this.filter.metaClass.respondsTo(this.filter, 'setCommandLineIncludePatterns')) {
+      this.filter.setCommandLineIncludePatterns(Arrays.asList(masks))
+    }
   }
 
   boolean isSupported() {
@@ -1144,32 +1180,43 @@ gradle.projectsEvaluated { Gradle gradle ->
         testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
       }
       // add executable tests
-      def executableTestsFile = System.getenv(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH)
+      final def executableTestsFile = System.getenv(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH)
+
       if (testTask.filter.supported && executableTestsFile != null && new File(executableTestsFile).exists()) {
         // todo log "use filter"
-        testTask.filter.setFailOnNoMatchingTests(false)
+        def filter = testTask.filter
+        filter.failOnNoMatchingTests = false
 
         File filtering = new File(executableTestsFile)
         String filterType = "INCLUDE ALL";
         filtering.withReader { filterType = it.readLine().trim() }
+        GradleTestFilter gradleFilter = new GradleTestFilter(filter.includePatterns, filter.excludePatterns, filter.commandLineIncludePatterns);
         switch (filterType) {
-          case "INCLUDE ALL": testTask.filter.includeTestsMatching("*")
+          case "INCLUDE ALL":
             logger.lifecycle("include all tests")
             break
-          case "EXCLUDE ALL": testTask.filter.excludeTestsMatching("*")
+          case "EXCLUDE ALL":
+            filter.includePatterns = [] as String[]
+            filter.commandLineIncludePatterns = [] as String[]
+            filter.excludePatterns = ["*"] as String[]
             logger.lifecycle("exclude all tests")
             break
-          case "INCLUDE": filtering.eachLine { name, number ->
-            if (number == 1) return
-            testTask.filter.includeTestsMatching("${name.trim()}.*")
-            logger.lifecycle("include ${name}")
-          }
+          case "INCLUDE":
+            List<String> filteredTests = []
+            filtering.eachLine { name, number ->
+              if (number == 1) return
+              if (gradleFilter.contains(name)) filteredTests += name
+              logger.lifecycle("include ${name}")
+            }
+            filter.includePatterns = filteredTests as String[]
+            filter.commandLineIncludePatterns = [] as String[]
             break
-          case "EXCLUDE": filtering.eachLine { name, number ->
-            if (number == 1) return
-            testTask.filter.excludeTestsMatching("${name.trim()}.*")
-            logger.lifecycle("exclude ${name}")
-          }
+          case "EXCLUDE":
+            filtering.eachLine { name, number ->
+              if (number == 1) return
+              filter.excludeTestsMatching(name)
+              logger.lifecycle("exclude ${name}")
+            }
             break
         }
       }

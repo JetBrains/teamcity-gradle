@@ -110,7 +110,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
     env.put(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY, getBuild().getBuildTypeOptionValue(BuildTypeOptions.BT_SUPPORT_TEST_RETRY).toString());
-    final String tests = getRunnerContext().getBuildParameters().getSystemProperties().get("teamcity.build.parallelTests.testsPart.artifactPath");
+    final String tests = getBuildParameters().getSystemProperties().get("teamcity.build.parallelTests.testsPart.artifactPath");
     if (tests != null && new File(tests).exists()) {
       try {
         final File testsPart = File.createTempFile("testsPart", ".txt", getBuildTempDirectory());
