@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
 
 /*
-* Copyright 2000-2020 JetBrains s.r.o.
+* Copyright 2000-2022 JetBrains s.r.o.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
