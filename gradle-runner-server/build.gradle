@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2013 JetBrains s.r.o.
+ * Copyright 2000-2022 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-test {
-  useTestNG()
+plugins {
+  id 'com.github.rodm.teamcity-server' version "1.4.1"
 }
 
+teamcity {
+  version = teamcityVersion
+
+  server {
+    descriptor = project.file('../teamcity-plugin.xml')
+    tokens = [Plugin_Version: project.version]
+    files {
+      into('kotlin-dsl') {
+        from(project.file("../Gradle.xml"))
+      }
+    }
+  }
+}
+
+dependencies {
+  implementation project(':gradle-runner-common')
+  compileOnly "org.jetbrains.teamcity.internal:server:${teamcityVersion}"
+  agent project(path: ':gradle-runner-agent', configuration: 'plugin')
+}
+
+serverPlugin {
+  archiveVersion.set('')
+  archiveBaseName.set('Gradle')
+}

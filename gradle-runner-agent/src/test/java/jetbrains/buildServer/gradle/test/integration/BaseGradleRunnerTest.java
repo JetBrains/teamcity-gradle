@@ -82,6 +82,7 @@ public class BaseGradleRunnerTest {
   protected static final String MULTI_PROJECT_E_NAME = "MultiProjectE";
   protected static final String DEMAND_MULTI_PROJECT_A_NAME = "demandMultiProjectA";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
+  private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
 
   static {
     TestInternalProperties.init();
@@ -204,6 +205,7 @@ public class BaseGradleRunnerTest {
       ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
     File gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH);
+    if(!gradleDir.exists()) gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL);
     Reporter.log(gradleDir.getAbsolutePath());
     if (gradleDir.exists() && gradleDir.isDirectory()) {
       return listAvailableVersions(gradleDir);
@@ -250,12 +252,16 @@ public class BaseGradleRunnerTest {
   }
 
   public static String getGradlePath(String gradleVersion) throws IOException {
-    final File gradleHome = new File(gradleVersion);
+    File gradleHome = new File(gradleVersion);
     if (gradleHome.isAbsolute()) {
       return gradleHome.getCanonicalPath();
-    } else {
-      return new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH), gradleVersion).getCanonicalPath();
     }
+    gradleHome = new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH), gradleVersion);
+    if (gradleHome.exists()) {
+      return gradleHome.getCanonicalPath();
+    }
+
+    return new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL), gradleVersion).getCanonicalPath();
   }
 
   @BeforeMethod

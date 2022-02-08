@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2013 JetBrains s.r.o.
+ * Copyright 2000-2022 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,107 +14,52 @@
  * limitations under the License.
  */
 
+import com.github.jk1.license.render.JsonReportRenderer
 
-def TeamCityVersion = "2017.2"
-def teamCityDir = project.getProperties()["path.variable.teamcitydistribution"]
+plugins {
+  id "com.github.jk1.dependency-license-report" version "1.17"
+}
+
+ext {
+  teamcityVersion = project.hasProperty('teamcityVersion') ? property('teamcityVersion') : '2021.2'
+  versionNumber = project.hasProperty('PluginVersion') ? property('PluginVersion') : teamcityVersion + "-SNAPSHOT"
+
+  teamCityDir = project.getProperties()["path.variable.teamcitydistribution"]
+
+  teamcityLibs = project.hasProperty("TeamCityLibs") ? "$TeamCityLibs" : teamCityDir + "/webapps/ROOT/WEB-INF/lib"
+  teamcityTestLibs = project.hasProperty("TeamCityTestLibs") ? "$TeamCityTestLibs" : teamCityDir + "/devPackage/tests"
+  teamcityAgentLibs = project.hasProperty("TeamCityAgentLibs") ? "$TeamCityTestLibs" : teamCityDir + "/buildAgent/lib"
+}
+
+group = 'teamcity-gradle-plugin'
+version = versionNumber
+
 
 allprojects {
-  apply plugin: 'java'
+  group = 'teamcity-gradle-plugin'
+  version = versionNumber
+
+  repositories {
+    mavenLocal()
+    maven {
+      name = "jetbrains-teamcity"
+      url = "https://download.jetbrains.com/teamcity-repository"
+    }
+  }
 }
 
 subprojects {
-  repositories {
-    maven  { 
-        name = "sonatype-public"
-        url = "https://oss.sonatype.org/content/groups/public/" 
-    }
-    maven { 
-        name = "jetbrains-teamcity"
-        url = "https://download.jetbrains.com/teamcity-repository"
-    }
-    mavenCentral()
+  apply plugin: "java"
+
+  java {
+    sourceCompatibility = JavaVersion.VERSION_1_6
+    targetCompatibility = JavaVersion.VERSION_1_6
   }
 
-  dependencies {
-    testCompile "org.jetbrains.teamcity:tests-support:$TeamCityVersion"
-  }
-
-  clean {
-    delete "target"
-  }
+  test.useTestNG()
+  jar.archiveVersion.set('')
 }
 
-project (':gradle-runner-common') {
-  dependencies {
-    compile "org.jetbrains.teamcity:common-api:$TeamCityVersion"
-  }
-}
-
-project (':gradle-runner-agent') {
-  configurations {
-    integTestClasspath {
-      extendsFrom testRuntime
-    }
-  }
-
-  dependencies {
-    compile project(':gradle-runner-common')
-//    integTestClasspath zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
-//        include 'lib/*.jar'
-//    }
-    compile zipTree(teamCityDir + "/webapps/ROOT/update/buildAgent.zip").matching {
-        include 'lib/*.jar'
-    }
-    compile "org.jetbrains.teamcity:agent-api:$TeamCityVersion"
-    compile "org.jetbrains.teamcity.internal:agent:$TeamCityVersion"
-  }
-}
-
-project (':gradle-runner-server') {
-  dependencies {
-    compile project(':gradle-runner-common')
-    compile "org.jetbrains.teamcity:server-api:$TeamCityVersion"
-  }
-}
-
-def gradlePluginDist = new File(distsDir, 'gradle-runner')
-
-task initDistrDestinations << {
-  def gradleServer = new File(gradlePluginDist, 'server')
-  gradleServer.mkdirs()
-
-  copy {
-    from project(':gradle-runner-server').libsDir
-    from project(':gradle-runner-common').libsDir
-    into gradleServer
-  }
-
-  copy {
-    from projectDir
-    include 'teamcity-plugin.xml'
-    into gradlePluginDist
-  }
-}
-
-task zipAgent(type: Zip, dependsOn: ['initDistrDestinations',
-                                     ':gradle-runner-agent:dist']) {
-  from project(':gradle-runner-agent').distsDir
-  include 'gradle-runner/**'
-  archiveName ='gradle-runner.zip'
-  destinationDir = new File(gradlePluginDist, 'agent')
-}
-
-task zipPlugin(type: Zip, dependsOn: ['initDistrDestinations',
-                                      'zipAgent']) {
-  from gradlePluginDist
-  archiveName = 'gradle-runner.zip'
-}
-
-
-task dist(dependsOn: [ 'zipPlugin' ]) {
-  description = 'Create Gradle Runner plugin package for TeamCity'
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '3.0'
+licenseReport {
+  renderers = [ new JsonReportRenderer('third-party-libs.json') ]
 }

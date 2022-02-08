@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2013 JetBrains s.r.o.
+ * Copyright 2000-2022 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,48 +13,69 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-jar {
-  exclude '**/jetbrains/buildServer/gradle/agent/init/*'
+plugins {
+    id 'com.github.rodm.teamcity-agent' version "1.4.1"
 }
 
-
-test {
-  description = 'Run unit tests for Gradle Runner plugin. Fast.'
-  useTestNG()
-  scanForTestClasses = false
-  include '**/jetbrains/buildServer/gradle/test/init/*'
-  include '**/jetbrains/buildServer/gradle/test/unit/*'
-}
-
-task integrationTest(type: Test, dependsOn: [assemble, test]) {
-  description = 'Run integration tests for Gradle Runner plugin. Slow.'
-  useTestNG()
-  scanForTestClasses = false
-  exclude '**/jetbrains/buildServer/gradle/test/init/*'
-  exclude '**/jetbrains/buildServer/gradle/test/unit/*'
-  setClasspath configurations.integTestClasspath + files([jar.archivePath, sourceSets.test.output.classesDir])
-  jvmArgs ("-Dgradle.runtime=${gradle.gradleHomeDir}")
-}
-
-task dist(dependsOn: [build,':gradle-runner-common:build']) {
-  description = 'Create Gradle Runner package for TeamCity Build Agent'
-  doLast {
-    def runnerDir = new File(distsDir,'gradle-runner')
-    def runnerLib = new File(runnerDir,'lib')
-    runnerLib.mkdirs()
-
-    copy {
-        from project(':gradle-runner-common').libsDir
-        from libsDir
-        into runnerLib
+teamcity {
+    version = teamcityVersion
+    agent {
+        descriptor = project.file('src/main/resources/META-INF/build-agent-plugin-gradle-runner.xml')
+        files {
+            into("scripts") {
+                from(project.file("src/main/scripts"))
+            }
+        }
     }
-
-    copy {
-        from new File(projectDir,'src/main')
-        include 'scripts/*.*'
-        into runnerDir
-    }
-  }
 }
+
+sourceSets.main.java.srcDirs += 'src/main/scripts'
+
+dependencies {
+    implementation project(':gradle-runner-common')
+    compileOnly "org.jetbrains.teamcity:agent-api:${teamcityVersion}",
+            "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
+            "org.jetbrains.teamcity:common-api:${teamcityVersion}"
+    testImplementation fileTree(dir: teamcityLibs, include: ['*.jar'], exclude: ['httpcore*.jar', 'httpclient*.jar']),
+            fileTree(dir: teamcityTestLibs, include: ['*.jar']),
+            fileTree(dir: teamcityAgentLibs, include: ['*.jar'])
+
+}
+
+agentPlugin {
+    archiveVersion.set('')
+    archiveBaseName.set('gradle-agent')
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    ivy {
+        url = uri("https://services.gradle.org/distributions")
+        patternLayout {
+            artifact '[artifact]-[revision]-bin.[ext]'
+        }
+        metadataSources { artifact() }
+    }
+}
+
+task downloadDistributive {
+    doLast {
+        def versions = ["2.0", "2.5", "4.0.2", "3.4.1", "4.4", "4.10.3", "5.6.4", "6.5.1"]
+        versions.each { version ->
+            if (new File("../.tools/gradle/gradle-$version").exists()) return
+            def configuration = configurations.detachedConfiguration()
+            configuration.transitive = false
+            configuration.dependencies.add(dependencies.create("org.jetbrains.teamcity:gradle:$version@zip"))
+            copy {
+                from zipTree(configuration.singleFile)
+                into "../.tools/gradle"
+            }
+        }
+    }
+}
+
+tasks.test.dependsOn("downloadDistributive")
