@@ -1098,7 +1098,7 @@ class TestFilterWrapper {
   }
 
   void updateFilters(String fileName, Logger logger) {
-    if (fileName == null || !new File(fileName).exists()) {
+    if (fileName == null || fileName.trim().length() == 0 || !new File(fileName).exists()) {
       // log
       return
     }
