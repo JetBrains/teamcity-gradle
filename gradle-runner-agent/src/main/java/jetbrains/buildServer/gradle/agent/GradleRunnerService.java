@@ -107,7 +107,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
     env.put(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY, getBuild().getBuildTypeOptionValue(BuildTypeOptions.BT_SUPPORT_TEST_RETRY).toString());
-    env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, getBuildParameters().getSystemProperties().getOrDefault("teamcity.build.parallelTests.file", ""));
+    env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, getBuildParameters().getSystemProperties().getOrDefault("teamcity.build.parallelTests.excludesFile", ""));
 
     return new SimpleProgramCommandLine(env, getWorkingDirectory().getPath(), exePath, params);
   }
