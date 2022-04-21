@@ -1,7 +1,6 @@
 package jetbrains.buildServer.gradle.filter;
 
 import java.io.*;
-import java.util.zip.GZIPInputStream;
 
 public class GradleTestFilter {
   private final File myFile;
@@ -13,13 +12,10 @@ public class GradleTestFilter {
   public void process(final Processor processor) {
     BufferedReader reader = null;
     try {
-      reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(myFile))));
-      String mode = null;
+      reader = new BufferedReader(new InputStreamReader(new FileInputStream(myFile)));
       while (reader.ready()) {
         final String line = reader.readLine();
-        if (line.startsWith("#")) {
-          if (line.startsWith("#filtering_mode=")) mode = line.substring("#filtering_mode=".length());
-        } else if ("excludes".equals(mode)) {
+        if (!line.startsWith("#")) {
           processor.process(line);
         }
       }
