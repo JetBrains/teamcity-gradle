@@ -1,11 +1,3 @@
-import jetbrains.buildServer.ComparisonFailureData
-import jetbrains.buildServer.ComparisonFailureUtil
-import jetbrains.buildServer.agent.AgentRuntimeProperties
-import jetbrains.buildServer.gradle.GradleBuildProblem
-import jetbrains.buildServer.gradle.GradleRunnerConstants
-import jetbrains.buildServer.gradle.filter.GradleTestFilter
-import jetbrains.buildServer.messages.serviceMessages.*
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,16 +20,6 @@ import java.util.regex.Pattern
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-initscript {
-  dependencies {
-    def teamCityInitLib = System.getenv("TEAMCITY_BUILD_INIT_PATH")
-    logger.info "Init lib: ${teamCityInitLib}"
-    def classPathFiles = teamCityInitLib.split(File.pathSeparator)
-    classpath files(classPathFiles)
-  }
-}
-
 public class DependencyBasedTestRun {
 
   def logger
@@ -48,16 +30,16 @@ public class DependencyBasedTestRun {
 
   public def configureGradle(Gradle gradle) {
     def rootProject = gradle.rootProject
-    def incrementalOption = System.getenv(GradleRunnerConstants.ENV_INCREMENTAL_PARAM);
+    def incrementalOption = System.getenv("TEAMCITY_GRADLE_INCREMENTAL_MODE");
     logger.debug("Received following incremental setting: ${incrementalOption}")
 
     switch(incrementalOption) {
-      case GradleRunnerConstants.ENV_INCREMENTAL_VALUE_SKIP:
+      case "skip_incremental":
         logger.debug("Incremental building is enabled, but full rebuild is forced");
         gradle.startParameter.taskNames = ["build"];
         break;
 
-      case GradleRunnerConstants.ENV_INCREMENTAL_VALUE_PROCEED:
+      case "do_incremental":
         logger.debug("Will look for affected projects")
         def modifiedProjects = findAffectedProjects(rootProject);
         if (modifiedProjects.empty) {
@@ -77,7 +59,7 @@ public class DependencyBasedTestRun {
 
   private def findAffectedProjects(Project project) {
 
-    if (project.teamcity.containsKey(AgentRuntimeProperties.CHANGED_FILES_FILE_PARAM)) {
+    if (project.teamcity.containsKey("teamcity.build.changedFiles.file")) {
       def changedFiles = readChangedFiles(project.teamcity);
       def sourceSetsToProject = readSourceSets(project);
 
@@ -114,7 +96,7 @@ public class DependencyBasedTestRun {
   }
 
   private def readChangedFiles(Map TCProps) {
-    String filename = TCProps[AgentRuntimeProperties.CHANGED_FILES_FILE_PARAM]
+    String filename = TCProps["teamcity.build.changedFiles.file"]
 
     def lines = new File(filename).readLines()
     def personalMatch = /(.*):(.*):<personal>/
@@ -148,7 +130,7 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
     loadProps(project);
     // Marker for TeamCity listener that shows that init script started to execute successfully
     if (initScriptStartReported.compareAndSet(false, true)) {
-      logger.lifecycle(GradleRunnerConstants.STARTING_TEAMCITY_BUILD_PREFIX + project.teamcity["build.number"])
+      logger.lifecycle("Starting Gradle in TeamCity build ${project.teamcity["build.number"]}")
     }
   }
 
@@ -181,9 +163,9 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   }
 
   private void loadProps(Project p) {
-    String propsFilePath = System.getProperty(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_PROP);
+    String propsFilePath = System.getProperty("teamcity.build.properties.file");
     if (null == propsFilePath) {
-      propsFilePath = System.getenv(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV);
+      propsFilePath = System.getenv("TEAMCITY_BUILD_PROPERTIES_FILE");
     }
 
     if (null != propsFilePath) {
@@ -200,6 +182,61 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
       p.ext.teamcity = props
     } else {
       p.setProperty("teamcity", props)
+    }
+  }
+}
+
+class ServiceMessage {
+  String name
+  Map<String, String> attributes
+
+  public void setFlowId(String flowId) {
+    attributes["flowId"] = flowId
+  }
+
+  public String asString() {
+    String msg = "##teamcity[$name"
+    Map<String, String> tmp = new LinkedHashMap<>(attributes)
+    if (tmp == null || tmp.isEmpty()) {
+    } else if (tmp[""] != null) {
+      msg += " '${tmp[""]}'"
+    } else {
+      def tags = tmp.remove("tc:tags")
+      if (tags != null) msg += " tc:tags='${escape(tags)}'"
+      def flowId = tmp.remove("flowId")
+      def parent = tmp.remove("parent")
+      msg += tmp.collect{ key, value -> " $key='${escape(value)}'"}.join()
+      if (flowId != null) msg += " flowId='${escape(flowId)}'"
+      if (parent != null) msg += " parent='${escape(parent)}'"
+    }
+    return "$msg]"
+  }
+
+  private String escape(String value) {
+    if (value == null) return null
+    StringBuilder result = new StringBuilder();
+    for (int i = 0; i < value.length(); i++) {
+      char ch = value.charAt(i)
+      String res = escape(ch)
+      if (res != null) {
+        result.append('|').append(res)
+      } else {
+        result.append(ch)
+      }
+    }
+    return result.toString();
+  }
+
+  private String escape(char ch) {
+    switch (ch) {
+      case ('\n' as char): return "n";
+      case ('\r' as char): return "r";
+      case ('|' as char): return "|";
+      case ('\'' as char): return "\'";
+      case ('[' as char): return "[";
+      case (']' as char): return "]";
+      default:
+        return ch < 128 ? null : String.format("0x%04x", (int) ch);
     }
   }
 }
@@ -235,9 +272,9 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       errorListener.reset();
       task.getLogging().addStandardOutputListener(errorListener);
       task.getLogging().addStandardErrorListener(errorListener);
-      message = addFlowId(task, new CompilationStarted(task.getPath()));
+      message = addFlowId(task, new ServiceMessage(name: "compilationStarted", attributes: [compiler: task.getPath()]));
     } else {
-      message = addFlowId(task, new BlockOpened(task.getPath()));
+      message = addFlowId(task, new ServiceMessage(name: "blockOpened", attributes: [name: task.getPath()]));
     }
 
     def oldMessage = popFromBlockOpenCache(task)
@@ -269,12 +306,12 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
       if (null != failure) {
         final TeamCityOutputListener outputListener = taskMessages.get(task);
         outputListener.getMessages().each { message ->
-          logger.lifecycle(addFlowId(task, new Message(message, "ERROR", null)).asString()); // compilation failure
+          logger.lifecycle(addFlowId(task, new ServiceMessage(name: "message", attributes: [text: message, status: "ERROR"])).asString()); // compilation failure
         }
       }
-      blockCloseMessage = addFlowId(task, new CompilationFinished(task.getPath()));
+      blockCloseMessage = addFlowId(task, new ServiceMessage(name: "compilationFinished", attributes: [compiler: task.getPath()]));
     } else {
-      blockCloseMessage = addFlowId(task, new BlockClosed(task.getPath()));
+      blockCloseMessage = addFlowId(task, new ServiceMessage(name: "blockClosed", attributes: [name: task.getPath()]));
     }
     logger.lifecycle(blockCloseMessage.asString());
   }
@@ -293,24 +330,15 @@ public class TeamcityTaskListener implements TaskExecutionListener, TaskActionLi
     if (message != null) {
       if (taskState.getSkipped()) {
         logger.debug("No actions were executed for task [${task}]. Task was skipped because [${taskState.getSkipMessage()}].")
-        def text;
-
-        if (message instanceof CompilationStarted) {
-          text = ((CompilationStarted)message).getCompilerName();
+        if (message.name == "compilationStarted") {
+          String text = "${message.attributes["compiler"]} ${taskState.getSkipMessage()}"
+          logger.lifecycle(addFlowId(task, new ServiceMessage(name: "compilationStarted", attributes: [compiler: text])).asString())
+          logger.lifecycle(addFlowId(task, new ServiceMessage(name: "compilationFinished", attributes: [compiler: text])).asString())
         } else {
-          text = ((BlockOpened)message).getBlockName();
+          String text = "${message.attributes["name"]} ${taskState.getSkipMessage()}";
+          logger.lifecycle(addFlowId(task, new ServiceMessage(name: "blockOpened", attributes: [name: text])).asString())
+          logger.lifecycle(addFlowId(task, new ServiceMessage(name: "blockClosed", attributes: [name: text])).asString())
         }
-
-        text += " ${taskState.getSkipMessage()}";
-
-        if (message instanceof CompilationStarted) {
-          logger.lifecycle(addFlowId(task, new CompilationStarted(text)).asString());
-          logger.lifecycle(addFlowId(task, new CompilationFinished(text)).asString());
-        } else {
-          logger.lifecycle(addFlowId(task, new BlockOpened(text)).asString());
-          logger.lifecycle(addFlowId(task, new BlockClosed(text)).asString());
-        }
-
         skipped = true;
       } else {
         logger.debug("No actions were executed for task [${task}]. But task was not skipped, sending blockOpenmessage [${message.asString().substring(2)}]")
@@ -598,11 +626,13 @@ public class FlowWrapper {
   }
 
   ServiceMessage start(DescriptorWrapper descriptor, SuiteDescriptorWrapper suite) {
-    return started.add(descriptor.flowId) ? new ServiceMessage("flowStarted", ["flowId": descriptor.flowId, "parent": suite?.flowId ?: id]) : null
+    return started.add(descriptor.flowId) ? new ServiceMessage(name: "flowStarted",
+                                                               attributes: [flowId: descriptor.flowId, parent: suite?.flowId ?: id]) : null
   }
 
   ServiceMessage finish(DescriptorWrapper descriptor) {
-    return started.remove(descriptor.flowId) ? new ServiceMessage("flowFinished", ["flowId": descriptor.flowId]) : null
+    return started.remove(descriptor.flowId) ? new ServiceMessage(name: "flowFinished",
+                                                                  attributes: [flowId: descriptor.flowId]) : null
   }
 
   String getId() {
@@ -619,17 +649,13 @@ public class SuiteDescriptorWrapper extends DescriptorWrapper {
 
   void start(Closure action) {
     if (ignored) return
-    ServiceMessage msg = new TestSuiteStarted(descriptor.name)
-    msg.setFlowId(flowId)
-
+    ServiceMessage msg = new ServiceMessage(name: "testSuiteStarted", attributes: [name: descriptor.name, flowId: flowId])
     action(flow.start(this, parent), msg)
   }
 
   void finish(Closure action) {
     if (ignored) return
-    ServiceMessage msg = new TestSuiteFinished(descriptor.name)
-    msg.setFlowId(flowId)
-
+    ServiceMessage msg = new ServiceMessage(name: "testSuiteFinished", attributes: [name: descriptor.name, flowId: flowId])
     action(flow.finish(this), msg)
   }
 
@@ -656,16 +682,15 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
   }
 
   void start(Closure action) {
-    ServiceMessage msg = new TestStarted(testName, false, null)
-    msg.setFlowId(flowId)
-
+    ServiceMessage msg = new ServiceMessage(name: "testStarted", attributes: [name: testName, flowId: flowId])
     action(flow.start(this, parent), msg)
   }
 
   void finish(TestResult result, Closure action) {
-    ServiceMessage msg = new TestFinished(testName, (int)(result.endTime - result.startTime))
-    msg.setFlowId(flowId)
-
+    ServiceMessage msg = new ServiceMessage(name: "testFinished",
+                                            attributes: [name    : testName,
+                                                         duration: String.valueOf((int)(result.endTime - result.startTime)),
+                                                         flowId  : flowId])
     action(flow.finish(this), msg)
   }
 
@@ -683,8 +708,10 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
         action([*messages, failure])
         break
       case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
-        ServiceMessage skipped = new TestIgnored(testName, "")
-        skipped.setFlowId(flowId)
+        ServiceMessage skipped = new ServiceMessage(name: "testIgnored",
+                                                    attributes: [name   : testName,
+                                                                 message: "",
+                                                                 flowId : flowId])
         action([skipped])
         break
     };
@@ -708,16 +735,18 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
       }
 
       if (stdout.length() > 0) {
-        def msg = new TestStdOut(testName, stdout.toString() - ~/\r?\n\z/)
-        msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
-        msg.setFlowId(flowId)
+        def msg = new ServiceMessage(name: "testStdOut", attributes: [name     : testName,
+                                                                      out      : stdout.toString() - ~/\r?\n\z/,
+                                                                      "tc:tags": "tc:parseServiceMessagesInside",
+                                                                      flowId   : flowId])
         action(msg)
       }
 
       if (stderr.length() > 0) {
-        def msg = new TestStdErr(testName, stderr.toString() - ~/\r?\n\z/)
-        msg.addTag(ServiceMessage.PARSE_SERVICE_MESSAGES_INSIDE_TAG)
-        msg.setFlowId(flowId)
+        def msg = new ServiceMessage(name: "testStdErr", attributes: [name     : testName,
+                                                                      out      : stderr.toString() - ~/\r?\n\z/,
+                                                                      "tc:tags": "tc:parseServiceMessagesInside",
+                                                                      flowId   : flowId])
         action(msg)
       }
     }
@@ -769,14 +798,13 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
     }
 
     String artifactName = ".teamcity/gradle/${artifactDir.name}"
-    def artifact = new PublishArtifacts("${artifactPath.canonicalPath} => ${artifactName}")
-    artifact.setFlowId(flowId)
-
-    ServiceMessage metadata = new ServiceMessage(ServiceMessageTypes.TEST_METADATA, [testName: testName,
-                                                                                     type    : 'artifact',
-                                                                                     value   : "${artifactName}/${fileName}" as String,
-                                                                                     name    : 'teamcity.test.output'])
-    metadata.setFlowId(flowId)
+    def artifact = new ServiceMessage(name: "publishArtifacts", attributes: ["": "${artifactPath.canonicalPath} => ${artifactName}" as String, flowId: flowId])
+    ServiceMessage metadata = new ServiceMessage(name: "testMetadata",
+                                                 attributes: [testName: testName,
+                                                              type    : 'artifact',
+                                                              value   : "${artifactName}/${fileName}" as String,
+                                                              name    : 'teamcity.test.output',
+                                                              flowId  : flowId])
     return [artifact, metadata]
   }
 
@@ -786,7 +814,7 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
       return new File(path)
     }
 
-    final String rootTmpDirectory = project[AgentRuntimeProperties.BUILD_TEMP_DIR] ?: project.getBuildDir().path
+    final String rootTmpDirectory = project["teamcity.build.tempDir"] ?: project.getBuildDir().path
     File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages${File.separator}${System.nanoTime()}")
     if (resultDir.mkdirs()) {
       project["teamcity.build.stacktraceLogDir"] = resultDir.path
@@ -843,10 +871,10 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
 
   @Override
   void projectsEvaluated(Gradle gradle) {
-    defaultOption = System.getenv(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY).toBoolean()
+    defaultOption = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY").toBoolean()
     if (defaultOption == true) return
     def conf = config.get()
-    if (conf != null && conf[GradleRunnerConstants.GRADLE_USE_TEST_RETRY_PLUGIN] == "false") return
+    if (conf != null && conf["teamcity.internal.gradle.useTestRetryPlugin"] == "false") return
 
     gradle.taskGraph.whenReady { graph ->
       for (Task task : graph.allTasks) {
@@ -860,7 +888,7 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
         if (!retries.metaClass.respondsTo(retries, "getOrNull")) continue
         if (retries.getOrNull() ?: 0 > 0) {
           newOption = true
-          logger.lifecycle(new ServiceMessage("testRetrySupport", ["enabled": "true"]).asString())
+          logger.lifecycle(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: "true"]).asString())
           break
         }
       }
@@ -870,7 +898,7 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
   @Override
   void buildFinished(BuildResult result) {
     if (defaultOption == true || defaultOption == newOption) return
-    logger.lifecycle(new ServiceMessage("testRetrySupport", ["enabled": defaultOption.toString()]).asString())
+    logger.lifecycle(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: defaultOption.toString()]).asString())
   }
 }
 
@@ -898,7 +926,11 @@ public class TeamcityExceptionsListener extends BuildAdapter {
         // do not report tests and compilation failures as build problems, as they are logged separately
         return
       }
-      logger.warn(new GradleBuildProblem(message).asString());
+      logger.warn(new ServiceMessage(name: "buildProblem",
+                                     attributes: [type       : "gradleBuildProblem",
+                                                  identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
+                                                  description: message
+                                     ]).asString())
     }
   }
 }
@@ -961,13 +993,52 @@ class WrappedException extends Exception {
   }
 
   public ServiceMessage getServiceMessage(String testName) {
-    if (thMessage == "") return new TestFailed(testName, this);
-    ComparisonFailureData cfd = ComparisonFailureUtil.extractComparisonFailure(th)
+    if (thMessage == "") return new ServiceMessage(name: "testFailed", attributes: [name: testName, message: message, details: stacktrace])
+    Map.Entry<String, String> cfd = extractComparisonFailure(th)
     if (cfd != null) {
-      return new TestFailed(testName, this, trim(cfd.getActual(), maxLength), trim(cfd.getExpected(), maxLength));
+      return new ServiceMessage(name: "testFailed", attributes: [name    : testName,
+                                                                 message : message,
+                                                                 details : stacktrace,
+                                                                 actual  : trim(cfd.key, maxLength),
+                                                                 expected: trim(cfd.value, maxLength),
+                                                                 type    : "comparisonFailure"])
     } else {
-      return new TestFailed(testName, this);
+      return new ServiceMessage(name: "testFailed", attributes: [name: testName, message: message, details: stacktrace])
     }
+  }
+
+  private Map.Entry<String, String> extractComparisonFailure(Throwable th) {
+    String actual = th.metaClass.respondsTo(th, 'fActual') ? th.fActual : null
+    String expected = th.metaClass.respondsTo(th, 'fExpected') ? th.fExpected : null
+    if (actual != null && expected != null) return new AbstractMap.SimpleEntry<String, String>(actual, expected)
+
+    def message = th.localizedMessage
+    if (message == null) return null
+
+    return parseComparison(message, "expected:<", "> but was:<", ">") ?:
+           parseComparison(message, "expected [", "] but found [", "]")
+  }
+
+  private Map.Entry<String, String> parseComparison(String msg, String start, String separator, String end) {
+    int expectedIdx = msg.indexOf(start)
+    if (expectedIdx >= 0) {
+      int butWasIdx = msg.indexOf(separator, expectedIdx + start.length())
+      if (butWasIdx >= 0) {
+        int endIdx = msg.lastIndexOf(end);
+        if (endIdx >= 0) {
+          def expected = msg.substring(expectedIdx + start.length(), butWasIdx)
+          def actual = msg.substring(butWasIdx + separator.length(), endIdx)
+          return new AbstractMap.SimpleEntry<String, String>(actual, expected)
+        }
+      }
+    }
+    return null
+  }
+
+  private String getStacktrace() {
+    ByteArrayOutputStream out = new ByteArrayOutputStream()
+    th.printStackTrace(new PrintStream(out))
+    return out.toString()
   }
 
   /**
@@ -1108,7 +1179,9 @@ class TestFilterWrapper {
     }
 
     failOnNoMatchingTests = false
-    new GradleTestFilter(new File(fileName)).process { test -> excludeTest(test, null) }
+    new File(fileName).eachLine { line ->
+      if (!line.startsWith("#")) excludeTest(line, null)
+    }
   }
 }
 
@@ -1132,7 +1205,7 @@ gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
     task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"]).jvmArgs(arguments)
   }
   // read teamcity configuration parameters
-  String tcConfigFile = project.teamcity[AgentRuntimeProperties.AGENT_CONFIGURATION_PARAMS_FILE_PROP]
+  String tcConfigFile = project.teamcity["teamcity.configuration.properties.file"]
   if (tcConfigFile != null && new File(tcConfigFile).exists()) {
     tcConfigurationParameters.set(TeamcityPropertiesListener.getProps(project, logger, tcConfigFile))
   }
@@ -1146,9 +1219,10 @@ gradle.projectsEvaluated { Gradle gradle ->
   gradle.rootProject.allprojects { Project project ->
     TestTaskWrapper.forAllTestTasks(project.tasks.withType(TestTaskWrapper.type)) { TestTaskWrapper testTask ->
       Properties tcConfigParams = tcConfigurationParameters.get()
-      def descriptor = TestNameDescriptor.of(tcConfigParams[GradleRunnerConstants.GRADLE_TEST_NAME_FORMAT])
+      def descriptor = TestNameDescriptor.of(tcConfigParams["teamcity.internal.gradle.testNameFormat"])
 
-      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter, descriptor, tcConfigParams[GradleRunnerConstants.GRADLE_IGNORED_SUITE_FORMAT])
+      def testListener = new TeamcityTestListener(logger, testTask, isParallelExec, project, testCounter, descriptor,
+                                                  tcConfigParams["teamcity.internal.gradle.ignoredSuiteFormat"])
       testTask.addTestListener(testListener.testListenerDelegate as TestListener)
       if (testOutputListenerClass != null) {
         testTask.addTestOutputListener(testListener.testOutputDelegate.asType(testOutputListenerClass))
@@ -1156,13 +1230,13 @@ gradle.projectsEvaluated { Gradle gradle ->
         testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
       }
       // add executable tests
-      testTask.filter.updateFilters(System.getenv(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH), logger)
+      testTask.filter.updateFilters(System.getenv("TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"), logger)
     }
   }
 
   gradle.rootProject.allprojects.each { project ->
     project.getTasks().findByName("junitPlatformTest")?.outputs?.files?.each { file ->
-      def message = new ServiceMessage("importData", ["type": "junit", "path": "$file.absolutePath/*.xml".toString()])
+      def message = new ServiceMessage(name: "importData", attributes: [type: "junit", path: "$file.absolutePath/*.xml".toString()])
       println(message.asString())
     }
   }
