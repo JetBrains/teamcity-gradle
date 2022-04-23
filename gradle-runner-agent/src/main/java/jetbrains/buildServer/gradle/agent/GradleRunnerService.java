@@ -104,7 +104,6 @@ public class GradleRunnerService extends BuildServiceAdapter
       env.put(JavaRunnerConstants.JAVA_HOME, getJavaHome());
     }
     env.put(GradleRunnerConstants.ENV_GRADLE_OPTS, appendTmpDir(buildGradleOpts(), getBuildTempDirectory()));
-    env.put(GradleRunnerConstants.ENV_TEAMCITY_BUILD_INIT_PATH, buildInitScriptClassPath());
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
     env.put(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY, getBuild().getBuildTypeOptionValue(BuildTypeOptions.BT_SUPPORT_TEST_RETRY).toString());
     env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, getBuildParameters().getSystemProperties().getOrDefault("teamcity.build.parallelTests.excludesFile", ""));
@@ -230,21 +229,6 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
 
     return Arrays.asList("--init-script", initScript.getAbsolutePath());
-  }
-
-  private String buildInitScriptClassPath() throws RunBuildException {
-    try {
-      final File serviceMessagesLib = new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class));
-      final File runtimeUtil = new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class));
-      final File gradleRunnerConstants = new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class));
-
-      return serviceMessagesLib.getAbsolutePath() +
-                       File.pathSeparator + runtimeUtil.getAbsolutePath() +
-                       File.pathSeparator + gradleRunnerConstants.getAbsolutePath();
-
-    } catch (IOException e) {
-      throw new RunBuildException("Failed to create init script classpath", e);
-    }
   }
 
   @NotNull

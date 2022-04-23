@@ -7,6 +7,7 @@ import jetbrains.buildServer.agent.IncrementalBuild;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -21,6 +22,13 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void setUp() throws Exception {
     super.setUp();
     myRunnerParams.put(GradleRunnerConstants.IS_INCREMENTAL, Boolean.TRUE.toString());
+  }
+
+  @Override
+  @AfterMethod
+  public void tearDown() throws Exception {
+    super.tearDown();
+    myRunnerParams.clear();
   }
 
   @Test(dataProvider = "gradle-version-provider")

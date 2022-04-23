@@ -61,6 +61,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll("(name|compiler)='(.*?)( UP-TO-DATE)?'", "$1='$2'"); // drop up-to-date marks
       resultMessage = resultMessage.replaceAll("duration='\\d+'", "duration='##Duration##'"); // drop test durations
       resultMessage = resultMessage.replaceAll("details='java.lang.AssertionError.*?[^|]'", "details='##Assert_Stacktrace##'"); // drop test durations
+      resultMessage = resultMessage.replaceAll("details='org.junit.ComparisonFailure.*?[^|]'", "details='##Assert_Stacktrace##'"); // drop test durations
       resultMessage = resultMessage.replaceAll("\\\\", "/"); // normalize paths if any
       resultMessage = resultMessage.replaceAll( "(file:(/)?)?" + myCoDir.getAbsolutePath().replaceAll("\\\\", "/"), "##Checkout_directory##"); // substitute temp checkout dir
       resultMessage = resultMessage.replaceAll("wrapper/dists/gradle-([0-9.]+)-bin/[^/]+", "wrapper/dists/gradle-$1-bin/##HASH##");

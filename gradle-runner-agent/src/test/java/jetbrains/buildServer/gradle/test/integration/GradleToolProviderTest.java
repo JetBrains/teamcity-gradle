@@ -141,19 +141,26 @@ public class GradleToolProviderTest {
   @Test
   public void testProvidedGradlePath() {
     final String expectedPath = "testPathString";
-    myRunnerParams.put(GradleRunnerConstants.GRADLE_HOME, expectedPath);
+    try {
+      myRunnerParams.put(GradleRunnerConstants.GRADLE_HOME, expectedPath);
 
-    final String path = myToolProvider.getPath(GradleToolProvider.GRADLE_TOOL, build, runner);
-    assertEquals(path, new File(myWorkingDir, expectedPath).getAbsolutePath(), "Wrong server-provided gradle path");
+      final String path = myToolProvider.getPath(GradleToolProvider.GRADLE_TOOL, build, runner);
+      assertEquals(path, new File(myWorkingDir, expectedPath).getAbsolutePath(), "Wrong server-provided gradle path");
+    } finally {
+      myRunnerParams.remove(GradleRunnerConstants.GRADLE_HOME);
+    }
   }
 
   // TW-24588
   @Test
   public void testEnvSettingGradlePath() {
     final String expectedPath = "testPathString";
-    myRunnerParams.put(Constants.ENV_PREFIX + GRADLE_HOME, expectedPath);
-
-    final String path = myToolProvider.getPath(GradleToolProvider.GRADLE_TOOL, build, runner);
-    assertEquals(path, new File(myWorkingDir, expectedPath).getAbsolutePath(), "Wrong env provided gradle path");
+    try {
+      myRunnerParams.put(Constants.ENV_PREFIX + GRADLE_HOME, expectedPath);
+      final String path = myToolProvider.getPath(GradleToolProvider.GRADLE_TOOL, build, runner);
+      assertEquals(path, new File(myWorkingDir, expectedPath).getAbsolutePath(), "Wrong env provided gradle path");
+    } finally {
+      myRunnerParams.remove(Constants.ENV_PREFIX + GRADLE_HOME);
+    }
   }
 }
