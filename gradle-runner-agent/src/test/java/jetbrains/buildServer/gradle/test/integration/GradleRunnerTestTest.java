@@ -222,14 +222,18 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     testTest(PROJECT_PRINT_NAME, "clean test --tests my.PrintTest", "testEscapingServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-last-version-provider")
+  @Test(dataProvider = "gradle-version-provider<4.4")
   public void testEscapingServiceMessageJdk7(final String gradleVersion) throws Exception {
-    final String jdk7 = System.getenv("JDK_1_7");
-    if (jdk7 == null) {
-      throw new SkipException("jdk7 not found");
+    try {
+      final String jdk7 = System.getenv("JDK_1_7");
+      if (jdk7 == null) {
+        throw new SkipException("jdk7 not found");
+      }
+      myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, jdk7);
+      testTest(PROJECT_PRINT_NAME, "clean test", "testEscapingServiceMessageJdk7.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+    } finally {
+      myRunnerParams.remove(JavaRunnerConstants.TARGET_JDK_HOME);
     }
-    myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, jdk7);
-    testTest(PROJECT_PRINT_NAME, "clean test --tests my.PrintTest", "testEscapingServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
 
   @Test(dataProvider = "gradle-last-version-provider")
