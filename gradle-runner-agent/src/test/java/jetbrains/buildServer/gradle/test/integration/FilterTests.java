@@ -17,8 +17,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=1\n" +
-                                "#total=2\n" +
+                                "#current_batch=1\n" +
+                                "#total_batches=2\n" +
                                 "test.My1Test\n" +
                                 "test.My4Test\n"
                               ).getCanonicalPath());
@@ -31,8 +31,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=3\n" +
-                                "#total=3\n" +
+                                "#current_batch=3\n" +
+                                "#total_batches=3\n" +
                                 "test.My2Test\n" +
                                 "test.My3Test\n"
                               ).getCanonicalPath());
@@ -45,8 +45,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=3\n" +
-                                "#total=3\n" +
+                                "#current_batch=3\n" +
+                                "#total_batches=3\n" +
                                 "NotExists1\n" +
                                 "NotExists2\n"
                               ).getCanonicalPath());
@@ -59,8 +59,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=2\n" +
-                                "#total=3\n" +
+                                "#current_batch=2\n" +
+                                "#total_batches=3\n" +
                                 "NotExists2\n" +
                                 "test.My1Test\n" +
                                 "test.My3Test\n" +
@@ -75,8 +75,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=3\n" +
-                                "#total=3\n" +
+                                "#current_batch=3\n" +
+                                "#total_batches=3\n" +
                                 "test.My2Test\n" +
                                 "NotExists\n"
                               ).getCanonicalPath());
@@ -90,8 +90,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=2\n" +
-                                "#total=3\n" +
+                                "#current_batch=2\n" +
+                                "#total_batches=3\n" +
                                 "module1.My2Test\n" +
                                 "module2.My1Test\n"
                               ).getCanonicalPath());
@@ -104,8 +104,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=3\n" +
-                                "#total=3\n" +
+                                "#current_batch=3\n" +
+                                "#total_batches=3\n" +
                                 "module1.My1Test\n" +
                                 "module2.My2Test\n"
                               ).getCanonicalPath());
@@ -119,8 +119,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=2\n" +
-                                "#total=3\n" +
+                                "#current_batch=2\n" +
+                                "#total_batches=3\n" +
                                 "test.MyIntegration\n" +
                                 "test.includeDir.Test2\n" +
                                 "test.includeDir.Test1\n"
@@ -134,8 +134,8 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
                               createFilterFile(
                                 "#version=1.0\n" +
                                 "#algorithm=test\n" +
-                                "#batch_num=3\n" +
-                                "#total=3\n" +
+                                "#current_batch=3\n" +
+                                "#total_batches=3\n" +
                                 "test.MyUI\n" +
                                 "test.MyUnit\n" +
                                 "test.MySmoke\n" +
