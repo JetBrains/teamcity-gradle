@@ -28,7 +28,6 @@ public class GradleRunnerConstants
   public static final String DEBUG = "ui.gradleRunner.gradle.debug.enabled";
   public static final String GRADLE_WRAPPER_FLAG = "ui.gradleRunner.gradle.wrapper.useWrapper";
   public static final String GRADLE_WRAPPER_PATH = "ui.gradleRunner.gradle.wrapper.path";
-  public static final String GRADLE_WORKING_DIR = "teamcity.build.workingDir";
   public static final String IS_INCREMENTAL = "ui.gradleRunner.gradle.incremental";
   public static final String PATH_TO_BUILD_FILE = "ui.gradleRUnner.gradle.build.file";
 
@@ -37,22 +36,11 @@ public class GradleRunnerConstants
 
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";
-  // todo: it would be nice to autoconfigure some of the params based on type of build
-  public static final String GRADLE_MODE_KEY = "GRADLE_RUNNER_MODE";
-
-  public static final String GRADLE_CI_MODE = "continuous-integration";
-  public static final String GRADLE_CD_MODE = "create-cd";
   public static final String ENV_GRADLE_OPTS = "GRADLE_OPTS";
-  public static final String ENV_TEAMCITY_BUILD_INIT_PATH = "TEAMCITY_BUILD_INIT_PATH";
   public static final String ENV_SUPPORT_TEST_RETRY = "TEAMCITY_SUPPORT_TEST_RETRY";
   public static final String TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH = "TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH";
 
   public static final String INIT_SCRIPT_NAME = "init.gradle";
   public static final String INIT_SCRIPT_SUFFIX = "scripts/"+INIT_SCRIPT_NAME;
-  public static final String STARTING_TEAMCITY_BUILD_PREFIX = "Starting Gradle in TeamCity build ";
   public static final String GRADLE_BUILD_PROBLEM_TYPE = "gradleBuildProblem";
-
-  public static final String GRADLE_USE_TEST_RETRY_PLUGIN = "teamcity.internal.gradle.useTestRetryPlugin";
-  public static final String GRADLE_TEST_NAME_FORMAT = "teamcity.internal.gradle.testNameFormat";
-  public static final String GRADLE_IGNORED_SUITE_FORMAT = "teamcity.internal.gradle.ignoredSuiteFormat";
 }

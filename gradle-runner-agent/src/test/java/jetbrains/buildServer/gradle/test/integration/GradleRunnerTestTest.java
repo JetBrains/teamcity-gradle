@@ -19,12 +19,15 @@ package jetbrains.buildServer.gradle.test.integration;
 import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
+import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
+import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.serverSide.BuildTypeOptions;
 import jetbrains.buildServer.util.TestFor;
 import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import static jetbrains.buildServer.util.FileUtil.getExtension;
@@ -212,5 +215,25 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   public void testIgnoreCustomSuiteNames(final String gradleVersion) throws Exception {
     myTeamCityConfigParameters.put("teamcity.internal.gradle.ignoredSuiteFormat", "(ignored)|(42)");
     testTest(PROJECT_Q_NAME, "clean test", "testIgnoreCustomSuiteNames.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+  }
+
+  @Test(dataProvider = "gradle-last-version-provider")
+  public void testEscapingServiceMessage(final String gradleVersion) throws Exception {
+    testTest(PROJECT_PRINT_NAME, "clean test --tests my.PrintTest", "testEscapingServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+  }
+
+  @Test(dataProvider = "gradle-last-version-provider")
+  public void testEscapingServiceMessageJdk7(final String gradleVersion) throws Exception {
+    final String jdk7 = System.getenv("JDK_1_7");
+    if (jdk7 == null) {
+      throw new SkipException("jdk7 not found");
+    }
+    myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, jdk7);
+    testTest(PROJECT_PRINT_NAME, "clean test --tests my.PrintTest", "testEscapingServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+  }
+
+  @Test(dataProvider = "gradle-last-version-provider")
+  public void testComparisonServiceMessage(final String gradleVersion) throws Exception {
+    testTest(PROJECT_PRINT_NAME, "clean test --tests my.ComparisonTest", "testComparisonServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
 }

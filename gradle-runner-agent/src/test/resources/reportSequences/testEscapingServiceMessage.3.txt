@@ -1,0 +1,6 @@
+##teamcity[testSuiteStarted name='my.PrintTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='my.PrintTest.print' flowId='##Flow_ID##']
+##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='my.PrintTest.print' out='|0x00a4|0x00a4' flowId='##Flow_ID##']
+##teamcity[testStdErr tc:tags='tc:parseServiceMessagesInside' name='my.PrintTest.print' out='|'|n|r|0x0085|0x2028|0x2029|||]|n##teamcity|[ignore value=|'|0x2029|'|]' flowId='##Flow_ID##']
+##teamcity[testFinished name='my.PrintTest.print' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='my.PrintTest' flowId='##Flow_ID##']

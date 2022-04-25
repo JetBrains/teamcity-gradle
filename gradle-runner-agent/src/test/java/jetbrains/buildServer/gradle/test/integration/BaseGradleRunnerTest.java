@@ -72,6 +72,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_N_NAME = "projectN";
   public static final String PROJECT_O_NAME = "projectO";
   public static final String PROJECT_P_NAME = "projectP";
+  public static final String PROJECT_PRINT_NAME = "projectPrint";
   public static final String PROJECT_Q_NAME = "projectQ";
   public static final String PROJECT_S_NAME = "projectS";
   public static final String PROJECT_SM_NAME = "projectSm";
@@ -339,7 +340,8 @@ public class BaseGradleRunnerTest {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);
     final HashMap<String, String> propsAndVars = new HashMap<String, String>();
-    propsAndVars.put("system.java.home", System.getProperty("java.home"));
+    final String jdk = myRunnerParams.getOrDefault(JavaRunnerConstants.TARGET_JDK_HOME, System.getProperty("java.home"));
+    propsAndVars.put("system.java.home", jdk);
     final String javaHome = JavaRunnerUtil.findJavaHome(null, propsAndVars, null);
     if (javaHome != null) {
       System.out.println("Found java at [" + javaHome + "] adding as " + JavaRunnerConstants.TARGET_JDK_HOME);
