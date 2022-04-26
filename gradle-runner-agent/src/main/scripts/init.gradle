@@ -205,7 +205,7 @@ class ServiceMessage {
       if (tags != null) msg += " tc:tags='${escape(tags)}'"
       def flowId = tmp.remove("flowId")
       def parent = tmp.remove("parent")
-      msg += tmp.collect{ key, value -> " $key='${escape(value)}'"}.join()
+      msg += tmp.collect{ key, value -> " $key='${escape(value as String)}'"}.join()
       if (flowId != null) msg += " flowId='${escape(flowId)}'"
       if (parent != null) msg += " parent='${escape(parent)}'"
     }
