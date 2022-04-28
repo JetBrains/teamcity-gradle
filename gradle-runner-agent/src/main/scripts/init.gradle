@@ -187,6 +187,7 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 }
 
 class ServiceMessage {
+  private static String ESCAPE_CHARACTER = '|'
   String name
   Map<String, String> attributes
 
@@ -213,30 +214,18 @@ class ServiceMessage {
   }
 
   private String escape(String value) {
-    if (value == null) return null
-    StringBuilder result = new StringBuilder();
-    for (int i = 0; i < value.length(); i++) {
-      char ch = value.charAt(i)
-      String res = escape(ch)
-      if (res != null) {
-        result.append('|').append(res)
-      } else {
-        result.append(ch)
-      }
-    }
-    return result.toString();
+    return value?.toCharArray()?.collect{ch -> escape(ch) }?.join()
   }
 
   private String escape(char ch) {
     switch (ch) {
-      case ('\n' as char): return "n";
-      case ('\r' as char): return "r";
-      case ('|' as char): return "|";
-      case ('\'' as char): return "\'";
-      case ('[' as char): return "[";
-      case (']' as char): return "]";
-      default:
-        return ch < 128 ? null : String.format("0x%04x", (int) ch);
+      case '\n': return ESCAPE_CHARACTER + "n";
+      case '\r': return ESCAPE_CHARACTER + "r";
+      case '|': return ESCAPE_CHARACTER + "|";
+      case '\'': return ESCAPE_CHARACTER + "\'";
+      case '[': return ESCAPE_CHARACTER + "[";
+      case ']': return ESCAPE_CHARACTER + "]";
+      default: return ch < 128 ? ch as String : ESCAPE_CHARACTER + String.format("0x%04x", (int)ch);
     }
   }
 }
