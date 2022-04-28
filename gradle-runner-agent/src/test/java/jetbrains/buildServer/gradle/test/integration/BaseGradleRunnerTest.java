@@ -61,6 +61,7 @@ public class BaseGradleRunnerTest {
 
   public static final String PROJECT_A_NAME = "projectA";
   public static final String PROJECT_B_NAME = "projectB";
+  public static final String PROJECT_BROKEN_NAME = "projectBroken";
   public static final String PROJECT_C_NAME = "projectC";
   public static final String PROJECT_D_NAME = "projectD";
   public static final String PROJECT_E_NAME = "projectE";

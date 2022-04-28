@@ -103,5 +103,13 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
       myRunnerParams.remove(GradleRunnerConstants.PATH_TO_BUILD_FILE);
     }
   }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void buildProblemTest(final String gradleVersion)  throws Exception {
+    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_BROKEN_NAME, "build", "buildProblemTest.txt");
+    config.setGradleVersion(gradleVersion);
+    config.setPatternStr("##teamcity\\[buildProblem (.*?)(?<!\\|)\\]");
+    runAndCheckServiceMessages(config);
+  }
 }
 

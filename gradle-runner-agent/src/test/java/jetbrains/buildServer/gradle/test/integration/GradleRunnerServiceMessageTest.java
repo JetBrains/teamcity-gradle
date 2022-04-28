@@ -72,6 +72,8 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts.*?=>.*?)/[0-9]+'", "$1/##NUMBER##'"); // drop file number
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[publishArtifacts.*?)/[0-9]+/",
                                                "$1/##NUMBER##/"); // drop build number directory
+      resultMessage = resultMessage.replaceAll("^(##teamcity\\[buildProblem.*?) identity='[0-9\\-]+'(.*?) description='.*?'\\]",
+                                               "$1 identity='##NUMBER##'$2 description='#DESCRIPTION']"); // clean buildProblem
 
       String tempDir = myTeamCitySystemProps.get("teamcity.build.tempDir");
       if (tempDir != null) {
