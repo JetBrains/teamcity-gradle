@@ -10,5 +10,5 @@
       <url>@Plugin_Vendor_Url@</url>
     </vendor>
   </info>
-  <deployment node-responsibilities-aware="true"/>
+  <deployment use-separate-classloader="true" node-responsibilities-aware="true" allow-runtime-reload="true"/>
 </teamcity-plugin>
