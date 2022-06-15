@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import jetbrains.buildServer.util.TestFor;
 import org.testng.annotations.Test;
 
 public class FilterTests extends GradleRunnerServiceMessageTest {
@@ -142,6 +143,27 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
       "#algorithm=test\n" +
       "#current_batch=3\n" +
       "#total_batches=3\n" +
+      "test.MyUI\n" +
+      "test.MyUnit\n" +
+      "test.MySmoke\n" +
+      "test.includeDir.Test1"
+    );
+    myTeamCitySystemProps.put("teamcity.build.parallelTests.excludesFile", excludes.getCanonicalPath());
+    myTeamCitySystemProps.put("teamcity.build.parallelTests.includesFile", excludes.getCanonicalPath());
+    testTest(PROJECT_SF_NAME, "test", "filterTests/withCustomFilteringExcludeTests.txt", gradleVersion, "(##teamcity\\[(testStarted|testFinished)(.*?)(?<!\\|)\\])");
+  }
+
+  @Test(dataProvider = "gradle-version-provider>=5.0")
+  @TestFor(issues = "TW-76451")
+  public void excludeEmptyTest(final String gradleVersion) throws Exception {
+    final File excludes = createFilterFile(
+      "#version=1\n" +
+      "#algorithm=test\n" +
+      "#current_batch=3\n" +
+      "#total_batches=3\n" +
+      "#suite=name1\n" +
+      "\n" +
+      "#suite=name2\n" +
       "test.MyUI\n" +
       "test.MyUnit\n" +
       "test.MySmoke\n" +
