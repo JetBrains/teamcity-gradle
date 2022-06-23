@@ -187,46 +187,63 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 }
 
 class ServiceMessage {
+  private static List<String> IGNORED_TAGD = ['tc:tags', 'flowId', 'parent']
   private static String ESCAPE_CHARACTER = '|'
+  private static String START_MESSAGE = '##teamcity['
+  private static String END_MESSAGE = ']'
   String name
   Map<String, String> attributes
 
   public void setFlowId(String flowId) {
-    attributes["flowId"] = flowId
+    attributes['flowId'] = flowId
   }
 
   public String asString() {
-    String msg = "##teamcity[$name"
-    Map<String, String> tmp = new LinkedHashMap<>(attributes)
-    if (tmp == null || tmp.isEmpty()) {
-    } else if (tmp[""] != null) {
-      msg += " '${tmp[""]}'"
+    StringBuilder msg = new StringBuilder(START_MESSAGE).append(name)
+    if (attributes == null || attributes.isEmpty()) {
+    } else if (attributes[''] != null) {
+      msg = appendAttribute(msg, null, attributes[''])
     } else {
-      def tags = tmp.remove("tc:tags")
-      if (tags != null) msg += " tc:tags='${escape(tags)}'"
-      def flowId = tmp.remove("flowId")
-      def parent = tmp.remove("parent")
-      msg += tmp.collect{ key, value -> " $key='${escape(value as String)}'"}.join()
-      if (flowId != null) msg += " flowId='${escape(flowId)}'"
-      if (parent != null) msg += " parent='${escape(parent)}'"
+      def tags = attributes['tc:tags']
+      if (tags != null) msg = appendAttribute(msg, 'tc:tags', tags)
+      def flowId = attributes['flowId']
+      def parent = attributes['parent']
+      for (def attr: attributes.entrySet()) {
+        if (!IGNORED_TAGD.contains(attr.key)) msg = appendAttribute(msg, attr.key, attr.value)
+      }
+      if (flowId != null) msg = appendAttribute(msg, 'flowId', flowId)
+      if (parent != null) msg = appendAttribute(msg, 'parent', parent)
     }
-    return "$msg]"
+    return msg.append(END_MESSAGE).toString()
   }
 
-  private String escape(String value) {
-    return value?.toCharArray()?.collect{ch -> escape(ch) }?.join()
-  }
-
-  private String escape(char ch) {
-    switch (ch) {
-      case '\n': return ESCAPE_CHARACTER + "n";
-      case '\r': return ESCAPE_CHARACTER + "r";
-      case '|': return ESCAPE_CHARACTER + "|";
-      case '\'': return ESCAPE_CHARACTER + "\'";
-      case '[': return ESCAPE_CHARACTER + "[";
-      case ']': return ESCAPE_CHARACTER + "]";
-      default: return ch < 128 ? ch as String : ESCAPE_CHARACTER + String.format("0x%04x", (int)ch);
+  private StringBuilder appendAttribute(StringBuilder msg, String key, Object value) {
+    String strValue = null
+    if (value instanceof String) {
+      strValue = value
+    } else {
+      strValue = value as String
     }
+    if (key == null) {
+      msg.append(' \'')
+    } else {
+      msg.append(' ').append(key).append('=\'')
+    }
+    if (strValue != null) {
+      for (int i = 0; i < strValue.length(); i++) {
+        char ch = strValue.charAt(i)
+        switch (ch) {
+          case '\n': msg.append(ESCAPE_CHARACTER).append('n'); break
+          case '\r': msg.append(ESCAPE_CHARACTER).append('r'); break
+          case '|': msg.append(ESCAPE_CHARACTER).append('|'); break
+          case '\'': msg.append(ESCAPE_CHARACTER).append('\''); break
+          case '[': msg.append(ESCAPE_CHARACTER).append('['); break
+          case ']': msg.append(ESCAPE_CHARACTER).append(']'); break
+          default: ch < 128 ? msg.append(ch) : msg.append(ESCAPE_CHARACTER).append(String.format("0x%04x", (int)ch)); break
+        }
+      }
+    }
+    return msg.append('\'')
   }
 }
 
