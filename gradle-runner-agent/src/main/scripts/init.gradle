@@ -1,3 +1,10 @@
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+import org.gradle.build.event.BuildEventsListenerRegistry
+import org.gradle.tooling.events.FailureResult
+import org.gradle.tooling.events.FinishEvent
+import org.gradle.tooling.events.OperationCompletionListener
+
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -864,7 +871,23 @@ class DescriptorWrapper {
   }
 }
 
-public class TeamcityRerunTestsListener extends  BuildAdapter {
+public class TeamcityRerunTestsService implements BuildService<BuildServiceParameters.None>, OperationCompletionListener, AutoCloseable {
+  @Override
+  void close() throws Exception {
+    def defaultOption = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY").toBoolean()
+    println(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: defaultOption.toString()]).asString())
+  }
+
+  @Override
+  void onFinish(FinishEvent event) {}
+
+  @Override
+  BuildServiceParameters.None getParameters() {
+    return null
+  }
+}
+
+public class TeamcityRerunTestsListener implements ProjectEvaluationListener {
   Logger logger
   AtomicReference<Properties> config;
   boolean defaultOption = false;
@@ -876,13 +899,16 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
   }
 
   @Override
-  void projectsEvaluated(Gradle gradle) {
+  void beforeEvaluate(Project project) {}
+
+  @Override
+  void afterEvaluate(Project project, ProjectState state) {
     defaultOption = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY").toBoolean()
     if (defaultOption == true) return
     def conf = config.get()
     if (conf != null && conf["teamcity.internal.gradle.useTestRetryPlugin"] == "false") return
 
-    gradle.taskGraph.whenReady { graph ->
+    project.gradle.taskGraph.whenReady { graph ->
       for (Task task : graph.allTasks) {
         if (!TestTaskWrapper.type.isAssignableFrom(task.class)) continue
         if (!task.project.plugins.hasPlugin("org.gradle.test-retry")) continue
@@ -900,44 +926,70 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
       }
     }
   }
-
-  @Override
-  void buildFinished(BuildResult result) {
-    if (defaultOption == true || defaultOption == newOption) return
-    logger.lifecycle(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: defaultOption.toString()]).asString())
-  }
 }
 
-public class TeamcityExceptionsListener extends BuildAdapter {
-  def logger
+public class TeamcityConfigurationExceptionsListener implements ProjectEvaluationListener {
+  Logger logger
 
-  public TeamcityExceptionsListener(Logger log) {
+  public TeamcityConfigurationExceptionsListener(Logger log) {
     logger = log
   }
 
   @Override
-  void buildFinished(BuildResult result) {
-    def failure = result.getFailure()
+  void beforeEvaluate(Project project) {}
+
+  @Override
+  void afterEvaluate(Project project, ProjectState state) {
+    def failure = state.failure
     if (failure != null) {
-      while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCause() && failure.getCause() != null) {
+      while (failure != failure.getCause() && failure.getCause() != null) {
         failure = failure.getCause()
       }
-      def message;
-      if (failure instanceof org.gradle.api.tasks.TaskExecutionException && failure.getCause() != null) {
-        message = "${failure.getMessage()} ${failure.getCause().getClass().getName()}: ${failure.getCause().getMessage()}"
-      } else {
-        message = "${failure.getClass().getName()}: ${failure.getMessage()}"
-      }
-      if (message.contains("There were failing tests") || message.contains("Compilation failed") || message.contains("Compilation error")) {
-        // do not report tests and compilation failures as build problems, as they are logged separately
-        return
-      }
+      def message = "${failure.getClass().getName()}: ${failure.getMessage()}"
       logger.warn(new ServiceMessage(name: "buildProblem",
-                                     attributes: [type       : "gradleBuildProblem",
-                                                  identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
-                                                  description: message
-                                     ]).asString())
+          attributes: [type       : "gradleBuildProblem",
+                       identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
+                       description: message
+          ]).asString())
     }
+  }
+}
+
+public class TeamcityExceptionsService implements BuildService<BuildServiceParameters.None>, OperationCompletionListener, AutoCloseable {
+  @Override
+  void close() throws Exception {
+  }
+
+  @Override
+  void onFinish(FinishEvent event) {
+    if (FailureResult.isAssignableFrom(event.result.class)) {
+      def failure = event.result.getFailures()[0]
+      if (failure != null) {
+        while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCauses()[0] && failure.getCauses()[0] != null) {
+          failure = failure.getCauses()[0]
+        }
+        def message;
+        if (failure instanceof org.gradle.api.tasks.TaskExecutionException && failure.getCauses()[0] != null) {
+          message = "${failure.getMessage()} ${failure.getCauses()[0].getClass().getName()}: ${failure.getCauses()[0].getMessage()}"
+        } else {
+          message = "${failure.getClass().getName()}: ${failure.getMessage()}"
+        }
+        if (message.contains("There were failing tests") || message.contains("Compilation failed") || message.contains("Compilation error")) {
+          // do not report tests and compilation failures as build problems, as they are logged separately
+          return
+        }
+        println(new ServiceMessage(name: "buildProblem",
+            attributes: [type       : "gradleBuildProblem",
+                         identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
+                         description: message
+            ]).asString())
+      }
+    }
+  }
+
+  @Override
+  BuildServiceParameters.None getParameters() {
+    return null
   }
 }
 
@@ -1219,8 +1271,17 @@ gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
   }
 }))
 
-gradle.addListener(new TeamcityExceptionsListener(logger))
+gradle.addListener(new TeamcityConfigurationExceptionsListener(logger))
 gradle.addListener(new TeamcityRerunTestsListener(logger, tcConfigurationParameters))
+
+if (gradle.parent == null) {
+  def teamcityRerunTestsService = gradle.sharedServices.registerIfAbsent("teamcityRerunTestsService", TeamcityRerunTestsService) {}
+  def teamcityExceptionsService = gradle.sharedServices.registerIfAbsent("teamcityExceptionsService", TeamcityExceptionsService) {}
+  def registry = services.get(BuildEventsListenerRegistry)
+  registry.onTaskCompletion(teamcityRerunTestsService)
+  registry.onTaskCompletion(teamcityExceptionsService)
+}
+
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
