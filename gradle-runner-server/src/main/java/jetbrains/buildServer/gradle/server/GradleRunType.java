@@ -19,6 +19,7 @@ package jetbrains.buildServer.gradle.server;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.requirements.Requirement;
 import jetbrains.buildServer.requirements.RequirementType;
@@ -71,6 +72,12 @@ public class GradleRunType extends RunType {
   @Override
   public Map<String, String> getDefaultRunnerProperties() {
     return Collections.singletonMap(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, "true");
+  }
+
+  @NotNull
+  @Override
+  public Set<String> getTags() {
+    return Collections.singleton("Java");
   }
 
   @NotNull
