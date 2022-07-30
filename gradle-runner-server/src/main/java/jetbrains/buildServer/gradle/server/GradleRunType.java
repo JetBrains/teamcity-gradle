@@ -27,12 +27,16 @@ import jetbrains.buildServer.serverSide.PropertiesProcessor;
 import jetbrains.buildServer.serverSide.RunType;
 import jetbrains.buildServer.serverSide.RunTypeRegistry;
 import jetbrains.buildServer.util.StringUtil;
+import jetbrains.buildServer.web.openapi.PluginDescriptor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class GradleRunType extends RunType {
+  private final PluginDescriptor myPluginDescriptor;
 
-  public GradleRunType(final RunTypeRegistry runTypeRegistry) {
+  public GradleRunType(final RunTypeRegistry runTypeRegistry, @NotNull final PluginDescriptor pluginDescriptor) {
     runTypeRegistry.registerRunType(this);
+    myPluginDescriptor = pluginDescriptor;
   }
 
   @NotNull
@@ -117,5 +121,11 @@ public class GradleRunType extends RunType {
     } else {
       return Collections.emptyList();
     }
+  }
+
+  @Nullable
+  @Override
+  public String getIconUrl() {
+    return myPluginDescriptor.getPluginResourcesPath("gradle-runner-icon.svg");
   }
 }

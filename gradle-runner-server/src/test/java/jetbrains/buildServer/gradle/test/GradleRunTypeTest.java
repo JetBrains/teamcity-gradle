@@ -23,6 +23,7 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.server.GradleRunType;
 import jetbrains.buildServer.requirements.Requirement;
 import jetbrains.buildServer.requirements.RequirementType;
+import jetbrains.buildServer.serverSide.MockServerPluginDescriptior;
 import jetbrains.buildServer.serverSide.RunTypeRegistry;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -55,7 +56,7 @@ public class GradleRunTypeTest {
     context.checking(new Expectations() {{
       allowing(runTypeRegistry).registerRunType(with(any(GradleRunType.class)));
     }});
-    myRunType = new GradleRunType(runTypeRegistry);
+    myRunType = new GradleRunType(runTypeRegistry, new MockServerPluginDescriptior());
   }
 
   @Test
