@@ -74,7 +74,7 @@
       <description>
         Add a Gradles build step with custom Gradle task and build file localted in also custom
         [working directory](https://www.jetbrains.com/help/teamcity/?Build+Working+Directory).
-        Gradle incremental buildling feature is enabled.
+        Gradle incremental building feature is enabled.
         Additional Gradle command line parameters is specified with a reference to a
         [configuration parameter](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters).
         Gralde build step is set up not to use Gradle Wrapper, so Gradle will be taken from the agent's GRADLE_HOME environment variable.
