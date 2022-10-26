@@ -74,9 +74,9 @@
       <description>
         Add a Gradles build step with custom Gradle task and build file localted in also custom
         [working directory](https://www.jetbrains.com/help/teamcity/?Build+Working+Directory).
-        Gradle inctemental buildling feature is enabled.
+        Gradle incremental buildling feature is enabled.
         Additional Gradle command line parameters is specified with a reference to a
-        [configutation parameter](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters).
+        [configuration parameter](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters).
         Gralde build step is set up not to use Gradle Wrapper, so Gradle will be taken from the agent's GRADLE_HOME environment variable.
         Additional [run parameter](https://www.jetbrains.com/help/teamcity/?Gradle#Run+Parameters) for printing stacktrace is enabled.
         This step will be run inside a [Docker](https://www.jetbrains.com/help/teamcity/?Gradle#Docker+Settings) container.
@@ -112,7 +112,7 @@
     <example>
       <description>
         Adds a Gradle build step with 'default' Gradle task and custom Gradle build file.
-        Gradle Wrapper using is disabeld, so Gradle will be taken with a reference to an
+        Gradle Wrapper using is disabled, so Gradle will be taken with a reference to an
         [environment variable](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters).
         JDK is set to the [environment variable](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters) value
         with custom command line [parameters](https://www.jetbrains.com/help/teamcity/?Gradle#Java+Parameters).
