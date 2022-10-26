@@ -116,10 +116,12 @@
         [environment variable](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters).
         JDK is set to the [environment variable](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters) value
         with custom command line [parameters](https://www.jetbrains.com/help/teamcity/?Gradle#Java+Parameters).
+        This build step will run even if some previous build steps are failed.
       </description>
       <code>
         gradle {
-            name = "Test my project in Docker"
+            name = "Default run on JDK 11"
+            executionMode = BuildStep.ExecutionMode.RUN_ON_FAILURE
 
             buildFile = "build-dev.gradle"
             gradleHome = "%env.GRADLE_DEV_HOME%"
