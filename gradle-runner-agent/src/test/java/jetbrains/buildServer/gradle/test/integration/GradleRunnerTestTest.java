@@ -16,10 +16,10 @@
 
 package jetbrains.buildServer.gradle.test.integration;
 
+import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
-import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.serverSide.BuildTypeOptions;
 import jetbrains.buildServer.util.TestFor;
@@ -219,16 +219,18 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-last-version-provider")
   public void testEscapingServiceMessage(final String gradleVersion) throws Exception {
-    testTest(PROJECT_PRINT_NAME, "clean test --tests my.PrintTest", "testEscapingServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+    final String test = SystemInfo.isWindows ? "my.SimpleTest" : "my.PrintTest";
+    final String expected = SystemInfo.isWindows ? "testEscapingServiceMessage.win.txt" : "testEscapingServiceMessage.unix.txt";
+    testTest(PROJECT_PRINT_NAME, "clean test --tests " + test, expected, gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
 
   @Test(dataProvider = "gradle-version-provider<4.4")
   public void testEscapingServiceMessageJdk7(final String gradleVersion) throws Exception {
+    if (SystemInfo.isWindows) throw new SkipException("skip windows os");
+    final String jdk7 = System.getenv("JDK_1_7");
+    if (jdk7 == null) throw new SkipException("jdk7 not found");
+
     try {
-      final String jdk7 = System.getenv("JDK_1_7");
-      if (jdk7 == null) {
-        throw new SkipException("jdk7 not found");
-      }
       myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, jdk7);
       testTest(PROJECT_PRINT_NAME, "clean test", "testEscapingServiceMessageJdk7.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
     } finally {

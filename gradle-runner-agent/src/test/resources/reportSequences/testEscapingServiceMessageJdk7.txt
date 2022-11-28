@@ -1,3 +1,8 @@
+##teamcity[testSuiteStarted name='my.SimpleTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='my.SimpleTest.print' flowId='##Flow_ID##']
+##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='my.SimpleTest.print' out='##teamcity|[testStarted name=|'my.PrintTest.print|' flowId=|'||n|'|]' flowId='##Flow_ID##']
+##teamcity[testFinished name='my.SimpleTest.print' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='my.SimpleTest' flowId='##Flow_ID##']
 ##teamcity[testSuiteStarted name='my.ComparisonTest' flowId='##Flow_ID##']
 ##teamcity[testStarted name='my.ComparisonTest.testNgFlatFormat' flowId='##Flow_ID##']
 ##teamcity[testFailed name='my.ComparisonTest.testNgFlatFormat' message='java.lang.AssertionError: .... expected |[value1|nvalue2|] but found |[value3|nvalue4|] ....' details='##Assert_Stacktrace##' actual='value3|nvalue4' expected='value1|nvalue2' type='comparisonFailure' flowId='##Flow_ID##']
