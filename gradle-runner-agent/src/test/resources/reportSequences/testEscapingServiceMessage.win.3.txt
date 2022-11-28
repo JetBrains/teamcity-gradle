@@ -1,0 +1,5 @@
+##teamcity[testSuiteStarted name='my.SimpleTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='my.SimpleTest.print' flowId='##Flow_ID##']
+##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='my.SimpleTest.print' out='##teamcity|[testStarted name=|'my.PrintTest.print|' flowId=|'||n|'|]' flowId='##Flow_ID##']
+##teamcity[testFinished name='my.SimpleTest.print' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='my.SimpleTest' flowId='##Flow_ID##']
