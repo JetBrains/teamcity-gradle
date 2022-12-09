@@ -176,7 +176,7 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
 
   // --tests org.gradle.SomeTestClass
   private File createFilterFile(final String content) throws IOException {
-    final File path = File.createTempFile("excludedTests", ".txt");
+    final File path = Files.createTempFile("excludedTests", ".txt").toFile();
     try (final OutputStream os = Files.newOutputStream(path.toPath())) {
       os.write(content.getBytes(StandardCharsets.UTF_8));
     }
