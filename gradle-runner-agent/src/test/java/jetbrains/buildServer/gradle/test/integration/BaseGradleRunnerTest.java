@@ -411,6 +411,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockLogger).activityStarted(with(any(String.class)), with(any(String.class)));
       allowing(myMockLogger).logBuildProblem(with(any(BuildProblemData.class)));
       allowing(myMockLogger).activityFinished(with(any(String.class)), with(any(String.class)));
+      allowing(myMockLogger).ignoreServiceMessages(with(any(Runnable.class)));
 
       allowing(myMockExtensionHolder).getExtensions(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(Collections.emptyList()));
     }};
