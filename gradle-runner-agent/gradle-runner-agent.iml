@@ -23,6 +23,7 @@
     <orderEntry type="module" module-name="agent" />
     <orderEntry type="library" name="jmock-2.5.1" level="project" />
     <orderEntry type="module" module-name="test-api" />
+    <orderEntry type="module" module-name="migration" />
     <orderEntry type="library" name="gradle" level="project" />
     <orderEntry type="library" scope="TEST" name="ant" level="project" />
   </component>
