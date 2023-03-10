@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
@@ -320,7 +321,7 @@ public class BaseGradleRunnerTest {
   }
 
   protected Mockery initContext(final String projectName, final String gradleParams, final String gradleVersion) throws IOException {
-    Mockery context = new Mockery();
+    Mockery context = TCJMockUtils.createInstance();
 
     final String flowId = FlowGenerator.generateNewFlow();
 
