@@ -692,6 +692,7 @@ public class SuiteDescriptorWrapper extends DescriptorWrapper {
 public class TestDescriptorWrapper extends DescriptorWrapper {
   private final TestNameDescriptor testNameDescriptor
   private final ProjectPropertyStorage project
+  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.message.maxLength", 18 * 1024)
 
   TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, ProjectPropertyStorage project, Pattern ignoreSuite) {
     super(descriptor, flow, ignoreSuite)
@@ -752,22 +753,69 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
         }
       }
 
-      if (stdout.length() > 0) {
-        def msg = new ServiceMessage(name: "testStdOut", attributes: [name     : testName,
-                                                                      out      : stdout.toString() - ~/\r?\n\z/,
-                                                                      "tc:tags": "tc:parseServiceMessagesInside",
-                                                                      flowId   : flowId])
-        action(msg)
-      }
-
-      if (stderr.length() > 0) {
-        def msg = new ServiceMessage(name: "testStdErr", attributes: [name     : testName,
-                                                                      out      : stderr.toString() - ~/\r?\n\z/,
-                                                                      "tc:tags": "tc:parseServiceMessagesInside",
-                                                                      flowId   : flowId])
-        action(msg)
-      }
+      flushOutputMessage("testStdOut", stdout.toString() - ~/\r?\n\z/, action)
+      flushOutputMessage("testStdErr", stderr.toString() - ~/\r?\n\z/, action)
     }
+  }
+
+  private void flushOutputMessage(String type, String message, Closure action) {
+    while (message.length() > 0) {
+      def msg = message
+      if (msg.length() >= MAX_MESSAGE_SIZE) {
+        // Find inner service messages and try not to split each message
+        def start = msg.indexOf("##teamcity[")
+        if (start == -1 || start > MAX_MESSAGE_SIZE) {
+          msg = msg.substring(0, MAX_MESSAGE_SIZE)
+        } else {
+          def end = getEndMessage(msg, start)
+          if (end == -1) {
+            msg = msg.substring(0, MAX_MESSAGE_SIZE)
+          } else if (end > MAX_MESSAGE_SIZE) {
+            if (start > 0) {
+              msg = msg.substring(0, start)
+            } else {
+              msg = msg.substring(0, MAX_MESSAGE_SIZE)
+            }
+          } else {
+            while (end > 0 && end < MAX_MESSAGE_SIZE) {
+              int newStart = msg.indexOf("##teamcity[", end)
+              if (newStart == -1 || newStart > MAX_MESSAGE_SIZE) {
+                end = MAX_MESSAGE_SIZE
+              } else {
+                int newEnd = getEndMessage(msg, newStart)
+                if (newEnd == -1) {
+                  end = MAX_MESSAGE_SIZE
+                } else if (newEnd < MAX_MESSAGE_SIZE) {
+                  end = newEnd
+                } else {
+                  end = newStart
+                  break
+                }
+              }
+            }
+            msg = msg.substring(0, end)
+          }
+        }
+      }
+      message = message.substring(msg.length())
+      action(new ServiceMessage(name: type, attributes: [name     : testName,
+                                                         out      : msg,
+                                                         "tc:tags": "tc:parseServiceMessagesInside",
+                                                         flowId   : flowId]))
+    }
+  }
+
+  private int getEndMessage(String msg, int position) {
+    char lastChar = 0
+    while (position < msg.length()) {
+      char currentChar = msg.charAt(position)
+      if (lastChar != '|' as char && currentChar == ']' as char) return position
+      else if (lastChar == '|' as char && currentChar == '|' as char) lastChar = 0
+      else lastChar = currentChar
+
+      position++
+    }
+    return -1
   }
 
   private String getTestName() {

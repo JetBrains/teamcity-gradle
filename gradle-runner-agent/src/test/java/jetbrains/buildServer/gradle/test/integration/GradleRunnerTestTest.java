@@ -242,4 +242,9 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   public void testComparisonServiceMessage(final String gradleVersion) throws Exception {
     testTest(PROJECT_PRINT_NAME, "clean test --tests my.ComparisonTest", "testComparisonServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void splitLongOutput(final String gradleVersion) throws Exception {
+    testTest(PROJECT_T_NAME, "clean test -Dteamcity.gradle.message.maxLength=100", "splitLongOutput.txt", gradleVersion, "##teamcity\\[testStd(.*?)(?<!\\|)\\]");
+  }
 }
