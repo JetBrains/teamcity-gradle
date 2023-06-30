@@ -3,6 +3,11 @@ package test;
 import org.junit.Test;
 
 public class TestClass {
+  @Test
+  public void testSmall() throws Exception {
+    System.out.println("1234567890 ##teamcity[testStdOut name='a.b' out='a'] 1234567890");
+    System.err.println("1234567890 ##teamcity[testStdOut name='a.b' out='b'] 1234567890");
+  }
 
   @Test
   public void testSimpleOutput() throws Exception {

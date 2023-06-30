@@ -187,10 +187,10 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 }
 
 class ServiceMessage {
-  private static List<String> IGNORED_TAGD = ['tc:tags', 'flowId', 'parent']
-  private static String ESCAPE_CHARACTER = '|'
-  private static String START_MESSAGE = '##teamcity['
-  private static String END_MESSAGE = ']'
+  static final List<String> IGNORED_TAGD = ['tc:tags', 'flowId', 'parent']
+  static final String ESCAPE_CHARACTER = '|'
+  static final String START_MESSAGE = '##teamcity['
+  static final String END_MESSAGE = ']'
   String name
   Map<String, String> attributes
 
@@ -693,6 +693,7 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
   private final TestNameDescriptor testNameDescriptor
   private final ProjectPropertyStorage project
   private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.message.maxLength", 18 * 1024)
+  private static final String OUTPUT_PARSER = System.getProperty("teamcity.gradle.message.parser.type", "ServiceMessage")
 
   TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, ProjectPropertyStorage project, Pattern ignoreSuite) {
     super(descriptor, flow, ignoreSuite)
@@ -759,58 +760,65 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
   }
 
   private void flushOutputMessage(String type, String message, Closure action) {
-    while (message.length() > 0) {
-      def msg = message
-      if (msg.length() >= MAX_MESSAGE_SIZE) {
-        // Find inner service messages and try not to split each message
-        def start = msg.indexOf("##teamcity[")
-        if (start == -1 || start > MAX_MESSAGE_SIZE) {
-          msg = msg.substring(0, MAX_MESSAGE_SIZE)
-        } else {
-          def end = getEndMessage(msg, start)
-          if (end == -1) {
-            msg = msg.substring(0, MAX_MESSAGE_SIZE)
-          } else if (end > MAX_MESSAGE_SIZE) {
-            if (start > 0) {
-              msg = msg.substring(0, start)
-            } else {
-              msg = msg.substring(0, MAX_MESSAGE_SIZE)
-            }
-          } else {
-            while (end > 0 && end < MAX_MESSAGE_SIZE) {
-              int newStart = msg.indexOf("##teamcity[", end)
-              if (newStart == -1 || newStart > MAX_MESSAGE_SIZE) {
-                end = MAX_MESSAGE_SIZE
-              } else {
-                int newEnd = getEndMessage(msg, newStart)
-                if (newEnd == -1) {
-                  end = MAX_MESSAGE_SIZE
-                } else if (newEnd < MAX_MESSAGE_SIZE) {
-                  end = newEnd
-                } else {
-                  end = newStart
-                  break
-                }
-              }
-            }
-            msg = msg.substring(0, end)
-          }
-        }
+    while (!message.isEmpty()) {
+      switch (OUTPUT_PARSER) {
+        case "disabled":
+          final String msg = getMessageWithoutParsing(message, MAX_MESSAGE_SIZE)
+          message = message.substring(msg.length())
+          action(new ServiceMessage(name: type, attributes: [name  : testName,
+                                                             out   : msg,
+                                                             flowId: flowId]))
+
+          break
+        case "ServiceMessage":
+        default:
+          final String msg = getMessageWithParsing(message, MAX_MESSAGE_SIZE)
+          message = message.substring(msg.length())
+          action(new ServiceMessage(name: type, attributes: [name     : testName,
+                                                             out      : msg,
+                                                             "tc:tags": "tc:parseServiceMessagesInside",
+                                                             flowId   : flowId]))
+          break
       }
-      message = message.substring(msg.length())
-      action(new ServiceMessage(name: type, attributes: [name     : testName,
-                                                         out      : msg,
-                                                         "tc:tags": "tc:parseServiceMessagesInside",
-                                                         flowId   : flowId]))
     }
+  }
+
+  private String getMessageWithoutParsing(String message, int maxLength) {
+    if (message.length() <= maxLength) return message
+    return message.substring(0, maxLength)
+  }
+
+  private String getMessageWithParsing(String message, int maxLength) {
+    if (message.length() <= maxLength) return message
+
+    // Find inner service messages and try not to split each message
+    def start = message.indexOf(ServiceMessage.START_MESSAGE)
+    if (start == -1 || start > maxLength) return message.substring(0, maxLength)
+
+    def end = getEndMessage(message, start)
+    if (end == -1) return message.substring(0, maxLength)
+    if (end > maxLength) return message.substring(0, start > 0 ? start : maxLength)
+
+    while (end < maxLength) {
+      int newStart = message.indexOf(ServiceMessage.START_MESSAGE, end)
+      if (newStart == -1 || newStart >= maxLength) return message.substring(0, maxLength)
+
+      int newEnd = getEndMessage(message, newStart)
+      if (newEnd == -1) return message.substring(0, maxLength)
+
+      if (newEnd >= maxLength) return message.substring(0, newStart)
+
+      end = newEnd
+    }
+    return message.substring(0, end)
   }
 
   private int getEndMessage(String msg, int position) {
     char lastChar = 0
     while (position < msg.length()) {
       char currentChar = msg.charAt(position)
-      if (lastChar != '|' as char && currentChar == ']' as char) return position
-      else if (lastChar == '|' as char && currentChar == '|' as char) lastChar = 0
+      if (lastChar != ServiceMessage.ESCAPE_CHARACTER as char && currentChar == ServiceMessage.END_MESSAGE as char) return position
+      else if (lastChar == ServiceMessage.ESCAPE_CHARACTER as char && currentChar == ServiceMessage.ESCAPE_CHARACTER as char) lastChar = 0
       else lastChar = currentChar
 
       position++

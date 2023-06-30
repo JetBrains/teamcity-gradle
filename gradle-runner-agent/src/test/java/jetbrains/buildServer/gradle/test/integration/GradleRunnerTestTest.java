@@ -247,4 +247,9 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   public void splitLongOutput(final String gradleVersion) throws Exception {
     testTest(PROJECT_T_NAME, "clean test -Dteamcity.gradle.message.maxLength=100", "splitLongOutput.txt", gradleVersion, "##teamcity\\[testStd(.*?)(?<!\\|)\\]");
   }
+
+  @Test(dataProvider = "gradle-version-provider")
+  public void splitLongOutputWithoutServiceMessages(final String gradleVersion) throws Exception {
+    testTest(PROJECT_T_NAME, "clean test -Dteamcity.gradle.message.maxLength=100 -Dteamcity.gradle.message.parser.type=disabled", "splitLongOutputWithoutServiceMessages.txt", gradleVersion, "##teamcity\\[testStd(.*?)(?<!\\|)\\]");
+  }
 }

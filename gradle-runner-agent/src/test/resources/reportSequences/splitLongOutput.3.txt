@@ -1,3 +1,5 @@
+##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='test.TestClass.testSmall' out='1234567890 ##teamcity|[testStdOut name=|'a.b|' out=|'a|'|] 1234567890' flowId='##Flow_ID##']
+##teamcity[testStdErr tc:tags='tc:parseServiceMessagesInside' name='test.TestClass.testSmall' out='1234567890 ##teamcity|[testStdOut name=|'a.b|' out=|'b|'|] 1234567890' flowId='##Flow_ID##']
 ##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='test.TestClass.testSimpleOutput' out='1:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678' flowId='##Flow_ID##']
 ##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='test.TestClass.testSimpleOutput' out='2:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678' flowId='##Flow_ID##']
 ##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='test.TestClass.testSimpleOutput' out='3:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678' flowId='##Flow_ID##']
