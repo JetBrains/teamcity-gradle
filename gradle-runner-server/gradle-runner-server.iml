@@ -31,6 +31,7 @@
     <orderEntry type="library" name="jmock-2.5.1" level="project" />
     <orderEntry type="library" name="testng" level="project" />
     <orderEntry type="module" module-name="server" />
+    <orderEntry type="module" module-name="server-core" />
     <orderEntry type="module" module-name="test-api" />
     <orderEntry type="module" module-name="server-test-core" scope="TEST" />
     <orderEntry type="module" module-name="migration" />
