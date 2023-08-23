@@ -32,17 +32,20 @@
 ##tc-property name='property.bravo' value='value bravo'
 ##tc-property name='property_alpha' value='value_alpha'
 ##tc-property name='property charlie' value='value charlie'
+##tc-property name='teamcity.build.tempDir' value='##Build_temp_directory##'
 ##tc-property name='teamcity.configuration.properties.file' value='tmp directory path'
 ##teamcity[blockClosed name=':printProperties']
 ##teamcity[blockOpened name=':projectA:printProperties']
 ##tc-property name='property.bravo' value='value bravo'
 ##tc-property name='property_alpha' value='value_alpha'
 ##tc-property name='property charlie' value='value charlie'
+##tc-property name='teamcity.build.tempDir' value='##Build_temp_directory##'
 ##tc-property name='teamcity.configuration.properties.file' value='tmp directory path'
 ##teamcity[blockClosed name=':projectA:printProperties']
 ##teamcity[blockOpened name=':projectB:printProperties']
 ##tc-property name='property.bravo' value='value bravo'
 ##tc-property name='property_alpha' value='value_alpha'
 ##tc-property name='property charlie' value='value charlie'
+##tc-property name='teamcity.build.tempDir' value='##Build_temp_directory##'
 ##tc-property name='teamcity.configuration.properties.file' value='tmp directory path'
 ##teamcity[blockClosed name=':projectB:printProperties']

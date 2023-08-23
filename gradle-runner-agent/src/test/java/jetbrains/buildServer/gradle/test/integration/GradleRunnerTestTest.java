@@ -73,7 +73,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     testTest(PROJECT_E_NAME, "clean test -Dteamcity.ignoreTestStdErr=true", "testStdErrSuppressed.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=4.4")
   public void parallelTestSuiteTest(final String gradleVersion) throws RunBuildException, IOException {
     myTeamCitySystemProps.put("gradle.test.jvmargs", "-Dtest.property.alpha=valueAlpha\n" +
                                                      "-Dtest.property.bravo=valueBravo");

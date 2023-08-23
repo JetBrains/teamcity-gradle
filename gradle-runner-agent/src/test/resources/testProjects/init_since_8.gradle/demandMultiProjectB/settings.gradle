@@ -1,0 +1,4 @@
+include ':sub-module1',
+        ':sub-module2',
+        ':sub-sub-module1'
+

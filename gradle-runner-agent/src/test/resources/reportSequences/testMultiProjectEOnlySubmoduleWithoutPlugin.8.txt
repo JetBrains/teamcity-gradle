@@ -1,0 +1,4 @@
+##teamcity[testSuiteStarted name='test.BFlakyTest' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.BFlakyTest.test' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.BFlakyTest.test' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testSuiteFinished name='test.BFlakyTest' flowId='##Flow_ID##']

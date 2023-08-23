@@ -1,0 +1,43 @@
+apply plugin: "java"
+dependencies {
+  testImplementation files('../../lib/junit-4.8.1.jar');
+}
+
+subprojects {
+  apply plugin: "java"
+  dependencies {
+    testImplementation files('../../../lib/junit-4.8.1.jar')
+  }
+
+  tasks.register('printProperties') {
+    doLast {
+      teamcity.each { key, val ->
+        println "##tc-property name='${key}' value='${val}'"
+      }
+    }
+  }
+}
+
+project (':projectB') {
+    dependencies {
+      implementation project(':projectA')
+    }
+}
+
+project (':projectD') {
+    dependencies {
+      implementation project(':projectC')
+    }
+}
+
+project(':projectA') {
+    dependencies {
+      implementation project(':')
+    }
+}
+
+project(':projectC') {
+    dependencies {
+      implementation project(':')
+    }
+}

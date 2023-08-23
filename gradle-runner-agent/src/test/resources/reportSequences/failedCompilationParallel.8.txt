@@ -1,0 +1,7 @@
+##teamcity[message tc:tags='tc:internal' text='##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: not a statement' status='ERROR']
+##teamcity[message tc:tags='tc:internal' text='xx        return "I|'m Project_B guinea pig";' status='ERROR']
+##teamcity[message tc:tags='tc:internal' text='^' status='ERROR']
+##teamcity[message tc:tags='tc:internal' text='##Checkout_directory##/MultiProjectD/projectB/src/main/java/my/module/GreeterB.java:14: error: |';|' expected' status='ERROR']
+##teamcity[message tc:tags='tc:internal' text='xx        return "I|'m Project_B guinea pig";' status='ERROR']
+##teamcity[message tc:tags='tc:internal' text='  ^' status='ERROR']
+##teamcity[message tc:tags='tc:internal' text='2 errors' status='ERROR']

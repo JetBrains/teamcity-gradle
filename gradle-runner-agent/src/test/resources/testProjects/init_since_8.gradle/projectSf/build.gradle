@@ -1,0 +1,18 @@
+apply plugin: 'java'
+
+dependencies {
+  testImplementation files('../../lib/junit-4.8.1.jar')
+}
+
+test {
+  filter {
+    includeTestsMatching "*UI"
+    includeTestsMatching "*Integration"
+    includeTestsMatching "*Unit"
+    includeTestsMatching "test.includeDir.*"
+
+    excludeTestsMatching "*Unit.test2"
+    excludeTestsMatching "*Smoke"
+    excludeTestsMatching "test.excludeDir.*"
+  }
+}
