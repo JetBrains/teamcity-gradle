@@ -37,9 +37,9 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     myExtension = new GradleRunnerDiscoveryExtension();
-    myRoot = new File("../gradle-runner-agent/src/test/resources/testProjects");
+    myRoot = new File("../gradle-runner-agent/src/test/resources/testProjects", GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME);
     if (!myRoot.exists()) {
-      myRoot = new File("external-repos/gradle-runner/gradle-runner-agent/src/test/resources/testProjects");
+      myRoot = new File("external-repos/gradle-runner/gradle-runner-agent/src/test/resources/testProjects", GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME);
     }
 
     assertTrue("Can not find test data. Please check if test projects exist", myRoot.exists());

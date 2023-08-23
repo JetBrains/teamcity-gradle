@@ -1,0 +1,33 @@
+apply plugin: 'java'
+
+repositories {
+    if (gradle.gradleVersion <= "2.0") {
+        maven {
+            url "https://repo.maven.apache.org/maven2/"
+        }
+    } else {
+        mavenCentral()
+    }
+}
+
+dependencies {
+    testCompile group: 'org.testng', name: 'testng', version: '6.11'
+}
+
+test.dependsOn "testParallelInstances", "testParallelMethods"
+
+task testParallelInstances(type: Test) {
+    useTestNG() {
+        parallel "instances"
+        threadCount 3
+        include "MyTestFactory.class"
+    }
+}
+
+task testParallelMethods(type: Test) {
+    useTestNG() {
+        parallel "methods"
+        threadCount 2
+        include "MyTest.class"
+    }
+}

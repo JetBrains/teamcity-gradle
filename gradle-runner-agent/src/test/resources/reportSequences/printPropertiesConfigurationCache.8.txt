@@ -1,0 +1,3 @@
+##system-property 1 way: My Custom Property Value
+##system-property 2 way: My Custom Property Value
+##system-property 3 way: My Custom Property Value

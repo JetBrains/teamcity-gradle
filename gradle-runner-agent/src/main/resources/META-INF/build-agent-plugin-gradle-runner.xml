@@ -5,6 +5,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
   <bean id="gradleRunnerServiceFactory" class="jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory"/>
+  <bean id="teamCityBuildPropertiesGradleSplitter" class="jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter"/>
   <bean id="gradleToolProvider" class="jetbrains.buildServer.gradle.agent.GradleToolProvider" autowire="constructor"/>
 
 </beans>

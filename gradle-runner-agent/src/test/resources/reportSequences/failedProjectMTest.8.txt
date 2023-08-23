@@ -1,0 +1,3 @@
+##teamcity[testStarted name='Foo.bar' flowId='##Flow_ID##']
+##teamcity[testFailed name='Foo.bar' message='java.lang.RuntimeException: custom error' details='java.lang.RuntimeException: custom error|n' flowId='##Flow_ID##']
+##teamcity[testFinished name='Foo.bar' duration='##Duration##' flowId='##Flow_ID##']

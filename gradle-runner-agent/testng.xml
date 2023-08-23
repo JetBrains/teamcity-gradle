@@ -7,10 +7,14 @@
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerTestTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerWrapperTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleToolProviderTest"/>
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerServiceTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleParallelRunTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerPropertiesTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.FilterTests"/>
+      <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerConfigurationCacheTest"/>
+
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerServiceTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.TeamCityBuildPropertiesGradleSplitterTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleLaunchModeSelectorTest"/>
     </classes>
   </test>
 </suite>

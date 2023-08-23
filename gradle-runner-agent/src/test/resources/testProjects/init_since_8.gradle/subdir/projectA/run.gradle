@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+dependencies {
+  testImplementation files('../../../lib/junit-4.8.1.jar')
+}
+
+tasks.register('printProperties') {
+  doLast {
+    project.getProperties().each { key, val ->
+      println "##gradle-property name='${key}' value='${val}'"
+    }
+
+    teamcity.each { key, val ->
+      println "##tc-property name='${key}' value='${val}'"
+    }
+  }
+}

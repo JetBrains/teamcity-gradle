@@ -1,0 +1,8 @@
+##teamcity[testStarted name='test.My1Test.test1' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.My1Test.test1' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.My1Test.test2' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.My1Test.test2' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.My4Test.test1' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.My4Test.test1' duration='##Duration##' flowId='##Flow_ID##']
+##teamcity[testStarted name='test.My4Test.test2' flowId='##Flow_ID##']
+##teamcity[testFinished name='test.My4Test.test2' duration='##Duration##' flowId='##Flow_ID##']

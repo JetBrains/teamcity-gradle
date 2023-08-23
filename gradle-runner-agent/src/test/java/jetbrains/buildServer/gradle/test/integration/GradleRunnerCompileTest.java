@@ -33,6 +33,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
   private static final boolean isJre6 = System.getProperty("java.specification.version").contains("1.6");
   private static final boolean isJre5 = System.getProperty("java.specification.version").contains("1.5");
   private static final String COMPILATION_BLOCK_PROPS_MSGS_PATTERN = "##teamcity\\[(message|compilation|block)(.*?)(?<!\\|)\\]|##tc-property.*";
+  private static final String COMPILATION_BLOCK_PROPS_MSGS_FLOW_PATTERN = "##teamcity\\[(message|compilation|block|flow)(.*?)(?<!\\|)\\]|##tc-property.*";
   private static final String COMPILATION_MSGS_PATTERN = "##teamcity\\[(message|compilation)(.*?)(?<!\\|)\\]";
 
   @Test(dataProvider = "gradle-version-provider")
@@ -56,7 +57,6 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-
   @Test(dataProvider = "gradle-version-provider")
   public void failedCompileTest(final String gradleVersion) throws Exception {
     GradleRunConfiguration config = null;
@@ -75,11 +75,19 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "gradle-version-provider>=3.0")
-  public void failedParallelCompileTest(final String gradleVersion) throws Exception {
+  @Test(dataProvider = "8 > gradle-version-provider >= 3.0")
+  public void failedParallelCompileTestLess8(final String gradleVersion) throws Exception {
     GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "failedCompilationParallel.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("##teamcity\\[message text='[^:](.*?)(?<!\\|)\\]");
+    runAndCheckServiceMessages(config);
+  }
+
+  @Test(dataProvider = "gradle-version-provider>=8")
+  public void failedParallelCompileTest8AndHigher(final String gradleVersion) throws Exception {
+    GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "failedCompilationParallel.txt");
+    config.setGradleVersion(gradleVersion);
+    config.setPatternStr("##teamcity\\[(message)(.*?)(?<!\\|)\\]");
     runAndCheckServiceMessages(config);
   }
 
@@ -97,7 +105,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     myRunnerParams.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "projectA/run.gradle");
     try {
       config.setGradleVersion(gradleVersion);
-      config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
+      config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_FLOW_PATTERN);
       runAndCheckServiceMessages(config);
     } finally {
       myRunnerParams.remove(GradleRunnerConstants.PATH_TO_BUILD_FILE);

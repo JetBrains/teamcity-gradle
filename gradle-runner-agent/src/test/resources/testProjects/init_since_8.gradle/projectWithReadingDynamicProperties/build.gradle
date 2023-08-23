@@ -1,0 +1,5 @@
+apply plugin: 'java'
+
+repositories {
+  flatDir dirs: teamcity["build.number"]
+}
