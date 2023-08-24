@@ -1,2 +1,0 @@
-include ':sub-module1',
-        ':sub-module2'

@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="SuiteAlpha" verbose="1" >
+  <test name="TestAlpha" preserve-order="true">
+    <classes>
+       <class name="test.GreeterTestNGTest">
+         <methods>
+           <include name="testIntro"/>
+           <include name="failedTest"/>
+           <include name="testGreet" />
+           <include name="skippedTest"/>
+         </methods>
+       </class>
+    </classes>
+  </test>
+</suite>

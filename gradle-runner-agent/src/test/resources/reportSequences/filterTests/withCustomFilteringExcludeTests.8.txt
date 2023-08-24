@@ -1,8 +1,0 @@
-##teamcity[testStarted name='test.MyIntegration.test2' flowId='##Flow_ID##']
-##teamcity[testFinished name='test.MyIntegration.test2' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testStarted name='test.MyIntegration.test1' flowId='##Flow_ID##']
-##teamcity[testFinished name='test.MyIntegration.test1' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testStarted name='test.includeDir.Test2.test2' flowId='##Flow_ID##']
-##teamcity[testFinished name='test.includeDir.Test2.test2' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testStarted name='test.includeDir.Test2.test1' flowId='##Flow_ID##']
-##teamcity[testFinished name='test.includeDir.Test2.test1' duration='##Duration##' flowId='##Flow_ID##']

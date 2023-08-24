@@ -17,15 +17,11 @@
 package jetbrains.buildServer.gradle.agent;
 
 import com.intellij.openapi.util.SystemInfo;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import jetbrains.buildServer.agent.AgentBuildRunnerInfo;
 import jetbrains.buildServer.agent.BuildAgentConfiguration;
 import jetbrains.buildServer.agent.runner.CommandLineBuildService;
 import jetbrains.buildServer.agent.runner.CommandLineBuildServiceFactory;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.log.Loggers;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,12 +33,6 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
   public static final String UNIX_GRADLEW = "gradlew";
 
   private static final Info info = new Info();
-
-  private final List<GradleBuildPropertiesSplitter> propertySplitters;
-
-  public GradleRunnerServiceFactory(List<GradleBuildPropertiesSplitter> propertySplitters) {
-    this.propertySplitters = propertySplitters;
-  }
 
   @NotNull public CommandLineBuildService createService()
    {
@@ -59,9 +49,7 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
       throw new RuntimeException("OS not supported");
     }
 
-    return new GradleRunnerService(exePath,
-                                   wrapperName,
-                                   propertySplitters.stream().collect(Collectors.toMap(it -> it.getType(), Function.identity())));
+    return new GradleRunnerService(exePath, wrapperName);
    }
 
    @NotNull public AgentBuildRunnerInfo getBuildRunnerInfo()

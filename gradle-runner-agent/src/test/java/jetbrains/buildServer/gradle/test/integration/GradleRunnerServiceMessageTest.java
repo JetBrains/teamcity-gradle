@@ -20,13 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jetbrains.buildServer.RunBuildException;
-import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.util.VersionComparatorUtil;
@@ -46,20 +44,12 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
   protected static final String SEQENCE_FILES_ENCODING = "utf-8";
   protected static final String DEFAULT_MSG_PATTERN = "##teamcity\\[(.*?)(?<!\\|)\\]";
 
-  protected void assertServiceMessages(ServiceMessageReceiver message, final String[] expected) {
-    final String[] actual = message.getMessages().toArray(new String[0]);
-    if (actual.length != expected.length) {
-      assertEquals(actual, expected, "Sequences differ in size.\n" +
-                                     "Sequences differ in size. " + getAsString(Arrays.asList(actual), expected) + "\n" +
-                                     "Full log:\n" + StringUtil.join("\n", message.getAllMessages()));
-    }
-    List<String> processedActual = preprocessMessages(Arrays.asList(actual));
+  protected void assertServiceMessages(final List<String> actual, final String[] expected) {
+    assertEquals(actual.size(), expected.length, "Sequences differ in size. " + getAsString(actual, expected));
+    List<String> processedActual = preprocessMessages(actual);
     for (String expectedMsg : expected) {
-      if (!processedActual.remove(expectedMsg)) {
-        assertEquals(processedActual, Arrays.asList(expected), "Could not find " + expectedMsg + " in actual sequence: "
-                                                               + getAsString(processedActual, expected) + "\n" +
-                                                               "Full log:\n" + StringUtil.join("\n", message.getAllMessages()));
-      }
+      assertTrue(processedActual.remove(expectedMsg), "Could not find " + expectedMsg + " in actual sequence: "
+                                                      + getAsString(processedActual, expected));
     }
   }
 
@@ -74,8 +64,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll("details='org.junit.ComparisonFailure.*?[^|]'", "details='##Assert_Stacktrace##'"); // drop test durations
       resultMessage = resultMessage.replaceAll("\\\\", "/"); // normalize paths if any
       resultMessage = resultMessage.replaceAll( "(file:(/)?)?" + myCoDir.getAbsolutePath().replaceAll("\\\\", "/"), "##Checkout_directory##"); // substitute temp checkout dir
-      resultMessage = resultMessage.replace("##Checkout_directory##/" + GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME, "##Checkout_directory##"); // substitute temp checkout dir
-      resultMessage = resultMessage.replace("##Checkout_directory##/" + GradleRunnerConstants.INIT_SCRIPT_NAME, "##Checkout_directory##"); // substitute temp checkout dir
       resultMessage = resultMessage.replaceAll("wrapper/dists/gradle-([0-9.]+)-bin/[^/]+", "wrapper/dists/gradle-$1-bin/##HASH##");
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[testMetadata.*?)value='(.*?)/[0-9]+\\.log'", "$1value='$2/##NUMBER##.log'"); // drop file number
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[testMetadata.*?value='(.*?))/[0-9]+/",
@@ -117,31 +105,12 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     FileUtil.writeFileAndReportErrors(sequenceFile, StringUtil.join(preprocessMessages(data), "\r\n"));
   }
 
-  protected ServiceMessageReceiver run(@NotNull final GradleRunConfiguration gradleRunConfiguration) throws IOException, RunBuildException {
-    return run(gradleRunConfiguration, initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
-                                                   gradleRunConfiguration.getGradleVersion()));
-  }
-
-  protected ServiceMessageReceiver run(@NotNull final GradleRunConfiguration gradleRunConfiguration, @NotNull final Mockery ctx) throws IOException, RunBuildException {
-    final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
-    gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
-
-    final Expectations gatherServiceMessage = new Expectations() {{
-      allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).warning(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).error(with(any(String.class))); will(reportError);
-    }};
-
-    runTest(gatherServiceMessage, ctx);
-    return gatherMessage;
-  }
-
   protected void runAndCheckServiceMessages(@NotNull final GradleRunConfiguration gradleRunConfiguration) throws IOException, RunBuildException {
 
     final Mockery ctx = initContext(gradleRunConfiguration.getProject(), gradleRunConfiguration.getCommand(),
                                     gradleRunConfiguration.getGradleVersion());
 
-    final String sequenceName = gradleRunConfiguration.getSequenceFileName(new File(ourProjectRoot, REPORT_SEQ_DIR));
+    final String sequenceName = gradleRunConfiguration.getSequenceFileName();
     final File sequenceFile = new File (ourProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
     final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
     gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
@@ -154,16 +123,13 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       }};
 
       runTest(gatherServiceMessage, ctx);
-      gatherMessage.getAllMessages().stream()
-                   .filter(line -> line.contains("init.gradle:"))
-                   .findFirst().ifPresent(error -> fail(error));
 
       String[] sequence = readReportSequence(sequenceName);
       if (sequence.length != gatherMessage.getMessages().size()) {
         System.out.println("Process output:");
         for (String line: gatherMessage.getAllMessages()) System.out.println(line);
       }
-      assertServiceMessages(gatherMessage, sequence);
+      assertServiceMessages(gatherMessage.getMessages(), sequence);
     } else {
       final Expectations gatherServiceMessage = new Expectations() {{
         allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
@@ -175,10 +141,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       }};
 
       runTest(gatherServiceMessage, ctx);
-      gatherMessage.getAllMessages().stream()
-                   .filter(line -> line.contains("init.gradle:"))
-                   .findFirst().ifPresent(error -> fail(error));
-
       writeReportSequence(sequenceFile, gatherMessage.getMessages());
       System.out.println("Process output:");
       for (String line: gatherMessage.getAllMessages()) System.out.println(line);
@@ -209,19 +171,10 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       return myCommand;
     }
 
-    public String getSequenceFileName(@NotNull final File dir) {
-      if (myGradleVersion.startsWith("gradle-")) {
-        if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "8") >= 0) {
-          final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".8." + FileUtil.getExtension(mySequenceFileName);
-          //if (new File(dir, file).exists()) return file;
-          return file;
-        }
-        if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "3") >= 0) {
-          final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName);
-          if (new File(dir, file).exists()) return file;
-        }
-      }
-      return mySequenceFileName;
+    public String getSequenceFileName() {
+      return myGradleVersion.startsWith("gradle-") && VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "3") >= 0
+             ? FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName)
+             : mySequenceFileName;
     }
 
     public String getGradleVersion() {

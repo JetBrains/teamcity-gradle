@@ -1,5 +1,0 @@
-##teamcity[testSuiteStarted name='test.TmpDirectoryTest' flowId='##Flow_ID##']
-##teamcity[testStarted name='test.TmpDirectoryTest.getSystemProperty' flowId='##Flow_ID##']
-##teamcity[testStdOut tc:tags='tc:parseServiceMessagesInside' name='test.TmpDirectoryTest.getSystemProperty' out='##Build_temp_directory##' flowId='##Flow_ID##']
-##teamcity[testFinished name='test.TmpDirectoryTest.getSystemProperty' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testSuiteFinished name='test.TmpDirectoryTest' flowId='##Flow_ID##']

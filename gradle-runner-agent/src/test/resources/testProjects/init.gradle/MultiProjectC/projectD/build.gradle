@@ -1,8 +1,0 @@
-apply plugin: "java"
-
-dependencies {
-  compile project(':projectC')
-  testCompile files('../../../lib/junit-4.8.1.jar')
-}
-
-

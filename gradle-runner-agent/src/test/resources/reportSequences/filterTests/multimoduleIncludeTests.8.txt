@@ -1,8 +1,0 @@
-##teamcity[testStarted name='module1.My1Test.test1' flowId='##Flow_ID##']
-##teamcity[testFinished name='module1.My1Test.test1' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testStarted name='module1.My1Test.test2' flowId='##Flow_ID##']
-##teamcity[testFinished name='module1.My1Test.test2' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testStarted name='module2.My2Test.test1' flowId='##Flow_ID##']
-##teamcity[testFinished name='module2.My2Test.test1' duration='##Duration##' flowId='##Flow_ID##']
-##teamcity[testStarted name='module2.My2Test.test2' flowId='##Flow_ID##']
-##teamcity[testFinished name='module2.My2Test.test2' duration='##Duration##' flowId='##Flow_ID##']

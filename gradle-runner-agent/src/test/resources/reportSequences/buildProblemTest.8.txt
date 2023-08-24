@@ -1,1 +1,0 @@
-##teamcity[buildProblem type='gradleBuildProblem' identity='##NUMBER##' description='#DESCRIPTION']

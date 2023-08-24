@@ -1,0 +1,25 @@
+
+allprojects {
+  apply plugin: "java"
+  dependencies {
+    testCompile files('../../lib/junit-4.8.1.jar')
+  }
+
+  ext.createTask = { name, fun ->
+    if(gradle.gradleVersion < "4") {
+      task "$name" << fun
+    } else {
+      task "$name" {
+        doLast fun
+      }
+    }
+  }
+
+  createTask("printProperties", {
+    teamcity.each { key, val ->
+      println "##tc-property name='${key}' value='${val}'"
+    }
+  })
+
+}
+

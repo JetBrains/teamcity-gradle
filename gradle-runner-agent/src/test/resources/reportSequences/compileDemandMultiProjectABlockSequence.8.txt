@@ -1,3 +1,0 @@
-##tc-property name='load-module' value='main'
-##tc-property name='load-module' value='sub-module 1'
-##tc-property name='load-module' value='sub-module 1.1'

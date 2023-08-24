@@ -27,23 +27,5 @@
     <orderEntry type="module" module-name="migration" />
     <orderEntry type="library" name="gradle" level="project" />
     <orderEntry type="library" scope="TEST" name="ant" level="project" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../lib.fetched/gradle-tooling-api/gradle-tooling-api-8.2.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../lib.fetched/gradle-tooling-api/slf4j-api-1.7.30.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
   </component>
 </module>

@@ -18,9 +18,8 @@ package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import jetbrains.TCJMockUtils;
@@ -31,10 +30,7 @@ import jetbrains.buildServer.agent.runner.MultiCommandBuildSession;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
 import jetbrains.buildServer.agent.runner2.SingleCommandLineBuildSessionFactoryAdapter;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
-import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
-import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
@@ -52,8 +48,6 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_NAME;
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -86,16 +80,11 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_SM_NAME = "projectSm";
   public static final String PROJECT_SF_NAME = "projectSf";
   public static final String PROJECT_T_NAME = "projectT";
-  public static final String PROJECT_WITH_READING_PROPERTIES_NAME = "projectWithReadingProperties";
-  public static final String PROJECT_WITH_READING_DYNAMIC_PROPERTIES_NAME = "projectWithReadingDynamicProperties";
-  public static final String PROJECT_WITH_STATIC_PROPERTY_NAME = "projectWithStaticProperty";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
   protected static final String MULTI_PROJECT_E_NAME = "MultiProjectE";
   protected static final String DEMAND_MULTI_PROJECT_A_NAME = "demandMultiProjectA";
-  protected static final String DEMAND_MULTI_PROJECT_B_NAME = "demandMultiProjectB";
-  protected static final String WRAPPED_PROJECT_A_NAME = "wrappedProjectA";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
   private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
 
@@ -172,25 +161,10 @@ public class BaseGradleRunnerTest {
                     .iterator();
   }
 
-  @DataProvider(name = "gradle-version-provider>=8")
-  public static Iterator<String[]> getGradlePaths8() {
-    return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8") >= 0)
-                    .iterator();
-  }
-
   @DataProvider(name = "gradle-version-provider>=3.0")
   public static Iterator<String[]> getGradlePaths30() {
     return generateGradlePaths().stream()
                     .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "3.0") >= 0)
-                    .iterator();
-  }
-
-  @DataProvider(name = "8 > gradle-version-provider >= 3.0")
-  public static Iterator<String[]> getGradlePaths3080() {
-    return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "3.0") >= 0)
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8.0") < 0)
                     .iterator();
   }
 
@@ -299,8 +273,7 @@ public class BaseGradleRunnerTest {
     if (ourProjectRoot == null) {
       ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
-    findInitScript(ourProjectRoot, "5");
-    findInitScript(ourProjectRoot, "8");
+    findInitScript(ourProjectRoot);
     createProjectsWorkingCopy(ourProjectRoot);
     myTestLogger.onSuiteStart();
   }
@@ -311,12 +284,11 @@ public class BaseGradleRunnerTest {
     myTempDir.mkdir();
     myCoDir = myTempFiles.createTempDir();
     FileUtil.copyDir(new File(curDir, "src/test/resources/testProjects"), myCoDir, true);
-    assertTrue(new File(myCoDir, INIT_SCRIPT_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
-    assertTrue(new File(myCoDir, INIT_SCRIPT_SINCE_8_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
+    assertTrue(new File(myCoDir, PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
   }
 
-  private void findInitScript(File curDir, String gradleVersion) {
-    myInitScript = new File(curDir, GradleTestUtil.REL_SCRIPT_DIR + "/" + ConfigurationParamsUtil.getGradleInitScript(gradleVersion));
+  private void findInitScript(File curDir) {
+    myInitScript = new File(curDir, GradleTestUtil.REL_SCRIPT_DIR + GradleRunnerConstants.INIT_SCRIPT_NAME);
     assertTrue(myInitScript.canRead(), "Path to init script must point to existing and readable file.");
   }
 
@@ -328,8 +300,7 @@ public class BaseGradleRunnerTest {
   protected void runTest(final Expectations expectations, final Mockery context) throws RunBuildException {
     context.checking(expectations);
 
-    List<GradleBuildPropertiesSplitter> splitters = Arrays.asList(new TeamCityBuildPropertiesGradleSplitter());
-    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory(splitters));
+    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory());
     final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
     final GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, session, myMockExtensionHolder);
     proc.start();
@@ -350,7 +321,6 @@ public class BaseGradleRunnerTest {
   }
 
   protected Mockery initContext(final String projectName, final String gradleParams, final String gradleVersion) throws IOException {
-    myTeamCitySystemProps.put("teamcity.build.tempDir", myTempDir.getAbsolutePath());
     Mockery context = TCJMockUtils.createInstance();
 
     final String flowId = FlowGenerator.generateNewFlow();
@@ -370,12 +340,6 @@ public class BaseGradleRunnerTest {
       gradlePath = null;
     }
 
-    String gradleVersionNum = gradleVersion.startsWith("gradle-") ? getGradleVersionFromPath(gradleVersion) : gradleVersion;
-    if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0) {
-      myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
-    }
-    findInitScript(ourProjectRoot, gradleVersionNum);
-
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);
     final HashMap<String, String> propsAndVars = new HashMap<String, String>();
@@ -391,21 +355,17 @@ public class BaseGradleRunnerTest {
 
     final Properties configProperties = new Properties();
     configProperties.putAll(myTeamCityConfigParameters);
-    final File configFile = new File(myTempDir, "teamcity.config.parameters");
-    try(final OutputStream out = Files.newOutputStream(configFile.toPath())) {
-      configProperties.store(out, null);
-    }
+    final File configFile = myTempFiles.createTempFile();
+    configProperties.store(new FileOutputStream(configFile), null);
 
     final Properties systemProperties = new Properties();
     systemProperties.putAll(myTeamCitySystemProps);
     systemProperties.put(AgentRuntimeProperties.AGENT_CONFIGURATION_PARAMS_FILE_PROP, configFile.getCanonicalPath());
-    final File propertiesFile = new File(myTempDir, "teamcity.build.parameters");
-    try(final OutputStream out = Files.newOutputStream(propertiesFile.toPath())) {
-      systemProperties.store(out, null);
-    }
-    myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV, propertiesFile.getAbsolutePath());
+    final File propertiesFile = myTempFiles.createTempFile();
+    systemProperties.store(new FileOutputStream(propertiesFile), null);
+    myBuildEnvVars.put("TEAMCITY_BUILD_PROPERTIES_FILE", propertiesFile.getAbsolutePath());
 
-    final File workingDir = new File(new File(myCoDir, ConfigurationParamsUtil.getGradleInitScript(gradleVersionNum)), projectName);
+    final File workingDir = new File(myCoDir, projectName);
 
     final Expectations initMockingCtx = new Expectations() {{
       //myBuildTypeOptionValue.entrySet().forEach(entry -> {
@@ -434,7 +394,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockRunner).getName(); will(returnValue("myRunnerName"));
       allowing(myMockRunner).getRunnerParameters(); will(returnValue(myRunnerParams));
       allowing(myMockRunner).getBuildParameters(); will(returnValue(buildParams));
-      allowing(myMockRunner).getConfigParameters(); will(returnValue(myTeamCityConfigParameters));
+      allowing(myMockRunner).getConfigParameters(); will(returnValue(Collections.<String, String>emptyMap()));
       allowing(myMockRunner).getWorkingDirectory(); will(returnValue(workingDir));
       allowing(myMockRunner).getToolPath("gradle"); will(returnValue(gradlePath));
       allowing(myMockRunner).getRunType(); will(returnValue(GradleRunnerConstants.RUNNER_TYPE));

@@ -1,5 +1,0 @@
-Reusing configuration cache
-##teamcity[importData type='junit' path='##Checkout_directory##/demandMultiProjectB/sub-sub-module1/build/test-results/junit-platform/*.xml']
-##teamcity[importData type='junit' path='##Checkout_directory##/demandMultiProjectB/sub-module2/build/test-results/junit-platform/*.xml']
-##teamcity[importData type='junit' path='##Checkout_directory##/demandMultiProjectB/build/test-results/junit-platform/*.xml']
-##teamcity[importData type='junit' path='##Checkout_directory##/demandMultiProjectB/sub-module1/build/test-results/junit-platform/*.xml']

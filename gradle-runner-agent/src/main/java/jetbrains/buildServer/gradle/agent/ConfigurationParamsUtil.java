@@ -22,7 +22,6 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.runner.CommandLineArgumentsUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.StringUtil;
-import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 
 import static jetbrains.buildServer.util.StringUtil.emptyIfNull;
@@ -61,17 +60,5 @@ public class ConfigurationParamsUtil
 
   public static String getGradleWPath(final Map<String, String> runnerParameters) {
     return emptyIfNull(runnerParameters.get(GradleRunnerConstants.GRADLE_WRAPPER_PATH));
-  }
-
-  @NotNull
-  public static String getGradleInitScript(@NotNull final String gradleVersion) {
-    return VersionComparatorUtil.compare(gradleVersion, "8") >= 0
-           ? GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME
-           : GradleRunnerConstants.INIT_SCRIPT_NAME;
-  }
-
-  @NotNull
-  public static String getGradleLaunchMode(@NotNull final Map<String, String> configurationParameters) {
-    return emptyIfNull(configurationParameters.get(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM));
   }
 }
