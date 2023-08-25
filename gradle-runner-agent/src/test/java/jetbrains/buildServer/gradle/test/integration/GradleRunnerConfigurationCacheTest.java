@@ -201,7 +201,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
 
     // when: second run / then: tests ran with configuration cache reused
-    config = new GradleRunConfiguration(PROJECT_E_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCache");
+    config = new GradleRunConfiguration(PROJECT_E_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCache.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("(##teamcity\\[(.*?)(?<!\\|)\\])|(Reusing configuration cache)");
     runAndCheckServiceMessages(config);
@@ -220,7 +220,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
 
     // when: second run / then: tests ran with configuration cache reused
-    config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_B_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCacheJupiter");
+    config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_B_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCacheJupiter.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("(##teamcity\\[importData (.*?)(?<!\\|)\\])|(Reusing configuration cache)");
     runAndCheckServiceMessages(config);
