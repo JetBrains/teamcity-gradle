@@ -35,6 +35,9 @@ dependencies {
     implementation project(':gradle-runner-common')
     implementation 'org.gradle:gradle-tooling-api:8.2.1'
     implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.2'
     compileOnly "org.jetbrains.teamcity:agent-api:${teamcityVersion}",
             "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
             "org.jetbrains.teamcity:common-api:${teamcityVersion}"

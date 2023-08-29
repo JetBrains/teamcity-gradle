@@ -24,6 +24,8 @@ import org.gradle.tooling.ResultHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
+
 public class TeamCityGradleLauncher {
 
   public static void main(String[] args) {
@@ -104,9 +106,10 @@ public class TeamCityGradleLauncher {
 
     boolean isDebugModeEnabled = gradleParams.stream().anyMatch(task -> task.equals("-d"));
     GradleToolingLogger logger = new GradleToolingLoggerImpl(isDebugModeEnabled);
-    BuildContext buildContext = new BuildContext(tcBuildParametersPath, buildTempDir, envFilePath, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
+    String taskOutputDir = buildTempDir + File.separator + BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
+    BuildContext buildContext = new BuildContext(tcBuildParametersPath, taskOutputDir, envFilePath, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
     List<BuildEventListener > eventListeners = new ArrayList<>();
-    eventListeners.add(new GradleBuildOutputProcessor(logger));
+    eventListeners.add(new GradleBuildOutputProcessor(logger, buildContext));
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
 
     try (ProjectConnection connection = connector.connect()) {

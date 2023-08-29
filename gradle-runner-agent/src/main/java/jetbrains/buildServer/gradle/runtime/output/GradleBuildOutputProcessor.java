@@ -3,8 +3,14 @@ package jetbrains.buildServer.gradle.runtime.output;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import jetbrains.buildServer.gradle.runtime.BuildContext;
 import jetbrains.buildServer.gradle.runtime.listening.BuildEventListener;
-import jetbrains.buildServer.gradle.runtime.listening.event.*;
+import jetbrains.buildServer.gradle.runtime.listening.event.BuildEvent;
+import jetbrains.buildServer.gradle.runtime.listening.event.BuildFinishedEvent;
+import jetbrains.buildServer.gradle.runtime.listening.event.FailureKind;
+import jetbrains.buildServer.gradle.runtime.listening.event.FailureResult;
+import jetbrains.buildServer.gradle.runtime.listening.event.TaskFinishedEvent;
+import jetbrains.buildServer.gradle.runtime.listening.event.TaskOutputEvent;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
 import jetbrains.buildServer.messages.DefaultMessagesInfo;
 import jetbrains.buildServer.messages.serviceMessages.CompilationFinished;
@@ -27,22 +33,23 @@ public class GradleBuildOutputProcessor implements BuildEventListener {
    */
   private static final int TASK_NAME_LAST_WHITESPACE_INDEX = 6;
 
-  private final GradleToolingLogger logger;
+  private final GradleToolingLogger myLogger;
+  private final String myTaskOutputDir;
   private volatile String currentTask = null;
-  private final Map<String, StringBuilder> tasksErrorOutput;
+  private final Map<String, GradleBuildOutputWrapper> tasksErrorOutput;
   private final List<BuildFailedTaskData> failedTasks;
 
-  public GradleBuildOutputProcessor(GradleToolingLogger logger) {
-    this.logger = logger;
+  public GradleBuildOutputProcessor(GradleToolingLogger logger,
+                                    BuildContext buildContext) {
+    myLogger = logger;
+    myTaskOutputDir = buildContext.getTaskOutputDir();
     tasksErrorOutput = new ConcurrentHashMap<>();
     failedTasks = new ArrayList<>();
   }
 
   @Override
   public void onEvent(@NotNull BuildEvent event) {
-    if (event instanceof TaskStartedEvent) {
-      tasksErrorOutput.put(event.getMessage(), new StringBuilder());
-    } else if (event instanceof TaskFinishedEvent) {
+    if (event instanceof TaskFinishedEvent) {
       TaskFinishedEvent taskFinishedEvent = (TaskFinishedEvent) event;
       if (taskFinishedEvent.getResult() instanceof FailureResult) {
         FailureResult failureResult = (FailureResult) taskFinishedEvent.getResult();
@@ -56,8 +63,10 @@ public class GradleBuildOutputProcessor implements BuildEventListener {
       BuildFinishedEvent buildFinishedEvent = (BuildFinishedEvent) event;
       switch (buildFinishedEvent.getResult()) {
         case SUCCEEDED:
+          closeTaskOutputWrappers();
           return;
         case FAILED:
+          closeTaskOutputWrappers();
           collectFailureMessages();
           processFailedTasks();
       }
@@ -79,7 +88,7 @@ public class GradleBuildOutputProcessor implements BuildEventListener {
     }
 
     if (currentTask != null && OutputType.STD_ERR == outputType) {
-      appendToTaskOutput(line);
+      appendToTaskErrorOutput(line);
     }
   }
 
@@ -91,25 +100,29 @@ public class GradleBuildOutputProcessor implements BuildEventListener {
              ? line.substring("> Task ".length(), lastSpaceIndex).trim()
              : line.substring("> Task ".length()).trim();
     } catch (Throwable t) {
-      logger.warn("Couldn't parse Gradle task name from line: " + line);
+      myLogger.warn("Couldn't parse Gradle task name from line: " + line);
       return null;
     }
   }
 
-  private void appendToTaskOutput(@NotNull String line) {
-    tasksErrorOutput.getOrDefault(currentTask, new StringBuilder()).append(line);
+  private void appendToTaskErrorOutput(@NotNull String line) {
+    tasksErrorOutput.computeIfAbsent(currentTask, k -> new GradleBuildOutputWrapper(myTaskOutputDir, currentTask, myLogger)).append(line);
+  }
+
+  private void closeTaskOutputWrappers() {
+    tasksErrorOutput.forEach((task, outputWrapper) -> outputWrapper.close());
   }
 
   private void collectFailureMessages() {
     failedTasks.forEach(failedTask -> {
-      failedTask.setFailureMessages(getTaskMessages(failedTask.getTaskPath()));
+      failedTask.setFailureMessages(getTaskErrorMessages(failedTask.getTaskPath()));
     });
   }
 
   @NotNull
-  private List<String> getTaskMessages(@NotNull String taskPath) {
+  private List<String> getTaskErrorMessages(@NotNull String taskPath) {
     return Optional.ofNullable(tasksErrorOutput.get(taskPath))
-                   .map(taskOutput -> Arrays.stream(taskOutput.toString().split("\\r?\\n"))
+                   .map(taskOutputWrapper -> Arrays.stream(taskOutputWrapper.getOutput().split("\\r?\\n"))
                                             .collect(Collectors.toList()))
                    .orElseGet(Collections::emptyList);
   }
@@ -126,9 +139,9 @@ public class GradleBuildOutputProcessor implements BuildEventListener {
 
   private void reportCompilationError(@NotNull String taskPath,
                                       @NotNull Collection<String> errors) {
-    logger.lifecycle(internalize(new CompilationStarted(taskPath)).asString());
-    errors.forEach(error -> logger.lifecycle(internalize(new Message(error, "ERROR", null)).asString()));
-    logger.lifecycle(internalize(new CompilationFinished(taskPath)).asString());
+    myLogger.lifecycle(internalize(new CompilationStarted(taskPath)).asString());
+    errors.forEach(error -> myLogger.lifecycle(internalize(new Message(error, "ERROR", null)).asString()));
+    myLogger.lifecycle(internalize(new CompilationFinished(taskPath)).asString());
   }
 
   @NotNull

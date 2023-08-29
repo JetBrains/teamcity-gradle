@@ -1,6 +1,5 @@
 package jetbrains.buildServer.gradle.agent;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.util.Map;
 import jetbrains.buildServer.RunBuildException;
@@ -71,7 +70,6 @@ public class GradleLaunchModeSelector {
     }
   }
 
-  @VisibleForTesting
   @NotNull
   public static GradleLaunchMode getByGradleVersion(@Nullable String gradleVersionStr) {
     if (gradleVersionStr == null) {

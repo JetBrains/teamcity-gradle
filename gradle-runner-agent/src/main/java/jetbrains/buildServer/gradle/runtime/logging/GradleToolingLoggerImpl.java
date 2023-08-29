@@ -24,6 +24,6 @@ public class GradleToolingLoggerImpl implements GradleToolingLogger {
 
   @Override
   public void warn(@NotNull String message) {
-    System.out.println(message);
+    System.err.println(message);
   }
 }

@@ -1,6 +1,5 @@
 package jetbrains.buildServer.gradle.agent.propertySplit;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -69,7 +68,6 @@ public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropert
    *
    * @return true - the property is dynamic
    */
-  @VisibleForTesting
   public boolean isDynamicProperty(@NotNull String propertyKey) {
     if (propertyKey.startsWith("dep.")) {
       propertyKey = propertyKey.substring(propertyKey.indexOf('.', 4) + 1);

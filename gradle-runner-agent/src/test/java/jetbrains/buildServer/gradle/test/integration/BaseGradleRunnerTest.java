@@ -89,6 +89,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_WITH_READING_PROPERTIES_NAME = "projectWithReadingProperties";
   public static final String PROJECT_WITH_READING_DYNAMIC_PROPERTIES_NAME = "projectWithReadingDynamicProperties";
   public static final String PROJECT_WITH_STATIC_PROPERTY_NAME = "projectWithStaticProperty";
+  public static final String PROJECT_WITH_GENERATED_TASKS_A_NAME = "projectWithGeneratedTasksA";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";

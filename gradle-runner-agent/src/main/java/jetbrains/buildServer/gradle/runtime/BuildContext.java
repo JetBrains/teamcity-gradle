@@ -10,9 +10,9 @@ public class BuildContext {
   private final String myTcBuildParametersPath;
 
   /**
-   * Temporary directory of the build
+   * Directory for output of the tasks
    */
-  private final String myBuildTempDir;
+  private final String myTaskOutputDir;
 
   /**
    * Temporary file with environment of the build
@@ -35,13 +35,13 @@ public class BuildContext {
   private final String myGradleTasksTempFilePath;
 
   public BuildContext(@NotNull String tcBuildParametersPath,
-                      @NotNull String buildTempDir,
+                      @NotNull String taskOutputDir,
                       @NotNull String envTempFilePath,
                       @NotNull String gradleParamsTempFilePath,
                       @NotNull String jvmArgsTempFilePath,
                       @NotNull String gradleTasksTempFilePath) {
     myTcBuildParametersPath = tcBuildParametersPath;
-    myBuildTempDir = buildTempDir;
+    myTaskOutputDir = taskOutputDir;
     myEnvTempFilePath = envTempFilePath;
     myGradleParamsTempFilePath = gradleParamsTempFilePath;
     myJvmArgsTempFilePath = jvmArgsTempFilePath;
@@ -54,8 +54,8 @@ public class BuildContext {
   }
 
   @NotNull
-  public String getBuildTempDir() {
-    return myBuildTempDir;
+  public String getTaskOutputDir() {
+    return myTaskOutputDir;
   }
 
   @NotNull
@@ -82,7 +82,7 @@ public class BuildContext {
   public String toString() {
     return getClass().getSimpleName() + "{" +
            "myTcBuildParametersPath=" + myTcBuildParametersPath +
-           ", myBuildTempDir='" + myBuildTempDir + '\'' +
+           ", myTaskOutputDir='" + myTaskOutputDir + '\'' +
            ", myEnvTempFilePath='" + myEnvTempFilePath + '\'' +
            ", myGradleParamsTempFilePath='" + myGradleParamsTempFilePath + '\'' +
            ", myJvmArgsTempFilePath='" + myJvmArgsTempFilePath + '\'' +

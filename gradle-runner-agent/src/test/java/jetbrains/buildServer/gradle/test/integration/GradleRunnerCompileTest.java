@@ -99,6 +99,17 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
+  @Test(dataProvider = "gradle-version-provider>=8")
+  public void shouldDetectCompilationErrorsWithHugeAmountOfTasksAndStdErrOutput(final String gradleVersion) throws Exception {
+    // given
+    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_GENERATED_TASKS_A_NAME, "clean build --continue", "testsWithHugeAmountOfTasksAndStdErrOutput");
+    config.setGradleVersion(gradleVersion);
+    config.setPatternStr("##tc-error-output.*|##teamcity\\[(message|compilation)(.*?)(?<!\\|)\\]");
+
+    // when / then
+    runAndCheckServiceMessages(config);
+  }
+
   @Test(dataProvider = "gradle-version-provider")
   public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {
     GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "projectABlockSequence.txt");
