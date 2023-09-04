@@ -405,6 +405,7 @@ public class BaseGradleRunnerTest {
       systemProperties.store(out, null);
     }
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV, propertiesFile.getAbsolutePath());
+    System.setProperty(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_PROP, propertiesFile.getAbsolutePath());
 
     final File workingDir = new File(new File(myCoDir, ConfigurationParamsUtil.getGradleInitScript(gradleVersionNum)), projectName);
 

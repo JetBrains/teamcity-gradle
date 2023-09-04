@@ -23,9 +23,6 @@ import org.gradle.tooling.events.OperationType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY;
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY;
-
 /**
  * Helps to configure Gradle Tooling API build
  */
@@ -98,17 +95,5 @@ public class GradleBuildConfigurator {
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(SortedProperties.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();
-  }
-
-  @NotNull
-  public static String getTeamCityBuildParametersPath(@NotNull Map<String, String> env) {
-    String propsFilePath = System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY);
-    if (null == propsFilePath) {
-      propsFilePath = env.get(TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY);
-    }
-    if (null == propsFilePath) {
-      throw new RuntimeException("Couldn't find teamcity.build.parameters file");
-    }
-    return propsFilePath;
   }
 }

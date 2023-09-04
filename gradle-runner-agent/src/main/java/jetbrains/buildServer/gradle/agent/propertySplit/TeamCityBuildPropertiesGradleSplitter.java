@@ -9,10 +9,9 @@ import org.jetbrains.annotations.NotNull;
 
 import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.*;
 import static jetbrains.buildServer.gradle.agent.propertySplit.SplitPropertiesFilenameBuilder.buildStaticPropertiesFilename;
+import static jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver.getTcBuildParametersFile;
 
 public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropertiesSplitter {
-
-  private static final String TEAMCITY_BUILD_PROPERTIES_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";
 
   private static final String TEAMCITY_CONFIGURATION_PROPERTIES_KEY = "teamcity.configuration.properties.file";
 
@@ -24,10 +23,7 @@ public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropert
   @Override
   public void split(@NotNull Map<String, String> environment,
                     @NotNull File buildTempDir) throws RunBuildException {
-    String propertyFilePath = environment.get(TEAMCITY_BUILD_PROPERTIES_ENV_KEY);
-    if (propertyFilePath == null) return;
-    File propertyFile = new File(propertyFilePath);
-    if (!propertyFile.exists()) return;
+    File propertyFile = getTcBuildParametersFile(environment);
 
     File propertyFileParent = propertyFile.getParentFile();
 

@@ -176,6 +176,8 @@ public class GradleRunnerService extends BuildServiceAdapter
     Map<String, String> systemProperties = new HashMap<>();
     systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM,
                          Boolean.valueOf(ConfigurationParamsUtil.isParameterEnabled(getConfigParameters(), GRADLE_RUNNER_READ_ALL_CONFIG_PARAM)).toString());
+    Optional.ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
+            .ifPresent(tcBuildParametersFilePath -> systemProperties.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, tcBuildParametersFilePath));
 
     return new JavaCommandLineBuilder()
       .withJavaHome(getJavaHome(), getRunnerContext().isVirtualContext())

@@ -110,7 +110,8 @@ public class GradleRunnerServiceTest {
     final HashMap<String, String> propsAndVars = new HashMap<String, String>();
     final String jdk = myRunnerParams.getOrDefault(JavaRunnerConstants.TARGET_JDK_HOME, System.getProperty("java.home"));
     propsAndVars.put("system.java.home", jdk);
-    javaHome = JavaRunnerUtil.findJavaHome(null, propsAndVars, null);
+    javaHome = JavaRunnerUtil.findJavaHome(jdk, propsAndVars, null);
+    myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, javaHome);
 
     toolingApiLauncherFiles.put(GRADLE_LAUNCHER_ENV_FILE, myTempDir.getAbsolutePath() + File.separator + GRADLE_LAUNCHER_ENV_FILE);
     toolingApiLauncherFiles.put(GRADLE_PARAMS_FILE, myTempDir.getAbsolutePath() + File.separator + GRADLE_PARAMS_FILE);
@@ -482,9 +483,16 @@ public class GradleRunnerServiceTest {
   private void validateCmdLineSince8(final ProgramCommandLine cmdLine, boolean isTestDaemon) throws Exception {
     final String workDir = myWorkingDirectory.getAbsolutePath();
     final String initScriptPath = myInitScript.getAbsolutePath();
+    StringBuilder javaHomeBuilder = new StringBuilder();
+    javaHomeBuilder.append(javaHome).append(File.separator)
+                  .append("bin").append(File.separator)
+                  .append("java");
 
-    assertEquals(cmdLine.getExecutablePath(), javaHome + File.separator + "bin" + File.separator + "java",
-                 "Gradle Tooling API startup script must be executed by separate Java process");
+    if (SystemInfo.isWindows) {
+      javaHomeBuilder.append(".exe");
+    }
+
+    assertEquals(cmdLine.getExecutablePath(), javaHomeBuilder.toString(), "Gradle Tooling API startup script must be executed by separate Java process");
     assertEquals(cmdLine.getWorkingDirectory(), workDir, "Wrong working directory.");
 
     File gradleLauncherEnvFile = new File(myTempDir, GRADLE_LAUNCHER_ENV_FILE);

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
+import static jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver.getTcBuildParametersFile;
 
 public class TeamCityGradleLauncher {
 
@@ -80,8 +81,8 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    String tcBuildParametersPath = GradleBuildConfigurator.getTeamCityBuildParametersPath(gradleEnv);
-    Properties teamCityBuildParameters = getTeamCityBuildParameters(tcBuildParametersPath);
+    File tcBuildParametersFile = getTcBuildParametersFile(gradleEnv);
+    Properties teamCityBuildParameters = getTeamCityBuildParameters(tcBuildParametersFile);
     if (teamCityBuildParameters == null) {
       return;
     }
@@ -107,7 +108,7 @@ public class TeamCityGradleLauncher {
     boolean isDebugModeEnabled = gradleParams.stream().anyMatch(task -> task.equals("-d"));
     GradleToolingLogger logger = new GradleToolingLoggerImpl(isDebugModeEnabled);
     String taskOutputDir = buildTempDir + File.separator + BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
-    BuildContext buildContext = new BuildContext(tcBuildParametersPath, taskOutputDir, envFilePath, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
+    BuildContext buildContext = new BuildContext(tcBuildParametersFile.getAbsolutePath(), taskOutputDir, envFilePath, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
     List<BuildEventListener > eventListeners = new ArrayList<>();
     eventListeners.add(new GradleBuildOutputProcessor(logger, buildContext));
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
@@ -135,11 +136,11 @@ public class TeamCityGradleLauncher {
   }
 
   @Nullable
-  private static Properties getTeamCityBuildParameters(@NotNull String tcBuildParametersPath) {
+  private static Properties getTeamCityBuildParameters(@NotNull File tcBuildParameters) {
     try {
-      return GradleRunnerFileUtil.readProperties(new File(tcBuildParametersPath));
+      return GradleRunnerFileUtil.readProperties(tcBuildParameters);
     } catch (IOException e) {
-      System.err.println("Couldn't read properties from: " + tcBuildParametersPath);
+      System.err.println("Couldn't read properties from: " + tcBuildParameters.getAbsolutePath());
       return null;
     }
   }
