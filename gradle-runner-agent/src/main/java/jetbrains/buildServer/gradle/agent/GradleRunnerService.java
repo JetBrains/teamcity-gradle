@@ -173,12 +173,9 @@ public class GradleRunnerService extends BuildServiceAdapter
     envs.put(GRADLE_JVM_PARAMS_FILE, jvmParamsFile.getAbsolutePath());
     envs.put(GRADLE_TASKS_FILE, gradleTasksFile.getAbsolutePath());
 
-    Map<String, String> systemProperties = new HashMap<String, String>();
-    for (Map.Entry<Object, Object> x : System.getProperties().entrySet()) {
-      systemProperties.put((String)x.getKey(), (String)x.getValue());
-      systemProperties.remove("log4j2.configurationFile");
-      systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, Boolean.valueOf(ConfigurationParamsUtil.isParameterEnabled(getConfigParameters(), GRADLE_RUNNER_READ_ALL_CONFIG_PARAM)).toString());
-    }
+    Map<String, String> systemProperties = new HashMap<>();
+    systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM,
+                         Boolean.valueOf(ConfigurationParamsUtil.isParameterEnabled(getConfigParameters(), GRADLE_RUNNER_READ_ALL_CONFIG_PARAM)).toString());
 
     return new JavaCommandLineBuilder()
       .withJavaHome(getJavaHome(), getRunnerContext().isVirtualContext())

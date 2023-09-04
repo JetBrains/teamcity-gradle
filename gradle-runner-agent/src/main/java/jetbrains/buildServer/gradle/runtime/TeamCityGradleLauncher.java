@@ -35,12 +35,12 @@ public class TeamCityGradleLauncher {
     if (envFilePath == null) {
       return;
     }
-    final Map<String, String> env = readParamsMap(envFilePath);
-    if (env == null) {
+    final Map<String, String> gradleEnv = readParamsMap(envFilePath);
+    if (gradleEnv == null) {
       return;
     }
     try {
-      env.put("TEAMCITY_BUILD_INIT_PATH", GradleBuildConfigurator.getInitScriptClasspath());
+      gradleEnv.put("TEAMCITY_BUILD_INIT_PATH", GradleBuildConfigurator.getInitScriptClasspath());
     } catch (IOException e) {
       System.err.println("Couldn't launch Gradle via Tooling API: error while trying to build init script classpath");
       return;
@@ -73,14 +73,14 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    final String workingDir = env.get(GradleRunnerConstants.WORKING_DIRECTORY_ENV_KEY);
+    final String workingDir = gradleEnv.get(GradleRunnerConstants.WORKING_DIRECTORY_ENV_KEY);
     if (workingDir == null) {
       System.err.println("Parameter " + GradleRunnerConstants.WORKING_DIRECTORY_ENV_KEY
                          + " must be present in environment variables.");
       return;
     }
 
-    String tcBuildParametersPath = GradleBuildConfigurator.getTeamCityBuildParametersPath(env);
+    String tcBuildParametersPath = GradleBuildConfigurator.getTeamCityBuildParametersPath(gradleEnv);
     Properties teamCityBuildParameters = getTeamCityBuildParameters(tcBuildParametersPath);
     if (teamCityBuildParameters == null) {
       return;
@@ -92,9 +92,9 @@ public class TeamCityGradleLauncher {
     }
     String buildNumber = teamCityBuildParameters.getProperty("build.number", "");
 
-    final Boolean useWrapper = Boolean.valueOf(env.get(GradleRunnerConstants.USE_WRAPPER_ENV_KEY));
-    final String gradleHome = env.get(GradleRunnerConstants.GRADLE_HOME_ENV_KEY);
-    final String gradleWrapperProperties = env.get(GradleRunnerConstants.GRADLE_WRAPPED_DISTRIBUTION_ENV_KEY);
+    final Boolean useWrapper = Boolean.valueOf(gradleEnv.get(GradleRunnerConstants.USE_WRAPPER_ENV_KEY));
+    final String gradleHome = gradleEnv.get(GradleRunnerConstants.GRADLE_HOME_ENV_KEY);
+    final String gradleWrapperProperties = gradleEnv.get(GradleRunnerConstants.GRADLE_WRAPPED_DISTRIBUTION_ENV_KEY);
 
     final GradleConnector connector;
     try {
@@ -113,7 +113,7 @@ public class TeamCityGradleLauncher {
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
 
     try (ProjectConnection connection = connector.connect()) {
-      BuildLauncher launcher = GradleBuildConfigurator.prepareBuildExecutor(env, gradleParams, jvmArgs, gradleTasks, buildLifecycleListener,
+      BuildLauncher launcher = GradleBuildConfigurator.prepareBuildExecutor(gradleEnv, gradleParams, jvmArgs, gradleTasks, buildLifecycleListener,
                                                                             logger, buildNumber, connection);
 
       String buildStartedMessage = String.format("%s %s", "Starting Gradle in TeamCity build", buildNumber);
