@@ -129,6 +129,9 @@ public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropert
     if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY)) {
       staticProperties.put(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY, tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY));
     }
+    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY)) {
+      staticProperties.put(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY, tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY));
+    }
   }
 
   /**
