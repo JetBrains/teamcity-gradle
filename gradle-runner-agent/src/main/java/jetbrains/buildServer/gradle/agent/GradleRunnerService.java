@@ -179,8 +179,12 @@ public class GradleRunnerService extends BuildServiceAdapter
     Optional.ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
             .ifPresent(tcBuildParametersFilePath -> systemProperties.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, tcBuildParametersFilePath));
 
+    String javaHome = getRunnerContext().isVirtualContext()
+                      ? getRunnerParameters().get(JavaRunnerConstants.TARGET_JDK_HOME)
+                      : getJavaHome();
+
     return new JavaCommandLineBuilder()
-      .withJavaHome(getJavaHome(), getRunnerContext().isVirtualContext())
+      .withJavaHome(javaHome, getRunnerContext().isVirtualContext())
       .withBaseDir(getCheckoutDirectory().getAbsolutePath())
       .withWorkingDir(workingDirectory.getAbsolutePath())
       .withSystemProperties(systemProperties)
