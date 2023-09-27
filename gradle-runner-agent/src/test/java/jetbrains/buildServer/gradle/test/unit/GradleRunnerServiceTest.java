@@ -113,10 +113,10 @@ public class GradleRunnerServiceTest {
     javaHome = JavaRunnerUtil.findJavaHome(jdk, propsAndVars, null);
     myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, javaHome);
 
-    toolingApiLauncherFiles.put(GRADLE_LAUNCHER_ENV_FILE, myTempDir.getAbsolutePath() + File.separator + GRADLE_LAUNCHER_ENV_FILE);
-    toolingApiLauncherFiles.put(GRADLE_PARAMS_FILE, myTempDir.getAbsolutePath() + File.separator + GRADLE_PARAMS_FILE);
-    toolingApiLauncherFiles.put(GRADLE_JVM_PARAMS_FILE, myTempDir.getAbsolutePath() + File.separator + GRADLE_JVM_PARAMS_FILE);
-    toolingApiLauncherFiles.put(GRADLE_TASKS_FILE, myTempDir.getAbsolutePath() + File.separator + GRADLE_TASKS_FILE);
+    toolingApiLauncherFiles.put(GRADLE_LAUNCHER_ENV_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_LAUNCHER_ENV_FILE);
+    toolingApiLauncherFiles.put(GRADLE_PARAMS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_PARAMS_FILE);
+    toolingApiLauncherFiles.put(GRADLE_JVM_PARAMS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_JVM_PARAMS_FILE);
+    toolingApiLauncherFiles.put(GRADLE_TASKS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_TASKS_FILE);
   }
 
   @AfterMethod
@@ -504,7 +504,7 @@ public class GradleRunnerServiceTest {
     assertTrue(gradleJvmParamsFile.exists(), "Gradle Tooling API JVM params file must exist");
     assertTrue(gradleTasksFile.exists(), "Gradle Tooling API gradle tasks file must exist");
 
-    toolingApiGradleArgs = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_PARAMS_FILE));
+    toolingApiGradleArgs = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY));
     int initScriptIndex = toolingApiGradleArgs.indexOf("--init-script");
     assertTrue(initScriptIndex > -1, "--init-script argument not found!");
     assertEquals(toolingApiGradleArgs.get(initScriptIndex + 1), initScriptPath, "Wrong init script path");
@@ -512,8 +512,8 @@ public class GradleRunnerServiceTest {
       assertTrue(toolingApiGradleArgs.contains("-Dorg.gradle.daemon=false"), "Gradle daemon should be disabled");
     }
 
-    toolingApiJvmGradleArgs = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE));
-    toolingApiGradleEnvParameters = GradleRunnerFileUtil.readParamsMap(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_LAUNCHER_ENV_FILE));
-    toolingApiGradleTasks = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_TASKS_FILE));
+    toolingApiJvmGradleArgs = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY));
+    toolingApiGradleEnvParameters = GradleRunnerFileUtil.readParamsMap(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_LAUNCHER_ENV_FILE_ENV_KEY));
+    toolingApiGradleTasks = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY));
   }
 }

@@ -37,7 +37,7 @@ public class TeamCityGradleLauncher {
   public static void main(String[] args) {
     final Map<String, String> systemEnv = System.getenv();
 
-    String envFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_LAUNCHER_ENV_FILE);
+    String envFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_LAUNCHER_ENV_FILE_ENV_KEY);
     if (envFilePath == null) {
       return;
     }
@@ -52,7 +52,7 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    String gradleParamsFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_PARAMS_FILE);
+    String gradleParamsFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY);
     if (gradleParamsFilePath == null) {
       return;
     }
@@ -61,7 +61,7 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    String jvmArgsFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE);
+    String jvmArgsFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY);
     if (jvmArgsFilePath == null) {
       return;
     }
@@ -70,7 +70,7 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    String gradleTasksPath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_TASKS_FILE);
+    String gradleTasksPath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY);
     if (gradleTasksPath == null) {
       return;
     }
