@@ -3,7 +3,7 @@ package jetbrains.buildServer.gradle.runtime.service;
 import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.agent.ClasspathUtil;
@@ -67,19 +67,22 @@ public class GradleBuildConfigurator {
 
   @NotNull
   public static BuildLauncher prepareBuildExecutor(@NotNull Map<String, String> env,
-                                                   @NotNull List<String> gradleParams,
-                                                   @NotNull List<String> jvmArgs,
-                                                   @NotNull List<String> gradleTasks,
+                                                   @NotNull Collection<String> gradleParams,
+                                                   @NotNull Collection<String> overridedJvmArgs,
+                                                   @NotNull Collection<String> gradleTasks,
                                                    @NotNull BuildLifecycleListener buildListener,
                                                    @NotNull GradleToolingLogger logger,
                                                    @NotNull String buildNumber,
                                                    @NotNull ProjectConnection connection) {
     BuildLauncher launcher = connection.newBuild();
 
+    if (!overridedJvmArgs.isEmpty()) {
+      launcher.addJvmArguments(overridedJvmArgs);
+    }
+
     launcher.forTasks(gradleTasks.toArray(new String[0]));
     launcher.addProgressListener(new GradleToolingApiProgressListener(buildListener, logger, buildNumber), OperationType.TASK);
     launcher.addArguments(gradleParams);
-    launcher.addJvmArguments(jvmArgs);
     launcher.setEnvironmentVariables(env);
     launcher.setStandardOutput(new GradleOutputWrapper(buildListener, OutputType.STD_OUT));
     launcher.setStandardError(new GradleOutputWrapper(buildListener, OutputType.STD_ERR));

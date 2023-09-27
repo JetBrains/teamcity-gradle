@@ -15,6 +15,7 @@
       <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerServiceTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.TeamCityBuildPropertiesGradleSplitterTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleLaunchModeSelectorTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleJvmArgsMergerTest"/>
     </classes>
   </test>
 </suite>

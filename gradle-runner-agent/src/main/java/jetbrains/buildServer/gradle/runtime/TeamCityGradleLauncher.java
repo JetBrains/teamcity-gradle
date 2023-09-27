@@ -3,8 +3,11 @@ package jetbrains.buildServer.gradle.runtime;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
@@ -16,11 +19,13 @@ import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLoggerImpl;
 import jetbrains.buildServer.gradle.runtime.output.GradleBuildOutputProcessor;
 import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator;
+import jetbrains.buildServer.gradle.runtime.service.jvmargs.GradleJvmArgsMerger;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.GradleConnectionException;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.ResultHandler;
+import org.gradle.tooling.model.build.BuildEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,8 +65,8 @@ public class TeamCityGradleLauncher {
     if (jvmArgsFilePath == null) {
       return;
     }
-    final List<String> jvmArgs = readParams(jvmArgsFilePath);
-    if (jvmArgs == null) {
+    final List<String> tcJvmArgs = readParams(jvmArgsFilePath);
+    if (tcJvmArgs == null) {
       return;
     }
 
@@ -107,6 +112,7 @@ public class TeamCityGradleLauncher {
 
     boolean isDebugModeEnabled = gradleParams.stream().anyMatch(task -> task.equals("-d"));
     GradleToolingLogger logger = new GradleToolingLoggerImpl(isDebugModeEnabled);
+    GradleJvmArgsMerger jvmArgsMerger = new GradleJvmArgsMerger(logger);
     String taskOutputDir = buildTempDir + File.separator + BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
     BuildContext buildContext = new BuildContext(tcBuildParametersFile.getAbsolutePath(), taskOutputDir, envFilePath, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
     List<BuildEventListener > eventListeners = new ArrayList<>();
@@ -114,21 +120,29 @@ public class TeamCityGradleLauncher {
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
 
     try (ProjectConnection connection = connector.connect()) {
-      BuildLauncher launcher = GradleBuildConfigurator.prepareBuildExecutor(gradleEnv, gradleParams, jvmArgs, gradleTasks, buildLifecycleListener,
-                                                                            logger, buildNumber, connection);
+      Optional<BuildEnvironment> buildEnvironment = getBuildEnvironment(connection, logger);
+      List<String> gradleProjectJvmArgs = buildEnvironment.map(env -> env.getJava().getJvmArguments()).orElseGet(Collections::emptyList);
+      Collection<String> jvmArgsForOverriding = !tcJvmArgs.isEmpty()
+                                                ? jvmArgsMerger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs)
+                                                : Collections.emptyList();
 
-      String buildStartedMessage = String.format("%s %s", "Starting Gradle in TeamCity build", buildNumber);
+      BuildLauncher launcher = GradleBuildConfigurator.prepareBuildExecutor(gradleEnv, gradleParams, jvmArgsForOverriding, gradleTasks,
+                                                                            buildLifecycleListener, logger, buildNumber, connection);
+
+      String buildStartedMessage = composeBuildStartedMessage(buildNumber, gradleTasks, gradleParams, jvmArgsForOverriding, buildEnvironment.orElse(null));
       buildLifecycleListener.onStart(new BuildStartedEventImpl(System.currentTimeMillis(), buildStartedMessage));
 
       launcher.run(new ResultHandler<Void>() {
         @Override
         public void onComplete(Void unused) {
           buildLifecycleListener.onSuccess();
+          connector.disconnect();
         }
 
         @Override
         public void onFailure(GradleConnectionException e) {
           buildLifecycleListener.onFail();
+          connector.disconnect();
           throw e;
         }
       });
@@ -174,5 +188,43 @@ public class TeamCityGradleLauncher {
       System.err.println(e.getMessage());
       return null;
     }
+  }
+
+  @NotNull
+  private static Optional<BuildEnvironment> getBuildEnvironment(@NotNull ProjectConnection connection,
+                                                                @NotNull GradleToolingLogger logger) {
+    try {
+      return Optional.of(connection.getModel(BuildEnvironment.class));
+    } catch (Throwable t) {
+      logger.debug("Failed to obtain build environment from Gradle: " + t);
+    }
+    return Optional.empty();
+  }
+
+  private static String composeBuildStartedMessage(@NotNull String buildNumber,
+                                                   @NotNull Collection<String> gradleTasks,
+                                                   @NotNull Collection<String> gradleParams,
+                                                   @NotNull Collection<String> overridedJvmArgs,
+                                                   @Nullable BuildEnvironment buildEnvironment) {
+    StringBuilder messageBuilder = new StringBuilder();
+    messageBuilder.append("Starting Gradle in TeamCity build ").append(buildNumber).append(System.lineSeparator());
+    messageBuilder.append("Gradle tasks: ").append(String.join(" ", gradleTasks)).append(System.lineSeparator());
+    messageBuilder.append("Gradle arguments: ").append(String.join(" ", gradleParams));
+
+    if (buildEnvironment != null) {
+      try {
+        String version = buildEnvironment.getGradle().getGradleVersion();
+        String javaHome = buildEnvironment.getJava().getJavaHome().getAbsolutePath();
+        String jvmArgsStr = !overridedJvmArgs.isEmpty()
+                            ? String.join(" ", overridedJvmArgs)
+                            : String.join(" ", buildEnvironment.getJava().getJvmArguments());
+        messageBuilder.append(System.lineSeparator())
+                      .append("Gradle version: ").append(version).append(System.lineSeparator())
+                      .append("Gradle java home: ").append(javaHome).append(System.lineSeparator())
+                      .append("Gradle jvm arguments: ").append(jvmArgsStr);
+      } catch (Throwable ignore) {}
+    }
+
+    return messageBuilder.toString();
   }
 }

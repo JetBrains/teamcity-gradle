@@ -173,13 +173,13 @@ public class GradleRunnerService extends BuildServiceAdapter
     envs.put(GRADLE_JVM_PARAMS_FILE, jvmParamsFile.getAbsolutePath());
     envs.put(GRADLE_TASKS_FILE, gradleTasksFile.getAbsolutePath());
 
-    Map<String, String> systemProperties = new HashMap<>();
+    final Map<String, String> systemProperties = new HashMap<>();
     systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM,
                          Boolean.valueOf(ConfigurationParamsUtil.isParameterEnabled(getConfigParameters(), GRADLE_RUNNER_READ_ALL_CONFIG_PARAM)).toString());
     Optional.ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
             .ifPresent(tcBuildParametersFilePath -> systemProperties.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, tcBuildParametersFilePath));
 
-    String javaHome = getRunnerContext().isVirtualContext()
+    final String javaHome = getRunnerContext().isVirtualContext()
                       ? getRunnerParameters().get(JavaRunnerConstants.TARGET_JDK_HOME)
                       : getJavaHome();
 
