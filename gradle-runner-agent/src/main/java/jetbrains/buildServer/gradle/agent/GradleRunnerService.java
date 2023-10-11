@@ -167,7 +167,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     final File gradleTasksFile = new File(buildTempDir, GRADLE_TASKS_FILE);
     storeParams(buildTempDir, gradleTasks, gradleTasksFile);
 
-    final Map<String, String> envs = new HashMap<>(System.getenv());
+    final Map<String, String> envs = new HashMap<>(env);
     envs.put(GRADLE_LAUNCHER_ENV_FILE_ENV_KEY, envFile.getAbsolutePath());
     envs.put(GRADLE_PARAMS_FILE_ENV_KEY, gradleParamsFile.getAbsolutePath());
     envs.put(GRADLE_JVM_PARAMS_FILE_ENV_KEY, jvmParamsFile.getAbsolutePath());
