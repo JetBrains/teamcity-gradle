@@ -14,16 +14,6 @@ public class GradleRunnerFileUtil {
 
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-  public static void storeParams(@NotNull File buildTempDirectory,
-                                 @NotNull Map<String, String> data,
-                                 @NotNull File destination) throws IOException {
-    createFileInBuildTempDirectory(buildTempDirectory, destination);
-
-    try (FileWriter writer = new FileWriter(destination)) {
-      GSON.toJson(data, writer);
-    }
-  }
-
   public static void storeProperties(@NotNull File buildTempDirectory,
                                      @NotNull GradleBuildProperties data,
                                      @NotNull File destination) throws IOException {
@@ -32,20 +22,6 @@ public class GradleRunnerFileUtil {
     try (OutputStream output = new FileOutputStream(destination)) {
       data.store(output, null);
     }
-  }
-
-  public static Map<String, String> readParamsMap(@NotNull String sourceFilePath) throws IOException {
-    File source = new File(sourceFilePath);
-    if (!source.exists()) {
-      throw new IOException("Source file doesn't exist in file system: " + sourceFilePath);
-    }
-
-    Map<String, String> result;
-    try (Reader reader = new FileReader(source)) {
-      result = GSON.fromJson(reader, new TypeToken<Map<String, String>>() {}.getType());
-    }
-
-    return result;
   }
 
   public static void storeParams(@NotNull File buildTempDirectory,

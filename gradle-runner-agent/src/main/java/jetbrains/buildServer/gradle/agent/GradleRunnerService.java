@@ -140,18 +140,15 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
   }
 
-  private ProgramCommandLine prepareToolingApi(@NotNull Map<String, String> env,
-                                               @NotNull File workingDirectory,
-                                               @NotNull List<String> gradleTasks) throws RunBuildException {
+  private ProgramCommandLine prepareToolingApi(@NotNull final Map<String, String> env,
+                                               @NotNull final File workingDirectory,
+                                               @NotNull final List<String> gradleTasks) throws RunBuildException {
 
     final File buildTempDir = getBuildTempDirectory();
 
     for (GradleBuildPropertiesSplitter splitter : propertySplitters.values()) {
       splitter.split(env, buildTempDir);
     }
-
-    final File envFile = new File(buildTempDir, GRADLE_LAUNCHER_ENV_FILE);
-    storeParamsMap(buildTempDir, env, envFile);
 
     final List<String> gradleParams = getParams(GradleLaunchMode.GRADLE_TOOLING_API, Collections.emptyList());
     final File gradleParamsFile = new File(buildTempDir, GRADLE_PARAMS_FILE);
@@ -168,7 +165,6 @@ public class GradleRunnerService extends BuildServiceAdapter
     storeParams(buildTempDir, gradleTasks, gradleTasksFile);
 
     final Map<String, String> envs = new HashMap<>(env);
-    envs.put(GRADLE_LAUNCHER_ENV_FILE_ENV_KEY, envFile.getAbsolutePath());
     envs.put(GRADLE_PARAMS_FILE_ENV_KEY, gradleParamsFile.getAbsolutePath());
     envs.put(GRADLE_JVM_PARAMS_FILE_ENV_KEY, jvmParamsFile.getAbsolutePath());
     envs.put(GRADLE_TASKS_FILE_ENV_KEY, gradleTasksFile.getAbsolutePath());
@@ -192,17 +188,6 @@ public class GradleRunnerService extends BuildServiceAdapter
       .withClassPath(composeToolingApiProcessClasspath())
       .withMainClass(TeamCityGradleLauncher.class.getCanonicalName())
       .build();
-  }
-
-  private void storeParamsMap(@NotNull File buildTempDir,
-                              @NotNull Map<String, String> params,
-                              @NotNull File targetFile) throws RunBuildException {
-    try {
-      GradleRunnerFileUtil.storeParams(buildTempDir, params, targetFile);
-    } catch (IOException e) {
-      throw new RunBuildException("Couldn't create temp file while trying to prepare Gradle Tooling API build.\n" +
-                                  "Destination file: " + targetFile.getAbsolutePath(), e);
-    }
   }
 
   private void storeParams(@NotNull File buildTempDir,

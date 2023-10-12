@@ -67,12 +67,10 @@ public class GradleRunnerConstants
 
   public static final char GRADLE_TASKS_DELIMITER = ' ';
 
-  public static final String GRADLE_LAUNCHER_ENV_FILE = "teamcity.gradle.env.parameters";
   public static final String GRADLE_PARAMS_FILE = "teamcity.gradle.config.parameters";
   public static final String GRADLE_JVM_PARAMS_FILE = "teamcity.gradle.jvm.parameters";
   public static final String GRADLE_TASKS_FILE = "teamcity.gradle.tasks";
 
-  public static final String GRADLE_LAUNCHER_ENV_FILE_ENV_KEY = "TEAMCITY_GRADLE_ENV_PARAMETERS";
   public static final String GRADLE_PARAMS_FILE_ENV_KEY = "TEAMCITY_GRADLE_CONFIG_PARAMETERS";
   public static final String GRADLE_JVM_PARAMS_FILE_ENV_KEY = "TEAMCITY_GRADLE_JVM_PARAMETERS";
   public static final String GRADLE_TASKS_FILE_ENV_KEY = "TEAMCITY_GRADLE_TASKS";

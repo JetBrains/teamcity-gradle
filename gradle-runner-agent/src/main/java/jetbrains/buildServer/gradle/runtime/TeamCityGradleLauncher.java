@@ -2,13 +2,7 @@ package jetbrains.buildServer.gradle.runtime;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import jetbrains.buildServer.gradle.runtime.listening.BuildEventListener;
@@ -35,16 +29,7 @@ import static jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParamete
 public class TeamCityGradleLauncher {
 
   public static void main(String[] args) {
-    final Map<String, String> systemEnv = System.getenv();
-
-    String envFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_LAUNCHER_ENV_FILE_ENV_KEY);
-    if (envFilePath == null) {
-      return;
-    }
-    final Map<String, String> gradleEnv = readParamsMap(envFilePath);
-    if (gradleEnv == null) {
-      return;
-    }
+    final Map<String, String> gradleEnv = new HashMap<>(System.getenv());
     try {
       gradleEnv.put("TEAMCITY_BUILD_INIT_PATH", GradleBuildConfigurator.getInitScriptClasspath());
     } catch (IOException e) {
@@ -52,7 +37,7 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    String gradleParamsFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY);
+    String gradleParamsFilePath = getSystemEnvValue(gradleEnv, GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY);
     if (gradleParamsFilePath == null) {
       return;
     }
@@ -61,7 +46,7 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    String jvmArgsFilePath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY);
+    String jvmArgsFilePath = getSystemEnvValue(gradleEnv, GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY);
     if (jvmArgsFilePath == null) {
       return;
     }
@@ -70,7 +55,7 @@ public class TeamCityGradleLauncher {
       return;
     }
 
-    String gradleTasksPath = getSystemEnvValue(systemEnv, GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY);
+    String gradleTasksPath = getSystemEnvValue(gradleEnv, GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY);
     if (gradleTasksPath == null) {
       return;
     }
@@ -114,7 +99,7 @@ public class TeamCityGradleLauncher {
     GradleToolingLogger logger = new GradleToolingLoggerImpl(isDebugModeEnabled);
     GradleJvmArgsMerger jvmArgsMerger = new GradleJvmArgsMerger(logger);
     String taskOutputDir = buildTempDir + File.separator + BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
-    BuildContext buildContext = new BuildContext(tcBuildParametersFile.getAbsolutePath(), taskOutputDir, envFilePath, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
+    BuildContext buildContext = new BuildContext(tcBuildParametersFile.getAbsolutePath(), taskOutputDir, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
     List<BuildEventListener > eventListeners = new ArrayList<>();
     eventListeners.add(new GradleBuildOutputProcessor(logger, buildContext));
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
@@ -166,16 +151,6 @@ public class TeamCityGradleLauncher {
       return null;
     }
     return value;
-  }
-
-  @Nullable
-  private static Map<String, String> readParamsMap(@NotNull String paramsFilePath) {
-    try {
-      return GradleRunnerFileUtil.readParamsMap(paramsFilePath);
-    } catch (IOException e) {
-      System.err.println(e.getMessage());
-      return null;
-    }
   }
 
   @Nullable

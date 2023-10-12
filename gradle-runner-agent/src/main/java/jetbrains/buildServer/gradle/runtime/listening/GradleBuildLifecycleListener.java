@@ -77,7 +77,6 @@ public class GradleBuildLifecycleListener implements BuildLifecycleListener {
     String staticFilePath = buildStaticPropertiesFilename(myBuildContext.getTcBuildParametersPath());
 
     Stream.of(staticFilePath,
-              myBuildContext.getEnvTempFilePath(),
               myBuildContext.getGradleParamsTempFilePath(),
               myBuildContext.getJvmArgsTempFilePath(),
               myBuildContext.getGradleTasksTempFilePath()).forEach(filePath -> {

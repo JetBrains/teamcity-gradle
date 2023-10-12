@@ -73,7 +73,6 @@ public class GradleRunnerServiceTest {
   private String javaHome;
   private List<String> toolingApiGradleArgs = Collections.emptyList();
   private List<String> toolingApiJvmGradleArgs = Collections.emptyList();
-  private Map<String, String> toolingApiGradleEnvParameters = Collections.emptyMap();
   private List<String> toolingApiGradleTasks = Collections.emptyList();
 
 
@@ -113,7 +112,6 @@ public class GradleRunnerServiceTest {
     javaHome = JavaRunnerUtil.findJavaHome(jdk, propsAndVars, null);
     myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, javaHome);
 
-    toolingApiLauncherFiles.put(GRADLE_LAUNCHER_ENV_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_LAUNCHER_ENV_FILE);
     toolingApiLauncherFiles.put(GRADLE_PARAMS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_PARAMS_FILE);
     toolingApiLauncherFiles.put(GRADLE_JVM_PARAMS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_JVM_PARAMS_FILE);
     toolingApiLauncherFiles.put(GRADLE_TASKS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_TASKS_FILE);
@@ -128,7 +126,6 @@ public class GradleRunnerServiceTest {
     mySystemProps.clear();
     toolingApiGradleArgs.clear();
     toolingApiJvmGradleArgs.clear();
-    toolingApiGradleEnvParameters.clear();
     toolingApiGradleTasks.clear();
   }
 
@@ -278,11 +275,10 @@ public class GradleRunnerServiceTest {
 
     if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
       validateCmdLineSince8(cmdLine, true);
-      gradleOptsValue = toolingApiGradleEnvParameters.get(GradleRunnerConstants.ENV_GRADLE_OPTS);
     } else {
       validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-      gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
     }
+    gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
     then(gradleOptsValue.split(" ")).as("Should contain new temp dir").contains("\"-Djava.io.tmpdir=" + myTempDir.getCanonicalPath() + "\"")
                                     .as("Should contain java args").contains(expectedRunnerJavaArgs);
@@ -495,11 +491,9 @@ public class GradleRunnerServiceTest {
     assertEquals(cmdLine.getExecutablePath(), javaHomeBuilder.toString(), "Gradle Tooling API startup script must be executed by separate Java process");
     assertEquals(cmdLine.getWorkingDirectory(), workDir, "Wrong working directory.");
 
-    File gradleLauncherEnvFile = new File(myTempDir, GRADLE_LAUNCHER_ENV_FILE);
     File gradleParamsFile = new File(myTempDir, GRADLE_PARAMS_FILE);
     File gradleJvmParamsFile = new File(myTempDir, GRADLE_JVM_PARAMS_FILE);
     File gradleTasksFile = new File(myTempDir, GRADLE_TASKS_FILE);
-    assertTrue(gradleLauncherEnvFile.exists(), "Gradle Tooling API launcher environment file must exist");
     assertTrue(gradleParamsFile.exists(), "Gradle Tooling API gradle params file must exist");
     assertTrue(gradleJvmParamsFile.exists(), "Gradle Tooling API JVM params file must exist");
     assertTrue(gradleTasksFile.exists(), "Gradle Tooling API gradle tasks file must exist");
@@ -513,7 +507,6 @@ public class GradleRunnerServiceTest {
     }
 
     toolingApiJvmGradleArgs = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY));
-    toolingApiGradleEnvParameters = GradleRunnerFileUtil.readParamsMap(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_LAUNCHER_ENV_FILE_ENV_KEY));
     toolingApiGradleTasks = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY));
   }
 }
