@@ -121,11 +121,13 @@ public class TeamCityGradleLauncher {
         @Override
         public void onComplete(Void unused) {
           buildLifecycleListener.onSuccess();
+          connector.disconnect();
         }
 
         @Override
         public void onFailure(GradleConnectionException e) {
           buildLifecycleListener.onFail();
+          connector.disconnect();
           throw e;
         }
       });
