@@ -615,7 +615,7 @@ public class TeamcityRerunTestsService implements BuildService<BuildServiceParam
   @Override
   void close() throws Exception {
     def defaultOption = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY")
-    if (newOption != defaultOption) {
+    if (!newOption.equals(defaultOption)) {
       println(ServiceMessage.asString("testRetrySupport", [enabled: defaultOption]))
     }
   }
@@ -641,7 +641,7 @@ public class TeamcityRerunTestsListener implements ProjectEvaluationListener {
   void afterEvaluate(Project project, ProjectState state) {
     if (TeamcityRerunTestsService.newOption == "true") return
     TeamcityRerunTestsService.newOption = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY")
-    if (System.getenv("TEAMCITY_SUPPORT_TEST_RETRY").toBoolean() == true) return
+    if ("true".equals(TeamcityRerunTestsService.newOption)) return
     if (propertyReader != null && propertyReader[TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY] == "false") return
 
     project.gradle.taskGraph.whenReady { graph ->
