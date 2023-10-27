@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.agent.ClasspathUtil;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
@@ -14,6 +16,7 @@ import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
 import jetbrains.buildServer.gradle.runtime.output.GradleOutputWrapper;
 import jetbrains.buildServer.gradle.runtime.output.OutputType;
 import jetbrains.buildServer.gradle.runtime.output.TestOutputParser;
+import jetbrains.buildServer.gradle.runtime.service.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.util.SortedProperties;
 import org.gradle.tooling.BuildLauncher;
@@ -28,11 +31,20 @@ import org.jetbrains.annotations.Nullable;
  */
 public class GradleBuildConfigurator {
 
+  private final CommandLineParametersProcessor commandLineParametersProcessor;
+  private final GradleToolingLogger logger;
+
+  public GradleBuildConfigurator(CommandLineParametersProcessor commandLineParametersProcessor,
+                                 GradleToolingLogger logger) {
+    this.commandLineParametersProcessor = commandLineParametersProcessor;
+    this.logger = logger;
+  }
+
   @NotNull
-  public static GradleConnector prepareConnector(@NotNull String workingDirectoryPath,
-                                                 @NotNull Boolean useWrapper,
-                                                 @Nullable String gradleWrapperPropertiesPath,
-                                                 @Nullable String gradleHomePath) {
+  public GradleConnector prepareConnector(@NotNull String workingDirectoryPath,
+                                          @NotNull Boolean useWrapper,
+                                          @Nullable String gradleWrapperPropertiesPath,
+                                          @Nullable String gradleHomePath) {
     File workingDirectory = new File(workingDirectoryPath);
 
     GradleConnector connector = GradleConnector.newConnector();
@@ -66,23 +78,29 @@ public class GradleBuildConfigurator {
   }
 
   @NotNull
-  public static BuildLauncher prepareBuildExecutor(@NotNull Map<String, String> env,
-                                                   @NotNull Collection<String> gradleParams,
-                                                   @NotNull Collection<String> overridedJvmArgs,
-                                                   @NotNull Collection<String> gradleTasks,
-                                                   @NotNull BuildLifecycleListener buildListener,
-                                                   @NotNull GradleToolingLogger logger,
-                                                   @NotNull String buildNumber,
-                                                   @NotNull ProjectConnection connection) {
+  public BuildLauncher prepareBuildExecutor(@NotNull Map<String, String> env,
+                                            @NotNull Collection<String> gradleParams,
+                                            @NotNull Collection<String> overridedJvmArgs,
+                                            @NotNull Collection<String> gradleTasks,
+                                            @NotNull BuildLifecycleListener buildListener,
+                                            @NotNull String buildNumber,
+                                            @NotNull ProjectConnection connection) {
     BuildLauncher launcher = connection.newBuild();
 
     if (!overridedJvmArgs.isEmpty()) {
       launcher.addJvmArguments(overridedJvmArgs);
     }
 
+    Set<String> unsupportedArgs = commandLineParametersProcessor.obtainUnsupportedArguments(gradleParams);
+    if (!unsupportedArgs.isEmpty()) {
+      logger.warn("Not all of the Gradle command line options are supported by the Gradle Tooling API." +
+                  "\nPlease find more information in the javadoc for the LongRunningOperation class.");
+      unsupportedArgs.forEach(arg -> logger.warn("The argument is not supported by the Gradle Tooling API and will not be used: " + arg));
+    }
+
     launcher.forTasks(gradleTasks.toArray(new String[0]));
     launcher.addProgressListener(new GradleToolingApiProgressListener(buildListener, logger, buildNumber), OperationType.TASK);
-    launcher.addArguments(gradleParams);
+    launcher.addArguments(gradleParams.stream().filter(arg -> !unsupportedArgs.contains(arg)).collect(Collectors.toList()));
     launcher.setEnvironmentVariables(env);
     launcher.setStandardOutput(new GradleOutputWrapper(buildListener, OutputType.STD_OUT));
     launcher.setStandardError(new GradleOutputWrapper(buildListener, OutputType.STD_ERR));
@@ -91,7 +109,7 @@ public class GradleBuildConfigurator {
   }
 
   @NotNull
-  public static String getInitScriptClasspath() throws IOException {
+  public String getInitScriptClasspath() throws IOException {
     return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class)).getAbsolutePath()
