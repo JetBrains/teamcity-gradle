@@ -40,6 +40,7 @@ import jetbrains.buildServer.serverSide.BuildTypeOptions;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.util.impl.Lazy;
+import org.apache.commons.cli.OptionGroup;
 import org.apache.logging.log4j.core.LoggerContextAccessor;
 import org.apache.logging.log4j.spi.AbstractLoggerAdapter;
 import org.gradle.tooling.BuildLauncher;
@@ -232,7 +233,9 @@ public class GradleRunnerService extends BuildServiceAdapter
                .append(File.pathSeparator)
                .append(getClasspathElement(com.intellij.openapi.diagnostic.Logger.class))
                .append(File.pathSeparator)
-               .append(getClasspathElement(JDOMException.class));
+               .append(getClasspathElement(JDOMException.class))
+               .append(File.pathSeparator)
+               .append(getClasspathElement(OptionGroup.class));
 
     } catch (IOException e) {
       throw new RunBuildException("Failed to create init script classpath", e);

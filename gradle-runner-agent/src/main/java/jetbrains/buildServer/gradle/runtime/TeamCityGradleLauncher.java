@@ -13,6 +13,7 @@ import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLoggerImpl;
 import jetbrains.buildServer.gradle.runtime.output.GradleBuildOutputProcessor;
 import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator;
+import jetbrains.buildServer.gradle.runtime.service.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.runtime.service.jvmargs.GradleJvmArgsMerger;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
@@ -30,12 +31,6 @@ public class TeamCityGradleLauncher {
 
   public static void main(String[] args) {
     final Map<String, String> gradleEnv = new HashMap<>(System.getenv());
-    try {
-      gradleEnv.put("TEAMCITY_BUILD_INIT_PATH", GradleBuildConfigurator.getInitScriptClasspath());
-    } catch (IOException e) {
-      System.err.println("Couldn't launch Gradle via Tooling API: error while trying to build init script classpath");
-      return;
-    }
 
     String gradleParamsFilePath = getSystemEnvValue(gradleEnv, GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY);
     if (gradleParamsFilePath == null) {
@@ -87,14 +82,6 @@ public class TeamCityGradleLauncher {
     final String gradleHome = gradleEnv.get(GradleRunnerConstants.GRADLE_HOME_ENV_KEY);
     final String gradleWrapperProperties = gradleEnv.get(GradleRunnerConstants.GRADLE_WRAPPED_DISTRIBUTION_ENV_KEY);
 
-    final GradleConnector connector;
-    try {
-      connector = GradleBuildConfigurator.prepareConnector(workingDir, useWrapper, gradleWrapperProperties, gradleHome);
-    } catch (Exception e) {
-      System.err.println(e.getMessage());
-      return;
-    }
-
     boolean isDebugModeEnabled = gradleParams.stream().anyMatch(task -> task.equals("-d"));
     GradleToolingLogger logger = new GradleToolingLoggerImpl(isDebugModeEnabled);
     GradleJvmArgsMerger jvmArgsMerger = new GradleJvmArgsMerger(logger);
@@ -103,6 +90,23 @@ public class TeamCityGradleLauncher {
     List<BuildEventListener > eventListeners = new ArrayList<>();
     eventListeners.add(new GradleBuildOutputProcessor(logger, buildContext));
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
+    CommandLineParametersProcessor commandLineParametersProcessor = new CommandLineParametersProcessor();
+    GradleBuildConfigurator buildConfigurator = new GradleBuildConfigurator(commandLineParametersProcessor, logger);
+
+    try {
+      gradleEnv.put("TEAMCITY_BUILD_INIT_PATH", buildConfigurator.getInitScriptClasspath());
+    } catch (IOException e) {
+      System.err.println("Couldn't launch Gradle via Tooling API: error while trying to build init script classpath");
+      return;
+    }
+
+    final GradleConnector connector;
+    try {
+      connector = buildConfigurator.prepareConnector(workingDir, useWrapper, gradleWrapperProperties, gradleHome);
+    } catch (Exception e) {
+      System.err.println(e.getMessage());
+      return;
+    }
 
     try (ProjectConnection connection = connector.connect()) {
       Optional<BuildEnvironment> buildEnvironment = getBuildEnvironment(connection, logger);
@@ -111,8 +115,8 @@ public class TeamCityGradleLauncher {
                                                 ? jvmArgsMerger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs)
                                                 : Collections.emptyList();
 
-      BuildLauncher launcher = GradleBuildConfigurator.prepareBuildExecutor(gradleEnv, gradleParams, jvmArgsForOverriding, gradleTasks,
-                                                                            buildLifecycleListener, logger, buildNumber, connection);
+      BuildLauncher launcher = buildConfigurator.prepareBuildExecutor(gradleEnv, gradleParams, jvmArgsForOverriding, gradleTasks,
+                                                                      buildLifecycleListener, buildNumber, connection);
 
       String buildStartedMessage = composeBuildStartedMessage(buildNumber, gradleTasks, gradleParams, jvmArgsForOverriding, buildEnvironment.orElse(null));
       buildLifecycleListener.onStart(new BuildStartedEventImpl(System.currentTimeMillis(), buildStartedMessage));

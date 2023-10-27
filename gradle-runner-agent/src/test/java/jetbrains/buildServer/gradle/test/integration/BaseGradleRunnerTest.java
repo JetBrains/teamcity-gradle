@@ -90,6 +90,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_WITH_READING_DYNAMIC_PROPERTIES_NAME = "projectWithReadingDynamicProperties";
   public static final String PROJECT_WITH_STATIC_PROPERTY_NAME = "projectWithStaticProperty";
   public static final String PROJECT_WITH_GENERATED_TASKS_A_NAME = "projectWithGeneratedTasksA";
+  public static final String PROJECT_WITH_GENERATED_TASKS_B_NAME = "projectWithGeneratedTasksB";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
@@ -295,6 +296,19 @@ public class BaseGradleRunnerTest {
     return new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL), gradleVersion).getCanonicalPath();
   }
 
+  protected File getInitScript() {
+    return myInitScript;
+  }
+
+  protected String getGradleVersion(String gradleVersion) {
+    return gradleVersion.startsWith("gradle-") ? getGradleVersionFromPath(gradleVersion) : gradleVersion;
+  }
+
+  protected File getWorkingDir(String gradleVersionNum,
+                               String projectName) {
+    return new File(new File(myCoDir, ConfigurationParamsUtil.getGradleInitScript(gradleVersionNum)), projectName);
+  }
+
   @BeforeMethod
   public void checkEnvironment() throws IOException {
     if (ourProjectRoot == null) {
@@ -371,7 +385,7 @@ public class BaseGradleRunnerTest {
       gradlePath = null;
     }
 
-    String gradleVersionNum = gradleVersion.startsWith("gradle-") ? getGradleVersionFromPath(gradleVersion) : gradleVersion;
+    String gradleVersionNum = getGradleVersion(gradleVersion);
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
     }
@@ -407,7 +421,7 @@ public class BaseGradleRunnerTest {
     myBuildEnvVars.put(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_ENV, propertiesFile.getAbsolutePath());
     System.setProperty(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_PROP, propertiesFile.getAbsolutePath());
 
-    final File workingDir = new File(new File(myCoDir, ConfigurationParamsUtil.getGradleInitScript(gradleVersionNum)), projectName);
+    final File workingDir = getWorkingDir(gradleVersionNum, projectName);
 
     final Expectations initMockingCtx = new Expectations() {{
       //myBuildTypeOptionValue.entrySet().forEach(entry -> {

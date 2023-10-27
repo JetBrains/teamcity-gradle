@@ -1,0 +1,22 @@
+plugins {
+  id 'java'
+}
+
+def taskNamePrefix = 'generatedTask'
+def taskAmount = 3
+
+for (int i = 1; i <= taskAmount; i++) {
+  def taskName = "$taskNamePrefix$i"
+  tasks.register(taskName) {
+    doLast {
+      System.err.println "##tc-output task: $taskName"
+    }
+  }
+  if (i > 1) {
+    tasks[taskName].dependsOn(tasks["$taskNamePrefix${i - 1}"])
+  }
+}
+
+tasks.named("assemble") {
+  dependsOn "$taskNamePrefix$taskAmount"
+}
