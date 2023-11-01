@@ -93,8 +93,7 @@ public class GradleBuildConfigurator {
 
     Set<String> unsupportedArgs = commandLineParametersProcessor.obtainUnsupportedArguments(gradleParams);
     if (!unsupportedArgs.isEmpty()) {
-      logger.warn("Not all of the Gradle command line options are supported by the Gradle Tooling API." +
-                  "\nPlease find more information in the javadoc for the LongRunningOperation class.");
+      logger.warn("Not all of the Gradle command line options are supported by the Gradle Tooling API.");
       unsupportedArgs.forEach(arg -> logger.warn("The argument is not supported by the Gradle Tooling API and will not be used: " + arg));
     }
 

@@ -1,6 +1,5 @@
 package jetbrains.buildServer.gradle.runtime.service.commandLine;
 
-import com.intellij.util.containers.ContainerUtil;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,18 +10,8 @@ import org.jetbrains.annotations.NotNull;
 
 public final class GradleToolingCommandLineOptionsProvider {
 
-  public static final Options OPTIONS;
-  public static final OptionGroup DEBUGGING_OPTIONS;
-  public static final OptionGroup PERFORMANCE_OPTIONS;
-  public static final OptionGroup LOGGING_OPTIONS;
-  public static final OptionGroup EXECUTION_OPTIONS;
-  public static final OptionGroup ENVIRONMENT_OPTIONS;
-  public static final OptionGroup EXECUTING_TASKS_OPTIONS;
-  public static final OptionGroup VERIFICATION_OPTIONS;
-
-  public static final OptionGroup DEPRECATED_OPTIONS;
-
-  public static final Options UNSUPPORTED_OPTIONS;
+  private static final Options OPTIONS;
+  private static final Options UNSUPPORTED_OPTIONS;
 
   public static Options getSupportedOptions() {
     return OPTIONS;
@@ -48,10 +37,6 @@ public final class GradleToolingCommandLineOptionsProvider {
                   .collect(Collectors.toList());
   }
 
-  public static List<String> getAllOptionsNames(@NotNull Collection<Option> options) {
-    return ContainerUtil.concat(getShortOptionsNames(options), getLongOptionsNames(options));
-  }
-
   static {
     // These options aren't supported via Gradle Tooling API,
     // https://github.com/gradle/gradle/blob/v6.2.0/subprojects/tooling-api/src/main/java/org/gradle/tooling/LongRunningOperation.java#L149-L154
@@ -66,24 +51,23 @@ public final class GradleToolingCommandLineOptionsProvider {
       .addOption(Option.builder().longOpt("status").desc("Shows status of running and recently stopped Gradle Daemon(s).").build())
       .addOption(Option.builder().longOpt("stop").desc("Stops the Gradle Daemon if it is running.").build())
       .addOption(Option.builder().longOpt("foreground").desc("Starts the Gradle Daemon in the foreground.").build())
-
       // Performance options, see https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_performance
       .addOption(Option.builder().longOpt("priority").desc("Specifies the scheduling priority for the Gradle daemon and all processes launched by it. Values are 'normal' (default) or 'low'.").hasArg().build());
 
     // These options are deprecated
-    DEPRECATED_OPTIONS = new OptionGroup()
+    OptionGroup DEPRECATED_OPTIONS = new OptionGroup()
       .addOption(Option.builder("b").longOpt("build-file").desc("Specify the build file").hasArg().build())
       .addOption(Option.builder("c").longOpt("settings-file").desc("Specify the settings file").hasArg().build());
 
     // Debugging options, see https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_debugging
-    DEBUGGING_OPTIONS = new OptionGroup()
+    OptionGroup DEBUGGING_OPTIONS = new OptionGroup()
       .addOption(Option.builder("S").longOpt("full-stacktrace").desc("Print out the full (very verbose) stacktrace for all exceptions.").build())
       .addOption(Option.builder("s").longOpt("stacktrace").desc("Print out the stacktrace for all exceptions.").build())
       .addOption(Option.builder().longOpt("scan").desc("Creates a build scan. Gradle will emit a warning if the build scan plugin has not been applied.").build())
       .addOption(Option.builder().longOpt("no-scan").desc("Disables the creation of a build scan.").build());
 
     // Performance options, see https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_performance
-    PERFORMANCE_OPTIONS = new OptionGroup()
+    OptionGroup PERFORMANCE_OPTIONS = new OptionGroup()
       .addOption(Option.builder().longOpt("build-cache").desc("Enables the Gradle build cache. Gradle will try to reuse outputs from previous builds.").build())
       .addOption(Option.builder().longOpt("no-build-cache").desc("Disables the Gradle build cache.").build())
       .addOption(Option.builder().longOpt("configuration-cache").desc("Enables the configuration cache. Gradle will try to reuse the build configuration from previous builds.").build())
@@ -99,7 +83,7 @@ public final class GradleToolingCommandLineOptionsProvider {
       .addOption(Option.builder().longOpt("no-watch-fs").desc("Disables watching the file system.").build());
 
     // Logging options, https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_logging
-    LOGGING_OPTIONS =  new OptionGroup()
+    OptionGroup LOGGING_OPTIONS =  new OptionGroup()
       .addOption(Option.builder("q").longOpt("quiet").desc("Log errors only.").build())
       .addOption(Option.builder("w").longOpt("warn").desc("Set log level to warning.").build())
       .addOption(Option.builder("i").longOpt("info").desc("Set log level to information.").build())
@@ -108,7 +92,7 @@ public final class GradleToolingCommandLineOptionsProvider {
       .addOption(Option.builder().longOpt("warning-mode").desc("Specifies which mode of warnings to generate. Values are 'all', 'fail', 'summary'(default) or 'none'.").hasArg().build());
 
     // Execution options, https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_execution_options
-    EXECUTION_OPTIONS = new OptionGroup()
+    OptionGroup EXECUTION_OPTIONS = new OptionGroup()
       .addOption(Option.builder().longOpt("include-build").desc("Include the specified build in the composite.").hasArg().build())
       .addOption(Option.builder().longOpt("offline").desc("Execute the build without accessing network resources.").build())
       .addOption(Option.builder("U").longOpt("refresh-dependencies").desc("Refresh the state of dependencies.").build())
@@ -120,7 +104,7 @@ public final class GradleToolingCommandLineOptionsProvider {
       .addOption(Option.builder("a").longOpt("no-rebuild").desc("Do not rebuild project dependencies.").build());
 
     // Environment options, https://docs.gradle.org/current/userguide/command_line_interface.html#environment_options
-    ENVIRONMENT_OPTIONS = new OptionGroup()
+    OptionGroup ENVIRONMENT_OPTIONS = new OptionGroup()
       .addOption(Option.builder("g").longOpt("gradle-user-home").desc("Specifies the gradle user home directory.").hasArg().build())
       .addOption(Option.builder("p").longOpt("project-dir").desc("Specifies the start directory for Gradle. Defaults to current directory.").hasArg().build())
       .addOption(Option.builder().longOpt("project-cache-dir").desc("Specify the project-specific cache directory. Defaults to .gradle in the root project directory.").hasArg().build())
@@ -129,12 +113,12 @@ public final class GradleToolingCommandLineOptionsProvider {
       .addOption(Option.builder("P").longOpt("project-prop").desc("Set project property for the build script (e.g. -Pmyprop=myvalue).").hasArg().build());
 
     // Executing tasks, https://docs.gradle.org/current/userguide/command_line_interface.html#sec:command_line_executing_tasks
-    EXECUTING_TASKS_OPTIONS = new OptionGroup()
+    OptionGroup EXECUTING_TASKS_OPTIONS = new OptionGroup()
       .addOption(Option.builder("x").longOpt("exclude-task").desc("Specify a task to be excluded from execution.").hasArg().build())
       .addOption(Option.builder().longOpt("rerun-tasks").desc("Ignore previously cached task results.").build());
 
     // https://docs.gradle.org/current/userguide/dependency_verification.html
-    VERIFICATION_OPTIONS = new OptionGroup()
+    OptionGroup VERIFICATION_OPTIONS = new OptionGroup()
       .addOption(Option.builder("F").longOpt("dependency-verification").desc("Configures the dependency verification mode (strict, lenient or off)").hasArg().build())
       .addOption(Option.builder("M").longOpt("write-verification-metadata").desc("Generates checksums for dependencies used in the project (comma-separated list).").hasArg().build())
       .addOption(Option.builder().longOpt("refresh-keys").desc("Refresh the public keys used for dependency verification.").build())

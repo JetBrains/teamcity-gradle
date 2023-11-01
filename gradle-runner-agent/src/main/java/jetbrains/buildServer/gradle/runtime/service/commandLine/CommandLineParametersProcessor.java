@@ -10,7 +10,7 @@ public class CommandLineParametersProcessor {
 
   /**
    * Obtain arguments unsupported by the Gradle Tooling API.
-   * If this is not done, Tooling API throws an exception and a build fails.
+   * If unsupported arguments are passed to Gradle Tooling API, it will throw an exception and the build will fail.
    *
    * @param gradleArgs arguments configured in a built project
    */
