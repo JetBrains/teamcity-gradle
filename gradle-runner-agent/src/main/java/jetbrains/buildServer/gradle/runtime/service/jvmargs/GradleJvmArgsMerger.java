@@ -39,15 +39,11 @@ public class GradleJvmArgsMerger {
     for (String argKey : arguments.keySet()) {
       Collection<String> argValues = arguments.get(argKey);
       if (argValues.size() > 1) {
-        Collection<String> mergedValues = mergeArgumentValues(argValues);
+        Collection<String> mergedValues = mergeArgumentValues(argKey, argValues);
         argValues.clear();
         argValues.addAll(mergedValues);
       }
     }
-
-    // remove `--add-opens` options, because same options will be added by gradle producing the option duplicates.
-    // see https://github.com/gradle/gradle/blob/v5.1.1/subprojects/launcher/src/main/java/org/gradle/launcher/daemon/configuration/DaemonParameters.java#L125
-    arguments.remove("--add-opens");
 
     List<String> result = new ArrayList<>();
     arguments.keySet().forEach(key -> arguments.get(key).forEach(val -> {
@@ -99,10 +95,12 @@ public class GradleJvmArgsMerger {
    * The result of merging the values of the "-Foo" key will be: ["bar=003", "baz=001"].
    * And the result of merging the values of the "-Dparam" key will be: ["newVal"]
    *
+   * @param argKey JVM argument key
    * @param argValues JVM argument values to merge
    * @return merged values
    */
-  private Collection<String> mergeArgumentValues(@NotNull Collection<String> argValues) {
+  private Collection<String> mergeArgumentValues(@NotNull String argKey,
+                                                 @NotNull Collection<String> argValues) {
     Collection<String> merged = new ArrayList<>();
 
     Map<String, String> compositeValues = new LinkedHashMap<>();
@@ -111,7 +109,7 @@ public class GradleJvmArgsMerger {
       if (argValue.isEmpty()) {
         continue;
       }
-      if (isCompositeValue(argValue)) {
+      if (isCompositeValue(argValue) || JvmArg.isPackageAccessibilityJvmArg(argKey)) {
         JvmArg composite = JvmArg.ofString(argValue);
         compositeValues.put(composite.getKey(), composite.getValue());
       } else {

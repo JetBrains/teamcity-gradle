@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.impl.StaticLoggerBinder;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
+import static jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil.getBooleanOrDefault;
 
 public class GradleRunnerService extends BuildServiceAdapter
 {
@@ -171,8 +172,8 @@ public class GradleRunnerService extends BuildServiceAdapter
     envs.put(GRADLE_TASKS_FILE_ENV_KEY, gradleTasksFile.getAbsolutePath());
 
     final Map<String, String> systemProperties = new HashMap<>();
-    systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM,
-                         Boolean.valueOf(ConfigurationParamsUtil.isParameterEnabled(getConfigParameters(), GRADLE_RUNNER_READ_ALL_CONFIG_PARAM)).toString());
+    systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, getBooleanOrDefault(getConfigParameters(), GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, false).toString());
+    systemProperties.put(GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM, getBooleanOrDefault(getConfigParameters(), GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM, true).toString());
     Optional.ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
             .ifPresent(tcBuildParametersFilePath -> systemProperties.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, tcBuildParametersFilePath));
 

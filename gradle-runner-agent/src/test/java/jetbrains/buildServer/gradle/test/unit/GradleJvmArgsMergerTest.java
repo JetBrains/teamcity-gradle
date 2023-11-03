@@ -100,21 +100,99 @@ public class GradleJvmArgsMergerTest {
     assertEquals(mergingResult, expectedResult);
   }
 
-  @Test
-  public void should_MergeGradleProjectJvmArgsWithTcJvmArgs_When_HaveAddOpensProperties() {
-    // arrange
-    List<String> gradleProjectJvmArgs = Arrays.asList("-Xmx256", "--add-opens", "java.base/java.util=ALL-UNNAMED");
-    List<String> tcJvmArgs = Arrays.asList("-Xmx512", "--add-opens", "java.base/java.lang=ALL-UNNAMED");
+  @DataProvider
+  public Object[][] packageJvmArgsProvider() {
+    return new Object[][]{
+      {
+        Arrays.asList("-Xmx256", "--add-opens", "java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens", "java.base/java.lang=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED")
+      },
+      {
+        Arrays.asList("-Xmx256", "--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens=java.base/java.lang=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.lang=ALL-UNNAMED")
+      },
 
+      {
+        Arrays.asList("-Xmx256", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens", "java.base/java.util=ALL-UNNAMED")
+      },
+      {
+        Arrays.asList("-Xmx256", "--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens=java.base/java.util=ALL-UNNAMED")
+      },
+
+      {
+        Arrays.asList("-Xmx256"),
+        Arrays.asList("-Xmx512", "--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512", "--add-opens=java.base/java.util=ALL-UNNAMED")
+      },
+      {
+        Arrays.asList("-Xmx256", "--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("-Xmx512"),
+        Arrays.asList("-Xmx512", "--add-opens=java.base/java.util=ALL-UNNAMED")
+      },
+
+      {
+        Arrays.asList("--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED")
+      },
+      {
+        Arrays.asList("--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList("--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED")
+      },
+
+      {
+        Arrays.asList(),
+        Arrays.asList("--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED"),
+        Arrays.asList("--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED")
+      },
+      {
+        Arrays.asList("--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED"),
+        Arrays.asList(),
+        Arrays.asList("--add-opens=java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED")
+      },
+
+      {
+        Arrays.asList(
+          "--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED",
+          "--add-opens=java.base/java.util=ALL-UNNAMED",
+          "--add-opens=java.base/java.util=ALL-UNNAMED",
+          "--add-opens=java.base/java.lang=ALL-UNNAMED",
+          "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+          "--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED",
+          "--add-opens=java.base/java.nio.charset=ALL-UNNAMED",
+          "--add-opens=java.base/java.net=ALL-UNNAMED",
+          "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED"),
+        Arrays.asList(
+          "--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED",
+          "--add-opens=java.base/java.util=ALL-UNNAMED"),
+        Arrays.asList(
+          "--add-opens", "java.base/jdk.internal.module=ALL-UNNAMED",
+          "--add-opens=java.base/java.util=ALL-UNNAMED",
+          "--add-opens=java.base/java.lang=ALL-UNNAMED",
+          "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+          "--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED",
+          "--add-opens=java.base/java.nio.charset=ALL-UNNAMED",
+          "--add-opens=java.base/java.net=ALL-UNNAMED",
+          "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED")
+      },
+    };
+  }
+  @Test(dataProvider = "packageJvmArgsProvider")
+  public void should_MergeGradleProjectJvmArgsWithTcJvmArgs_When_HavePackageProperties(List<String> gradleProjectJvmArgs,
+                                                                                       List<String> tcJvmArgs,
+                                                                                       List<String> expectedResult) {
     // act
     Collection<String> mergingResult = merger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs);
 
     // assert
-    assertFalse(mergingResult.contains("-Xmx256"));
-    assertTrue(mergingResult.contains("-Xmx512"));
-    assertFalse(mergingResult.contains("--add-opens"));
-    assertFalse(mergingResult.contains("java.base/java.util=ALL-UNNAMED"));
-    assertFalse(mergingResult.contains("java.base/java.lang=ALL-UNNAMED"));
+    assertEquals(mergingResult, expectedResult);
   }
 
   @Test
@@ -190,7 +268,7 @@ public class GradleJvmArgsMergerTest {
   }
 
   @DataProvider
-  public Object[][] colonSeparaterJvmArgsProvider() {
+  public Object[][] colonSeparatedJvmArgsProvider() {
     return new Object[][]{
       {
         Arrays.asList("-agentlib:jdwp=transport=dt_socket,server=y,address=8000"),
@@ -284,7 +362,7 @@ public class GradleJvmArgsMergerTest {
       },
     };
   }
-  @Test(dataProvider = "colonSeparaterJvmArgsProvider")
+  @Test(dataProvider = "colonSeparatedJvmArgsProvider")
   public void should_MergeGradleProjectJvmArgsWithTcJvmArgs_When_HaveColonSeparaterProperties(List<String> gradleProjectJvmArgs,
                                                                                               List<String> tcJvmArgs,
                                                                                               List<String> expectedResult) {

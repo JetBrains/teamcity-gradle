@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM;
 import static jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver.getTcBuildParametersFile;
 
 public class TeamCityGradleLauncher {
@@ -111,9 +112,11 @@ public class TeamCityGradleLauncher {
     try (ProjectConnection connection = connector.connect()) {
       Optional<BuildEnvironment> buildEnvironment = getBuildEnvironment(connection, logger);
       List<String> gradleProjectJvmArgs = buildEnvironment.map(env -> env.getJava().getJvmArguments()).orElseGet(Collections::emptyList);
-      Collection<String> jvmArgsForOverriding = !tcJvmArgs.isEmpty()
-                                                ? jvmArgsMerger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs)
-                                                : Collections.emptyList();
+      boolean allowJvmArgsOverriding = Boolean.parseBoolean(System.getProperty(GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM));
+
+      Collection<String> jvmArgsForOverriding = !allowJvmArgsOverriding || tcJvmArgs.isEmpty()
+                                                ? Collections.emptyList()
+                                                : jvmArgsMerger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs);
 
       BuildLauncher launcher = buildConfigurator.prepareBuildExecutor(gradleEnv, gradleParams, jvmArgsForOverriding, gradleTasks,
                                                                       buildLifecycleListener, buildNumber, connection);

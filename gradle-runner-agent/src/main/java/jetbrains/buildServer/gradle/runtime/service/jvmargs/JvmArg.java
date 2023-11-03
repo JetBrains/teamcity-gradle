@@ -16,6 +16,7 @@ public class JvmArg {
     "--class-path", "-classpath", "-cp",
     "-enableassertions", "-ea", "-disableassertions", "-da"
     ));
+  private static final Set<String> PACKAGE_ACCESSIBILITY_JVM_ARGS = new HashSet<>(Arrays.asList("--add-opens", "--add-exports"));
 
   public static final char ARGS_DELIMITER = '=';
   public static final String PREFIX = "-";
@@ -61,6 +62,10 @@ public class JvmArg {
     return SUPPORTED_COLON_SEPARATED_ARG_PREFIXES.stream().anyMatch(prefix -> arg.startsWith(prefix))
            && !arg.startsWith("-XX:")
            && colonIndex > 0 && delimiterIndex <= 0;
+  }
+
+  public static boolean isPackageAccessibilityJvmArg(@NotNull String argKey) {
+    return PACKAGE_ACCESSIBILITY_JVM_ARGS.contains(argKey);
   }
 
   @NotNull

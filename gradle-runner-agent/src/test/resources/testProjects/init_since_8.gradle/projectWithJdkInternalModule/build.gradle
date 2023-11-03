@@ -1,0 +1,7 @@
+import jdk.internal.module.ModuleInfoWriter
+tasks.register('internalThings') {
+    doLast {
+        ModuleInfoWriter writer = new ModuleInfoWriter()
+        println("writer's Meta Class: ${writer.metaClass}")
+    }
+}

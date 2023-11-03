@@ -18,6 +18,7 @@ package jetbrains.buildServer.gradle.agent;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.runner.CommandLineArgumentsUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -73,5 +74,14 @@ public class ConfigurationParamsUtil
   @NotNull
   public static String getGradleLaunchMode(@NotNull final Map<String, String> configurationParameters) {
     return emptyIfNull(configurationParameters.get(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM));
+  }
+
+  @NotNull
+  public static Boolean getBooleanOrDefault(@NotNull final Map<String, String> configurationParameters,
+                                            @NotNull final String key,
+                                            final boolean defaultValue) {
+    return Optional.ofNullable(configurationParameters.get(key))
+      .map(Boolean::valueOf)
+      .orElse(defaultValue);
   }
 }

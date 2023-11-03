@@ -91,6 +91,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_WITH_STATIC_PROPERTY_NAME = "projectWithStaticProperty";
   public static final String PROJECT_WITH_GENERATED_TASKS_A_NAME = "projectWithGeneratedTasksA";
   public static final String PROJECT_WITH_GENERATED_TASKS_B_NAME = "projectWithGeneratedTasksB";
+  public static final String PROJECT_WITH_JDK_INTERNAL_MODULE_NAME = "projectWithJdkInternalModule";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
