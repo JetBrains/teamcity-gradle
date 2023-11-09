@@ -44,6 +44,9 @@ import org.apache.commons.cli.OptionGroup;
 import org.apache.logging.log4j.core.LoggerContextAccessor;
 import org.apache.logging.log4j.spi.AbstractLoggerAdapter;
 import org.gradle.tooling.BuildLauncher;
+import org.gradle.tooling.GradleConnector;
+import org.gradle.tooling.ProjectConnection;
+import org.gradle.tooling.model.build.BuildEnvironment;
 import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +55,8 @@ import org.slf4j.impl.StaticLoggerBinder;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil.getBooleanOrDefault;
+import static jetbrains.buildServer.gradle.agent.GradleConfigurationCacheDetector.isConfigurationCacheEnabled;
+import static jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector.selectMode;
 
 public class GradleRunnerService extends BuildServiceAdapter
 {
@@ -128,12 +133,19 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     Map<String, String> env = getEnvironments(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
 
-    GradleLaunchModeSelectionResult selectionResult = GradleLaunchModeSelector.selectMode(workingDirectory, useWrapper, getConfigParameters(), gradleHome, gradleWrapperProperties);
+    GradleConnector projectConnector = null;
+    try {
+      projectConnector = GradleToolingConnectorFactory.instantiate(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
+    } catch (Throwable t) {
+      getLogger().debug("Unable to obtain project connector: " + t.getMessage());
+    }
+    GradleLaunchModeSelectionResult selectionResult = selectMode(getConfigParameters(), projectConnector);
     switch (selectionResult.getLaunchMode()) {
       case GRADLE_TOOLING_API:
-        getLogger().message("The build will be launched via Gradle Tooling API because " + selectionResult.getReason());
-        return prepareToolingApi(env, workingDirectory, gradleTasks);
+        getLogger().message("The build will be launched via Gradle Tooling API because: " + selectionResult.getReason());
+        return prepareToolingApi(env, workingDirectory, gradleTasks, projectConnector);
       case GRADLE:
+      case UNDEFINED:
         params.addAll(getParams(GradleLaunchMode.GRADLE, gradleTasks));
         return new SimpleProgramCommandLine(env, workingDirectory.getPath(), exePath, params);
 
@@ -145,7 +157,8 @@ public class GradleRunnerService extends BuildServiceAdapter
 
   private ProgramCommandLine prepareToolingApi(@NotNull final Map<String, String> env,
                                                @NotNull final File workingDirectory,
-                                               @NotNull final List<String> gradleTasks) throws RunBuildException {
+                                               @NotNull final List<String> gradleTasks,
+                                               @Nullable final GradleConnector projectConnector) throws RunBuildException {
 
     final File buildTempDir = getBuildTempDirectory();
 
@@ -173,7 +186,8 @@ public class GradleRunnerService extends BuildServiceAdapter
     envs.put(GRADLE_TASKS_FILE_ENV_KEY, gradleTasksFile.getAbsolutePath());
 
     final Map<String, String> systemProperties = new HashMap<>();
-    systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, getBooleanOrDefault(getConfigParameters(), GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, false).toString());
+    File gradleUserHome = Optional.ofNullable(projectConnector).flatMap(this::getGradleUserHome).orElse(null);
+    systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, readAllBuildParamsRequired(gradleTasks, gradleParams, workingDirectory, gradleUserHome).toString());
     systemProperties.put(GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM, getBooleanOrDefault(getConfigParameters(), GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM, true).toString());
     Optional.ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
             .ifPresent(tcBuildParametersFilePath -> systemProperties.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, tcBuildParametersFilePath));
@@ -191,6 +205,50 @@ public class GradleRunnerService extends BuildServiceAdapter
       .withClassPath(composeToolingApiProcessClasspath())
       .withMainClass(TeamCityGradleLauncher.class.getCanonicalName())
       .build();
+  }
+
+  private Boolean readAllBuildParamsRequired(@NotNull List<String> gradleTasks,
+                                             @NotNull List<String> gradleParams,
+                                             @NotNull File workingDirectory,
+                                             @Nullable File gradleUserHome) {
+    Map<String, String> configParams = getConfigParameters();
+    if (configParams.containsKey(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM)) {
+      return Boolean.valueOf(configParams.get(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM));
+    }
+
+    return isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHome, workingDirectory)
+      .map(enabled -> {
+        if (enabled) {
+          getLogger().message(
+            "Gradle configuration-cache feature usage has been detected.\n" +
+            "To make the build configuration cache compatible, build parameters that change from build to build (e.g.: build.id, build.number) " +
+            "will be loaded lazily, only on demand.\n" +
+            "That means, they could still be obtained using project.teamcity[\"build.number\"].\n" +
+            "But they aren’t accessible using project.findProperty(\"build.number\") or project[\"build.number\"].\n\n" +
+            "Also, you can make the following steps:\n" +
+            "1. Define BuildNumber=%build.number% configuration parameter in the build configuration.\n" +
+            "2. Define system.buildNumber=%BuildNumber% system property in the build configuration.\n" +
+            "3. Access this param in your gradle script like: def buildNumber = \"${findProperty(\"buildNumber\")}\"\n" +
+            "Note that these steps will not allow you to reuse configuration-cache, so the most correct way would be to disable this feature.");
+          return false;
+        }
+        return true;
+      })
+      .orElse(true);
+  }
+
+  @NotNull
+  private Optional<File> getGradleUserHome(@NotNull GradleConnector projectConnector) {
+    try (ProjectConnection connection = projectConnector.connect()) {
+      BuildEnvironment buildEnvironment;
+      try {
+        buildEnvironment = connection.getModel(BuildEnvironment.class);
+      } catch (Throwable t) {
+        return Optional.empty();
+      }
+
+      return Optional.ofNullable(buildEnvironment.getGradle().getGradleUserHome());
+    }
   }
 
   private void storeParams(@NotNull File buildTempDir,

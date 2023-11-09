@@ -161,6 +161,9 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
     if (arg.equals("-x") || arg.equals("--exclude-task")) {
       return arg + " generatedTask1";
     }
+    if (arg.equals("-t") || arg.equals("--continuous")) {
+      return arg + " --watch-fs";
+    }
     if (arg.equals("-F") || arg.equals("--dependency-verification")) {
       return arg + "=off";
     }

@@ -105,7 +105,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
-  public void shouldReadDynamicPropertyOnDemandOnly(String gradleVersion) throws Exception {
+  public void shouldReadDynamicPropertiesByDefaultWhenCCIsDiabled(String gradleVersion) throws Exception {
     // given: dynamic property that used in the gradle project
     // build.number is TC's property that changes from build to build
     myTeamCitySystemProps.put("build.number", String.valueOf(new Random().nextInt()));
@@ -118,19 +118,56 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     // when
     List<String> messages = run(config).getAllMessages();
 
-    // then: by default, we don't read dynamic properties because of configuration-cache feature
+    // then: by default, we can read dynamic properties because the configuration-cache is disabled
     String buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 1: ")), buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 2: ")), buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 3: ")), buildFullLog);
+
+    // when: enabling the configuration-cache and trying again
+    myTeamCityConfigParameters.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, "true");
+    config = new GradleRunConfiguration(PROJECT_WITH_READING_PROPERTIES_NAME,
+                                        "clean build --configuration-cache printBuildNumber",
+                                        null);
+    config.setPatternStr("##build-num(.*)");
+    config.setGradleVersion(gradleVersion);
+    messages = run(config).getAllMessages();
+
+    // then: dynamic properties are not available because of using configuration cache
+    buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\n" + buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.contains("Could not get unknown property 'build.number'")), buildFullLog);
+  }
+
+  @Test(dataProvider = "gradle-version-provider>=8")
+  public void shouldUseReadAllConfigParamInPriorityWhenItPresent(String gradleVersion) throws Exception {
+    // given
+    myTeamCityConfigParameters.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, "true");
+    myTeamCitySystemProps.put("build.number", String.valueOf(new Random().nextInt()));
+    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_READING_PROPERTIES_NAME,
+                                                               "clean build printBuildNumber",
+                                                               null);
+    config.setGradleVersion(gradleVersion);
+
+    // when
+    List<String> messages = run(config).getAllMessages();
+
+    // then
+    String buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 1: ")), buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 2: ")), buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 3: ")), buildFullLog);
 
     // when: setting up the corresponding configuration parameter and trying again
-    myTeamCityConfigParameters.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, "true");
+    myTeamCityConfigParameters.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, "false");
     messages = run(config).getAllMessages();
 
     // then: property has successfully been printed
     buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num: ")), buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\n" + buildFullLog);
+    assertTrue(messages.stream().anyMatch(line -> line.contains("Could not get unknown property 'build.number'")), buildFullLog);
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")

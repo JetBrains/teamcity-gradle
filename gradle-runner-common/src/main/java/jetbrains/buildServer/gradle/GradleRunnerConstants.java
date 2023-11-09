@@ -41,9 +41,9 @@ public class GradleRunnerConstants
   public static final String GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE = "gradle-tooling-api";
   public static final String GRADLE_RUNNER_GRADLE_LAUNCH_MODE = "gradle";
   /**
-   * Normally, we don't read all the parameters from teamcity.build.parameters file,
-   * because it always changes from build to build. Because of that, Gradle configuration-cache doesn't work.
-   * But if for some reason user wants to use all the parameters, he could set this configuration parameter to true.
+   * This param defaults to true. But if Gradle's configuration-cache feature is enabled, it switches to false.
+   * That means, we won't read all the data from teamcity.build.parameters file.
+   * The content of this file changes from build to build. So if we read all the content of the file, Gradle's configuration-cache will not work properly.
    */
   public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = "teamcity.internal.gradle.runner.read.all.params";
   public static final String GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM = "teamcity.internal.gradle.runner.allow.jvm.args.overriding";

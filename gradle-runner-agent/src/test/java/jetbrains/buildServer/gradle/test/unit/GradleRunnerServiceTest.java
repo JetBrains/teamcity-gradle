@@ -374,8 +374,9 @@ public class GradleRunnerServiceTest {
     gradlew.createNewFile();
     assertTrue(gradlew.exists(), "Could not create gradleW mock file.");
 
-    File gradleWrapperProperties = new File(myWorkingDirectory, GRADLE_WRAPPER_PROPERTIES_DEFAULT_LOCATION);
-    gradleWrapperProperties.mkdirs();
+    File gradleWrapperPropertiesDir = new File(myWorkingDirectory, "gradle" + File.separator + "wrapper");
+    gradleWrapperPropertiesDir.mkdirs();
+    File gradleWrapperProperties = new File(gradleWrapperPropertiesDir, "gradle-wrapper.properties");
     gradleWrapperProperties.createNewFile();
     assertTrue(gradleWrapperProperties.exists(), "Could not create gradleWrapperProperties mock file.");
 
