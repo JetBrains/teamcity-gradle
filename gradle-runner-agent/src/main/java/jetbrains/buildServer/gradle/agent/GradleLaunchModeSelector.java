@@ -21,23 +21,26 @@ public class GradleLaunchModeSelector {
   private static final String GRADLE_TOOLING_API_VERSION_FROM = "8.0";
 
   @NotNull
-  public static GradleLaunchMode selectMode(@NotNull File workingDirectory,
-                                            @NotNull Boolean useWrapper,
-                                            @NotNull Map<String, String> configurationParameters,
-                                            @Nullable File gradleHome,
-                                            @Nullable File gradleWrapperProperties) throws RunBuildException {
+  public static GradleLaunchModeSelectionResult selectMode(@NotNull File workingDirectory,
+                                                           @NotNull Boolean useWrapper,
+                                                           @NotNull Map<String, String> configurationParameters,
+                                                           @Nullable File gradleHome,
+                                                           @Nullable File gradleWrapperProperties) throws RunBuildException {
     String configuredLaunchMode = ConfigurationParamsUtil.getGradleLaunchMode(configurationParameters);
 
     // currently we default to launching Gradle build in the old way when the launch mode is not configured with the appropriate config param
     if (configuredLaunchMode.isEmpty()) {
-      return GradleLaunchMode.GRADLE;
+      return new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE, null);
     }
 
     if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_GRADLE_LAUNCH_MODE)) {
-      return GradleLaunchMode.GRADLE;
+      return new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE, null);
     }
     if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE)) {
-      return GradleLaunchMode.GRADLE_TOOLING_API;
+      String reason = String.format("%s configuration parameter is set to %s",
+                                    GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM,
+                                    GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
+      return new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE_TOOLING_API, reason);
     }
 
     GradleConnector connector = GradleConnector.newConnector();
@@ -62,29 +65,43 @@ public class GradleLaunchModeSelector {
       try {
         buildEnvironment = connection.getModel(BuildEnvironment.class);
       } catch (Throwable t) {
-        return GradleLaunchMode.UNDEFINED;
+        return new GradleLaunchModeSelectionResult(GradleLaunchMode.UNDEFINED, null);
       }
 
       String gradleVersion = buildEnvironment.getGradle().getGradleVersion();
-      return getByGradleVersion(gradleVersion);
+      return getByGradleVersion(gradleVersion, configuredLaunchMode);
     }
   }
 
   @NotNull
-  public static GradleLaunchMode getByGradleVersion(@Nullable String gradleVersionStr) {
+  public static GradleLaunchModeSelectionResult getByGradleVersion(@Nullable String gradleVersionStr,
+                                                                   @NotNull String configuredLaunchMode) {
     if (gradleVersionStr == null) {
-      return GradleLaunchMode.UNDEFINED;
+      return new GradleLaunchModeSelectionResult(GradleLaunchMode.UNDEFINED, null);
     }
 
     DefaultGradleVersion gradleVersion;
     try {
       gradleVersion = DefaultGradleVersion.version(gradleVersionStr);
     } catch (IllegalArgumentException e) {
-      return GradleLaunchMode.UNDEFINED;
+      return new GradleLaunchModeSelectionResult(GradleLaunchMode.UNDEFINED, null);
     }
 
     return VersionComparatorUtil.compare(gradleVersion.getVersion(), GRADLE_TOOLING_API_VERSION_FROM) >= 0
-           ? GradleLaunchMode.GRADLE_TOOLING_API
-           : GradleLaunchMode.GRADLE;
+           ? new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE_TOOLING_API, composeLaunchingViaToolingApiReason(configuredLaunchMode))
+           : new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE, null);
+  }
+
+  private static String composeLaunchingViaToolingApiReason(@NotNull String configuredLaunchMode) {
+    StringBuilder result = new StringBuilder();
+    result.append("Gradle version is 8.0+ ").append(GRADLE_TOOLING_API_VERSION_FROM);
+    if (!configuredLaunchMode.isEmpty()) {
+      result.append(" and ")
+            .append(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)
+            .append(" configuration parameter")
+            .append(" is set to ")
+            .append(configuredLaunchMode);
+    }
+    return result.toString();
   }
 }
