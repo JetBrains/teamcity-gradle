@@ -94,7 +94,7 @@ public class GradleLaunchModeSelector {
 
   private static String composeLaunchingViaToolingApiReason(@NotNull String configuredLaunchMode) {
     StringBuilder result = new StringBuilder();
-    result.append("Gradle version is 8.0+ ").append(GRADLE_TOOLING_API_VERSION_FROM);
+    result.append("Gradle version is ").append(GRADLE_TOOLING_API_VERSION_FROM).append("+");
     if (!configuredLaunchMode.isEmpty()) {
       result.append(" and ")
             .append(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)
