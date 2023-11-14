@@ -128,9 +128,10 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     Map<String, String> env = getEnvironments(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
 
-    GradleLaunchMode launchMode = GradleLaunchModeSelector.selectMode(workingDirectory, useWrapper, getConfigParameters(), gradleHome, gradleWrapperProperties);
-    switch (launchMode) {
+    GradleLaunchModeSelectionResult selectionResult = GradleLaunchModeSelector.selectMode(workingDirectory, useWrapper, getConfigParameters(), gradleHome, gradleWrapperProperties);
+    switch (selectionResult.getLaunchMode()) {
       case GRADLE_TOOLING_API:
+        getLogger().message("The build will be launched via Gradle Tooling API because " + selectionResult.getReason());
         return prepareToolingApi(env, workingDirectory, gradleTasks);
       case GRADLE:
         params.addAll(getParams(GradleLaunchMode.GRADLE, gradleTasks));

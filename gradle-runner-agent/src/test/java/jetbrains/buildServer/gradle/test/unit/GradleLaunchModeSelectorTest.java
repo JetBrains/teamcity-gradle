@@ -54,7 +54,7 @@ public class GradleLaunchModeSelectorTest {
   @Test(dataProvider = "gradleVersionProvider")
   public void shouldReturnGradleLaunchModeAsExpected(String gradleVersion, GradleLaunchMode expectedMode) {
     // when
-    GradleLaunchMode result = GradleLaunchModeSelector.getByGradleVersion(gradleVersion);
+    GradleLaunchMode result = GradleLaunchModeSelector.getByGradleVersion(gradleVersion, "").getLaunchMode();
 
     // then
     assertEquals(result, expectedMode);
@@ -67,7 +67,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode expectedMode = GradleLaunchMode.GRADLE;
 
     // when
-    GradleLaunchMode result = GradleLaunchModeSelector.selectMode(new File(""), false, configurationParameters, null, null);
+    GradleLaunchMode result = GradleLaunchModeSelector.selectMode(new File(""), false, configurationParameters, null, null).getLaunchMode();
 
     // then
     assertEquals(result, expectedMode);
@@ -81,7 +81,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode expectedMode = GradleLaunchMode.GRADLE_TOOLING_API;
 
     // when
-    GradleLaunchMode result = GradleLaunchModeSelector.selectMode(new File(""), false, configurationParameters, null, null);
+    GradleLaunchMode result = GradleLaunchModeSelector.selectMode(new File(""), false, configurationParameters, null, null).getLaunchMode();
 
     // then
     assertEquals(result, expectedMode);
@@ -95,7 +95,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode expectedMode = GradleLaunchMode.GRADLE;
 
     // when
-    GradleLaunchMode result = GradleLaunchModeSelector.selectMode(new File(""), false, configurationParameters, null, null);
+    GradleLaunchMode result = GradleLaunchModeSelector.selectMode(new File(""), false, configurationParameters, null, null).getLaunchMode();
 
     // then
     assertEquals(result, expectedMode);
