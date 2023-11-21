@@ -79,9 +79,8 @@ public class GradleBuildConfigurator {
 
   @NotNull
   public BuildLauncher prepareBuildExecutor(@NotNull Map<String, String> env,
-                                            @NotNull Collection<String> gradleParams,
+                                            @NotNull Collection<String> tasksAndParams,
                                             @NotNull Collection<String> overridedJvmArgs,
-                                            @NotNull Collection<String> gradleTasks,
                                             @NotNull BuildLifecycleListener buildListener,
                                             @NotNull String buildNumber,
                                             @NotNull ProjectConnection connection) {
@@ -91,15 +90,14 @@ public class GradleBuildConfigurator {
       launcher.addJvmArguments(overridedJvmArgs);
     }
 
-    Set<String> unsupportedArgs = commandLineParametersProcessor.obtainUnsupportedArguments(gradleParams);
+    Set<String> unsupportedArgs = commandLineParametersProcessor.obtainUnsupportedArguments(tasksAndParams);
     if (!unsupportedArgs.isEmpty()) {
       logger.warn("Not all of the Gradle command line options are supported by the Gradle Tooling API.");
       unsupportedArgs.forEach(arg -> logger.warn("The argument is not supported by the Gradle Tooling API and will not be used: " + arg));
     }
 
-    launcher.forTasks(gradleTasks.toArray(new String[0]));
     launcher.addProgressListener(new GradleToolingApiProgressListener(buildListener, logger, buildNumber), OperationType.TASK);
-    launcher.addArguments(gradleParams.stream().filter(arg -> !unsupportedArgs.contains(arg)).collect(Collectors.toList()));
+    launcher.addArguments(tasksAndParams.stream().filter(arg -> !unsupportedArgs.contains(arg)).collect(Collectors.toList()));
     launcher.setEnvironmentVariables(env);
     launcher.setStandardOutput(new GradleOutputWrapper(buildListener, OutputType.STD_OUT));
     launcher.setStandardError(new GradleOutputWrapper(buildListener, OutputType.STD_ERR));

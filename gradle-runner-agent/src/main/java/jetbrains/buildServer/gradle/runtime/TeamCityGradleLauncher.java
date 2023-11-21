@@ -3,6 +3,8 @@ package jetbrains.buildServer.gradle.runtime;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import jetbrains.buildServer.gradle.runtime.listening.BuildEventListener;
@@ -118,10 +120,11 @@ public class TeamCityGradleLauncher {
                                                 ? Collections.emptyList()
                                                 : jvmArgsMerger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs);
 
-      BuildLauncher launcher = buildConfigurator.prepareBuildExecutor(gradleEnv, gradleParams, jvmArgsForOverriding, gradleTasks,
-                                                                      buildLifecycleListener, buildNumber, connection);
+      Collection<String> tasksAndParams = Stream.concat(gradleTasks.stream(), gradleParams.stream()).collect(Collectors.toList());
 
-      String buildStartedMessage = composeBuildStartedMessage(buildNumber, gradleTasks, gradleParams, jvmArgsForOverriding, buildEnvironment.orElse(null));
+      BuildLauncher launcher = buildConfigurator.prepareBuildExecutor(gradleEnv, tasksAndParams, jvmArgsForOverriding, buildLifecycleListener, buildNumber, connection);
+
+      String buildStartedMessage = composeBuildStartedMessage(buildNumber, tasksAndParams, jvmArgsForOverriding, buildEnvironment.orElse(null));
       buildLifecycleListener.onStart(new BuildStartedEventImpl(System.currentTimeMillis(), buildStartedMessage));
 
       launcher.run(new ResultHandler<Void>() {
@@ -184,14 +187,12 @@ public class TeamCityGradleLauncher {
   }
 
   private static String composeBuildStartedMessage(@NotNull String buildNumber,
-                                                   @NotNull Collection<String> gradleTasks,
-                                                   @NotNull Collection<String> gradleParams,
+                                                   @NotNull Collection<String> tasksAndParams,
                                                    @NotNull Collection<String> overridedJvmArgs,
                                                    @Nullable BuildEnvironment buildEnvironment) {
     StringBuilder messageBuilder = new StringBuilder();
     messageBuilder.append("Starting Gradle in TeamCity build ").append(buildNumber).append(System.lineSeparator());
-    messageBuilder.append("Gradle tasks: ").append(String.join(" ", gradleTasks)).append(System.lineSeparator());
-    messageBuilder.append("Gradle arguments: ").append(String.join(" ", gradleParams));
+    messageBuilder.append("Gradle tasks and arguments: ").append(String.join(" ", tasksAndParams));
 
     if (buildEnvironment != null) {
       try {
