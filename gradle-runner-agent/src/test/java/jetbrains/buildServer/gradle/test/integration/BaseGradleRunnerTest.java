@@ -32,9 +32,13 @@ import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
 import jetbrains.buildServer.agent.runner2.SingleCommandLineBuildSessionFactoryAdapter;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil;
+import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
+import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
+import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
+import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
@@ -345,7 +349,8 @@ public class BaseGradleRunnerTest {
     context.checking(expectations);
 
     List<GradleBuildPropertiesSplitter> splitters = Arrays.asList(new TeamCityBuildPropertiesGradleSplitter());
-    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory(splitters));
+    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory(
+      splitters, new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor()));
     final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
     final GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, session, myMockExtensionHolder);
     proc.start();
@@ -387,7 +392,7 @@ public class BaseGradleRunnerTest {
     }
 
     String gradleVersionNum = getGradleVersion(gradleVersion);
-    if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0) {
+    if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
     }
     findInitScript(ourProjectRoot, gradleVersionNum);

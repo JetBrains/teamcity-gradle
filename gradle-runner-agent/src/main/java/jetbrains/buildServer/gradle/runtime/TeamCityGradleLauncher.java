@@ -15,7 +15,6 @@ import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLoggerImpl;
 import jetbrains.buildServer.gradle.runtime.output.GradleBuildOutputProcessor;
 import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator;
-import jetbrains.buildServer.gradle.runtime.service.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.runtime.service.jvmargs.GradleJvmArgsMerger;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
@@ -93,8 +92,7 @@ public class TeamCityGradleLauncher {
     List<BuildEventListener > eventListeners = new ArrayList<>();
     eventListeners.add(new GradleBuildOutputProcessor(logger, buildContext));
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
-    CommandLineParametersProcessor commandLineParametersProcessor = new CommandLineParametersProcessor();
-    GradleBuildConfigurator buildConfigurator = new GradleBuildConfigurator(commandLineParametersProcessor, logger);
+    GradleBuildConfigurator buildConfigurator = new GradleBuildConfigurator(logger);
 
     try {
       gradleEnv.put("TEAMCITY_BUILD_INIT_PATH", buildConfigurator.getInitScriptClasspath());

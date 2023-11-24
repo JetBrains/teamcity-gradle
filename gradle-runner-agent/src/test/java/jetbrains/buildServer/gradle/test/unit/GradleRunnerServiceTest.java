@@ -30,6 +30,9 @@ import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.*;
+import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
+import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
+import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
@@ -102,7 +105,8 @@ public class GradleRunnerServiceTest {
         }
       });
     }});
-    myService = (GradleRunnerService) new GradleRunnerServiceFactory(Collections.emptyList()).createService();
+    myService = (GradleRunnerService) new GradleRunnerServiceFactory(
+      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor()).createService();
 
     myCoDir = myTempFiles.createTempDir();
 
@@ -406,7 +410,8 @@ public class GradleRunnerServiceTest {
 
   @Test(expectedExceptions = RunBuildException.class)
   public void gradleExeDoesNotExistTest() throws RunBuildException, IOException {
-    GradleRunnerService service = (GradleRunnerService) new GradleRunnerServiceFactory(Collections.emptyList()).createService();
+    GradleRunnerService service = (GradleRunnerService) new GradleRunnerServiceFactory(
+      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor()).createService();
 
     myContext.checking(new Expectations() {{
       allowing(myRunnerContext).getToolPath("gradle"); will(returnValue(myTempFiles.createTempDir().getAbsolutePath()));
@@ -427,7 +432,7 @@ public class GradleRunnerServiceTest {
                                             + "/" + ConfigurationParamsUtil.getGradleInitScript(gradleVersion));
 
     myConfigParameters.put(GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM,
-                           VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE : GRADLE_RUNNER_GRADLE_LAUNCH_MODE);
+                           VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE : GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE);
 
     myGradleExe = new File(gradleToolDir, GradleRunnerServiceFactory.WIN_GRADLE_EXE);
     if (SystemInfo.isUnix) {

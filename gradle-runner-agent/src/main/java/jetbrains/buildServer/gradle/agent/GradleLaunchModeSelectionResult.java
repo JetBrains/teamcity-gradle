@@ -10,8 +10,8 @@ public class GradleLaunchModeSelectionResult {
   @Nullable
   private final String reason;
 
-  public GradleLaunchModeSelectionResult(@NotNull GradleLaunchMode launchMode,
-                                         @Nullable String reason) {
+  private GradleLaunchModeSelectionResult(@NotNull GradleLaunchMode launchMode,
+                                          @Nullable String reason) {
     this.launchMode = launchMode;
     this.reason = reason;
   }
@@ -24,5 +24,33 @@ public class GradleLaunchModeSelectionResult {
   @Nullable
   public String getReason() {
     return reason;
+  }
+
+  @NotNull
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    private GradleLaunchMode launchMode;
+    private String reason;
+
+    private Builder() {
+    }
+
+    public Builder withLaunchMode(@NotNull GradleLaunchMode launchMode) {
+      this.launchMode = launchMode;
+      return this;
+    }
+
+    public Builder withReason(@Nullable String reason) {
+      this.reason = reason;
+      return this;
+    }
+
+    @NotNull
+    public GradleLaunchModeSelectionResult build() {
+      return new GradleLaunchModeSelectionResult(launchMode, reason);
+    }
   }
 }

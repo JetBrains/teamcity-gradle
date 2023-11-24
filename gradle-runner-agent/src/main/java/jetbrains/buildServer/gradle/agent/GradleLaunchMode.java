@@ -9,16 +9,11 @@ public enum GradleLaunchMode {
    * Launch build via Gradle Tooling API.
    * For Gradle 8.0 and newer
    */
-  GRADLE_TOOLING_API,
+  TOOLING_API,
 
   /**
-   * Launch build via Gradle (the old way).
+   * Launch build via Gradle command line (the old way).
    * For Gradle before 8.0
    */
-  GRADLE,
-
-  /**
-   * Couldn't detect launch mode.
-   */
-  UNDEFINED
+  COMMAND_LINE
 }

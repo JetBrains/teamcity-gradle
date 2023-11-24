@@ -25,7 +25,9 @@ import jetbrains.buildServer.agent.BuildAgentConfiguration;
 import jetbrains.buildServer.agent.runner.CommandLineBuildService;
 import jetbrains.buildServer.agent.runner.CommandLineBuildServiceFactory;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
+import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.log.Loggers;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,9 +41,18 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
   private static final Info info = new Info();
 
   private final List<GradleBuildPropertiesSplitter> propertySplitters;
+  private final GradleLaunchModeSelector gradleLaunchModeSelector;
+  private final GradleConfigurationCacheDetector gradleConfigurationCacheDetector;
+  private final CommandLineParametersProcessor commandLineParametersProcessor;
 
-  public GradleRunnerServiceFactory(List<GradleBuildPropertiesSplitter> propertySplitters) {
+  public GradleRunnerServiceFactory(List<GradleBuildPropertiesSplitter> propertySplitters,
+                                    GradleLaunchModeSelector gradleLaunchModeSelector,
+                                    GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
+                                    CommandLineParametersProcessor commandLineParametersProcessor) {
     this.propertySplitters = propertySplitters;
+    this.gradleLaunchModeSelector = gradleLaunchModeSelector;
+    this.gradleConfigurationCacheDetector = gradleConfigurationCacheDetector;
+    this.commandLineParametersProcessor = commandLineParametersProcessor;
   }
 
   @NotNull public CommandLineBuildService createService()
@@ -61,7 +72,10 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
 
     return new GradleRunnerService(exePath,
                                    wrapperName,
-                                   propertySplitters.stream().collect(Collectors.toMap(it -> it.getType(), Function.identity())));
+                                   propertySplitters.stream().collect(Collectors.toMap(it -> it.getType(), Function.identity())),
+                                   gradleLaunchModeSelector,
+                                   gradleConfigurationCacheDetector,
+                                   commandLineParametersProcessor);
    }
 
    @NotNull public AgentBuildRunnerInfo getBuildRunnerInfo()

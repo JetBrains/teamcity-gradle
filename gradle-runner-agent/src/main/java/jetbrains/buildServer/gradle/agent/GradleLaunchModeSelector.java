@@ -1,7 +1,12 @@
 package jetbrains.buildServer.gradle.agent;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.gradle.tooling.GradleConnector;
@@ -19,77 +24,229 @@ public class GradleLaunchModeSelector {
   private static final String GRADLE_TOOLING_API_VERSION_FROM = "8.0";
 
   @NotNull
-  public static GradleLaunchModeSelectionResult selectMode(@NotNull Map<String, String> configurationParameters,
-                                                           @Nullable GradleConnector projectConnector) {
-    String configuredLaunchMode = ConfigurationParamsUtil.getGradleLaunchMode(configurationParameters);
+  public GradleLaunchModeSelectionResult selectMode(@NotNull Parameters parameters) {
+    String configuredLaunchMode = ConfigurationParamsUtil.getGradleLaunchMode(parameters.getConfigurationParameters());
+    GradleLaunchModeSelectionResult defaultMode = GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.COMMAND_LINE).build();
+    DefaultGradleVersion gradleVersion = Optional.ofNullable(parameters.getProjectConnector())
+                                                 .flatMap(connector -> getGradleVersion(connector, parameters.getLogger()))
+                                                 .orElse(null);
 
     // currently we default to launching Gradle build in the old way when the launch mode is not configured with the appropriate config param
     if (configuredLaunchMode.isEmpty()) {
-      return new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE, null);
+      return defaultMode;
     }
 
-    if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_GRADLE_LAUNCH_MODE)) {
-      return new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE, null);
+    if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE)) {
+      return defaultMode;
     }
+
     if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE)) {
-      return new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE_TOOLING_API, composeLaunchingViaToolingApiReason(configuredLaunchMode, false));
+      return GradleLaunchModeSelectionResult.builder()
+                                            .withLaunchMode(GradleLaunchMode.TOOLING_API)
+                                            .withReason(composeLaunchingViaToolingApiReason(configuredLaunchMode, false, false))
+                                            .build();
     }
 
-    return Optional.ofNullable(projectConnector)
-                   .flatMap(connector -> getGradleVersion(connector))
-                   .map(gradleVersion -> getByGradleVersion(gradleVersion, configuredLaunchMode))
-                   .orElse(new GradleLaunchModeSelectionResult(GradleLaunchMode.UNDEFINED, null));
+    if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_VERSION_BASED_LAUNCH_MODE)) {
+      if (!isVersionToolingApiCompatible(gradleVersion)) {
+        return defaultMode;
+      }
+      return GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.TOOLING_API)
+                                            .withReason(composeLaunchingViaToolingApiReason(configuredLaunchMode, true, false))
+                                            .build();
+    }
+
+    return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode, gradleVersion)
+      .orElse(defaultMode);
+  }
+
+  private Optional<GradleLaunchModeSelectionResult> tryToIdentifyModeIndirectly(@NotNull Parameters parameters,
+                                                                                @NotNull String configuredLaunchMode,
+                                                                                @Nullable DefaultGradleVersion gradleVersion) {
+    BuildProgressLogger logger = parameters.getLogger();
+    if (!isVersionToolingApiCompatible(gradleVersion)) {
+      return Optional.empty();
+    }
+
+    if (!parameters.isConfigurationCacheEnabled()) {
+      return Optional.empty();
+    }
+
+    if (parameters.isConfigurationCacheProblemsIgnored()) {
+      logger.warning("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
+                     "Reason: \"--configuration-cache-problems\" command line argument or \"org.gradle.configuration-cache.problems\" property is set to \"warn\".\n" +
+                     "Please set this argument to the default value and try again.");
+      return Optional.empty();
+    }
+
+    if (!parameters.getUnsupportedByToolingArgs().isEmpty()) {
+      logger.warning("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
+                     "There are unsupported by Gradle Tooling API arguments passed: " +
+                     String.join(", ", parameters.getUnsupportedByToolingArgs()));
+      return Optional.empty();
+    }
+
+    return Optional.of(GradleLaunchModeSelectionResult.builder()
+                                                      .withLaunchMode(GradleLaunchMode.TOOLING_API)
+                                                      .withReason(composeLaunchingViaToolingApiReason(configuredLaunchMode, true, true))
+                                                      .build());
+  }
+
+  private boolean isVersionToolingApiCompatible(@Nullable DefaultGradleVersion gradleVersion) {
+    if (gradleVersion == null) {
+      return false;
+    }
+    return VersionComparatorUtil.compare(gradleVersion.getVersion(), GRADLE_TOOLING_API_VERSION_FROM) >= 0;
   }
 
   @NotNull
-  public static GradleLaunchModeSelectionResult getByGradleVersion(@Nullable String gradleVersionStr,
-                                                                   @NotNull String configuredLaunchMode) {
-    if (gradleVersionStr == null) {
-      return new GradleLaunchModeSelectionResult(GradleLaunchMode.UNDEFINED, null);
-    }
+  private String composeLaunchingViaToolingApiReason(@NotNull String configuredLaunchMode,
+                                                     boolean reportVersionToolingCompatible,
+                                                     boolean reportConfigurationCacheEnabled) {
+    List<String> result = new ArrayList<>();
 
-    DefaultGradleVersion gradleVersion;
-    try {
-      gradleVersion = DefaultGradleVersion.version(gradleVersionStr);
-    } catch (IllegalArgumentException e) {
-      return new GradleLaunchModeSelectionResult(GradleLaunchMode.UNDEFINED, null);
-    }
-
-    return VersionComparatorUtil.compare(gradleVersion.getVersion(), GRADLE_TOOLING_API_VERSION_FROM) >= 0
-           ? new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE_TOOLING_API, composeLaunchingViaToolingApiReason(configuredLaunchMode, true))
-           : new GradleLaunchModeSelectionResult(GradleLaunchMode.GRADLE, null);
-  }
-
-  @NotNull
-  private static String composeLaunchingViaToolingApiReason(@NotNull String configuredLaunchMode,
-                                                            boolean gradleVersionToolingCompatible) {
-    StringBuilder result = new StringBuilder();
     if (!configuredLaunchMode.isEmpty()) {
-      result.append("\"").append(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM).append("\"")
-            .append(" configuration parameter")
-            .append(" is set to ")
-            .append("\"").append(configuredLaunchMode).append("\"");
+      result.add(new StringBuilder().append("\"").append(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM).append("\"")
+                                    .append(" configuration parameter")
+                                    .append(" is set to ")
+                                    .append("\"").append(configuredLaunchMode).append("\"").toString());
     }
 
-    if (gradleVersionToolingCompatible) {
-      result.append(" and ")
-            .append("Gradle version is ").append(GRADLE_TOOLING_API_VERSION_FROM).append("+");
+    if (reportVersionToolingCompatible) {
+      result.add(new StringBuilder().append("Gradle version is ").append(GRADLE_TOOLING_API_VERSION_FROM).append("+").toString());
     }
 
-    return result.length() > 0 ? result.toString() : "unknown reason";
+    if (reportConfigurationCacheEnabled) {
+      result.add("Gradle's configuration-cache is enabled");
+    }
+
+    return !result.isEmpty() ? String.join(", ", result) : "unknown reason";
   }
 
   @NotNull
-  private static Optional<String> getGradleVersion(@NotNull GradleConnector projectConnector) {
+  private Optional<DefaultGradleVersion> getGradleVersion(@NotNull GradleConnector projectConnector,
+                                                          @NotNull BuildProgressLogger logger) {
     try (ProjectConnection connection = projectConnector.connect()) {
-      BuildEnvironment buildEnvironment;
-      try {
-        buildEnvironment = connection.getModel(BuildEnvironment.class);
-      } catch (Throwable t) {
+      BuildEnvironment buildEnvironment = connection.getModel(BuildEnvironment.class);
+
+      String gradleVersionStr = buildEnvironment.getGradle().getGradleVersion();
+      if (gradleVersionStr == null) {
+        logger.warning("Couldn't detect the Gradle version in the project: null value");
         return Optional.empty();
       }
 
-      return Optional.of(buildEnvironment.getGradle().getGradleVersion());
+      return Optional.of(DefaultGradleVersion.version(gradleVersionStr));
+    } catch (Throwable t) {
+      logger.warning("Couldn't detect the Gradle version in the project: " + t.getMessage());
+      return Optional.empty();
+    }
+  }
+
+  public static class Parameters {
+    @NotNull
+    private final BuildProgressLogger logger;
+    @NotNull
+    private final Map<String, String> configurationParameters;
+    @Nullable
+    private final GradleConnector projectConnector;
+    private final boolean configurationCacheEnabled;
+    private final boolean configurationCacheProblemsIgnored;
+    @NotNull
+    private final Set<String> unsupportedByToolingArgs;
+
+    private Parameters(@NotNull BuildProgressLogger logger,
+                       @NotNull Map<String, String> configurationParameters,
+                       @Nullable GradleConnector projectConnector,
+                       boolean configurationCacheEnabled,
+                       boolean configurationCacheProblemsIgnored,
+                       @NotNull Set<String> unsupportedByToolingArgs) {
+      this.logger = logger;
+      this.configurationParameters = Collections.unmodifiableMap(configurationParameters);
+      this.projectConnector = projectConnector;
+      this.configurationCacheEnabled = configurationCacheEnabled;
+      this.configurationCacheProblemsIgnored = configurationCacheProblemsIgnored;
+      this.unsupportedByToolingArgs = Collections.unmodifiableSet(unsupportedByToolingArgs);
+    }
+
+    @NotNull
+    public BuildProgressLogger getLogger() {
+      return logger;
+    }
+
+    @NotNull
+    public Map<String, String> getConfigurationParameters() {
+      return configurationParameters;
+    }
+
+    @Nullable
+    public GradleConnector getProjectConnector() {
+      return projectConnector;
+    }
+
+    public boolean isConfigurationCacheEnabled() {
+      return configurationCacheEnabled;
+    }
+
+    public boolean isConfigurationCacheProblemsIgnored() {
+      return configurationCacheProblemsIgnored;
+    }
+
+    @NotNull
+    public Set<String> getUnsupportedByToolingArgs() {
+      return unsupportedByToolingArgs;
+    }
+
+    @NotNull
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    public static final class Builder {
+      private BuildProgressLogger logger;
+      private Map<String, String> configurationParameters;
+      private GradleConnector projectConnector;
+      private boolean configurationCacheEnabled;
+      private boolean configurationCacheProblemsIgnored;
+      private Set<String> unsupportedByToolingArgs;
+
+      private Builder() {
+      }
+
+      public Builder withLogger(@NotNull BuildProgressLogger logger) {
+        this.logger = logger;
+        return this;
+      }
+
+      public Builder withConfigurationParameters(@NotNull Map<String, String> configurationParameters) {
+        this.configurationParameters = configurationParameters;
+        return this;
+      }
+
+      public Builder withProjectConnector(@Nullable GradleConnector projectConnector) {
+        this.projectConnector = projectConnector;
+        return this;
+      }
+
+      public Builder withConfigurationCacheEnabled(boolean configurationCacheEnabled) {
+        this.configurationCacheEnabled = configurationCacheEnabled;
+        return this;
+      }
+
+      public Builder withConfigurationCacheProblemsIgnored(boolean configurationCacheProblemsIgnored) {
+        this.configurationCacheProblemsIgnored = configurationCacheProblemsIgnored;
+        return this;
+      }
+
+      public Builder withUnsupportedByToolingArgs(Set<String> unsupportedByToolingArgs) {
+        this.unsupportedByToolingArgs = unsupportedByToolingArgs;
+        return this;
+      }
+
+      @NotNull
+      public Parameters build() {
+        return new Parameters(logger, configurationParameters, projectConnector, configurationCacheEnabled, configurationCacheProblemsIgnored,
+                              unsupportedByToolingArgs);
+      }
     }
   }
 }

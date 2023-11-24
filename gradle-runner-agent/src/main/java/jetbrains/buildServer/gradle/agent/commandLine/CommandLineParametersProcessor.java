@@ -1,4 +1,4 @@
-package jetbrains.buildServer.gradle.runtime.service.commandLine;
+package jetbrains.buildServer.gradle.agent.commandLine;
 
 import java.util.Collection;
 import java.util.Set;
@@ -19,8 +19,8 @@ public class CommandLineParametersProcessor {
     Options unsupported = GradleToolingCommandLineOptionsProvider.getUnsupportedOptions();
 
     return tasksAndParams.stream()
-                  .filter(it -> it.startsWith("-") || it.startsWith("--"))
-                  .filter(it -> unsupported.hasOption(it))
-                  .collect(Collectors.toSet());
+                         .filter(it -> it.startsWith("-") || it.startsWith("--"))
+                         .filter(it -> unsupported.hasOption(it.split("=")[0]))
+                         .collect(Collectors.toSet());
   }
 }

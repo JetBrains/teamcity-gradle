@@ -6,6 +6,10 @@
 
   <bean id="gradleRunnerServiceFactory" class="jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory"/>
   <bean id="teamCityBuildPropertiesGradleSplitter" class="jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter"/>
+  <bean id="gradleLaunchModeSelector" class="jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector"/>
+  <bean id="gradleConfigurationCacheDetector" class="jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector"/>
+  <bean id="gradleOptionValueFetcher" class="jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher"/>
+  <bean id="commandLineParametersProcessor" class="jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor"/>
   <bean id="gradleToolProvider" class="jetbrains.buildServer.gradle.agent.GradleToolProvider" autowire="constructor"/>
 
 </beans>

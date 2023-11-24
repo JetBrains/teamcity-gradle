@@ -2,7 +2,9 @@ package jetbrains.buildServer.gradle.test.integration;
 
 import java.util.ArrayList;
 import java.util.List;
-import jetbrains.buildServer.gradle.runtime.service.commandLine.GradleToolingCommandLineOptionsProvider;
+import java.util.stream.Collectors;
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.gradle.agent.commandLine.GradleToolingCommandLineOptionsProvider;
 import jetbrains.buildServer.util.StringUtil;
 import org.testng.annotations.Test;
 
@@ -14,7 +16,11 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
   public void should_NotFail_When_SupportedLongArgumentsArePassed(final String gradleVersion) throws Exception {
     // arrange
     List<String> supported = new ArrayList<>(GradleToolingCommandLineOptionsProvider
-                                               .getLongOptionsNames(GradleToolingCommandLineOptionsProvider.getSupportedOptions().getOptions()));
+                                               .getLongOptionsNames(GradleToolingCommandLineOptionsProvider.getSupportedOptions().getOptions())
+                                               .stream()
+                                               .filter(arg -> !arg.equals("--watch-fs") && !arg.equals("--continuous"))
+                                               // Continuous build doesn't work w/o watch-fs. watch-fs leads to test failures when watching the file system is not supported
+                                               .collect(Collectors.toList()));
 
     for (String supportedArg : supported) {
       // act
@@ -28,7 +34,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
       if (!isLoggingOption(supportedArg)) {
         assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
       }
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("The argument is not supported by the Gradle Tooling API and will not be used")), "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "The build should be launched via Tooling API\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible")), "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
       assertTrue(messages.stream().noneMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option")), "Supported arguments should not cause an exception\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
@@ -37,7 +44,11 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
   public void should_NotFail_When_SupportedShortArgumentsArePassed(final String gradleVersion) throws Exception {
     // arrange
     List<String> supported = new ArrayList<>(GradleToolingCommandLineOptionsProvider
-                                               .getShortOptionsNames(GradleToolingCommandLineOptionsProvider.getSupportedOptions().getOptions()));
+                                               .getShortOptionsNames(GradleToolingCommandLineOptionsProvider.getSupportedOptions().getOptions())
+                                               .stream()
+                                               .filter(arg -> !arg.equals("-t"))
+                                               // Continuous build doesn't work w/o watch-fs. watch-fs leads to test failures when watching the file system is not supported
+                                               .collect(Collectors.toList()));
 
     for (String supportedArg : supported) {
       // act
@@ -51,50 +62,57 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
       if (!isLoggingOption(supportedArg)) {
         assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
       }
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("The argument is not supported by the Gradle Tooling API and will not be used")), "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "The build should be launched via Tooling API\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible")), "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
       assertTrue(messages.stream().noneMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option")), "Supported arguments should not cause an exception\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
-  public void should_NotFail_When_UnsupportedLongArgumentsArePassed(final String gradleVersion) throws Exception {
+  public void should_LaunchBuildInOldWay_When_UnsupportedLongArgumentsArePassed(final String gradleVersion) throws Exception {
     // arrange
     List<String> unsupported = new ArrayList<>(GradleToolingCommandLineOptionsProvider.getLongOptionsNames(GradleToolingCommandLineOptionsProvider.getUnsupportedOptions().getOptions()));
-    String buildCmd = "clean build " + String.join(" ", unsupported);
 
-    final GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_GENERATED_TASKS_B_NAME, buildCmd, null);
-    config.setGradleVersion(gradleVersion);
-
-    // act
-    System.out.println("Checking cmd: " + buildCmd);
-    List<String> messages = run(config).getAllMessages();
-
-    // assert
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
     for (String unsupportedArg : unsupported) {
-      assertTrue(messages.stream().anyMatch(line -> line.startsWith("The argument is not supported by the Gradle Tooling API and will not be used: " + unsupportedArg)),
-                 "Unsupported arguments should be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
+      String buildCmd = "clean build --configuration-cache " + prefillArgWithValue(unsupportedArg, gradleVersion, PROJECT_WITH_GENERATED_TASKS_B_NAME);
+
+      final GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_GENERATED_TASKS_B_NAME, buildCmd, null);
+      config.setGradleVersion(gradleVersion);
+      myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
+
+      // act
+      System.out.println("Checking cmd: " + buildCmd);
+      List<String> messages = run(config).getAllMessages();
+
+      // assert
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
+                                                                    "There are unsupported by Gradle Tooling API arguments passed: " + unsupportedArg)),
+                 "Expected: unsupported args are logged\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
-  public void should_NotFail_When_UnsupportedShortArgumentsArePassed(final String gradleVersion) throws Exception {
+  public void should_LaunchBuildInOldWay_When_UnsupportedShortArgumentsArePassed(final String gradleVersion) throws Exception {
     // arrange
     List<String> unsupported = new ArrayList<>(GradleToolingCommandLineOptionsProvider.getShortOptionsNames(GradleToolingCommandLineOptionsProvider.getUnsupportedOptions().getOptions()));
-    String buildCmd = "clean build " + String.join(" ", unsupported);
 
-    final GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_GENERATED_TASKS_B_NAME, buildCmd, null);
-    config.setGradleVersion(gradleVersion);
-
-    // act
-    System.out.println("Checking cmd: " + buildCmd);
-    List<String> messages = run(config).getAllMessages();
-
-    // assert
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
     for (String unsupportedArg : unsupported) {
-      assertTrue(messages.stream().anyMatch(line -> line.startsWith("The argument is not supported by the Gradle Tooling API and will not be used: " + unsupportedArg)),
-                 "Unsupported arguments should be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
+      String buildCmd = "clean build --configuration-cache " + prefillArgWithValue(unsupportedArg, gradleVersion, PROJECT_WITH_GENERATED_TASKS_B_NAME);
+
+      final GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_GENERATED_TASKS_B_NAME, buildCmd, null);
+      config.setGradleVersion(gradleVersion);
+      myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
+
+      // act
+      System.out.println("Checking cmd: " + buildCmd);
+      List<String> messages = run(config).getAllMessages();
+
+      // assert
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
+                                                                    "There are unsupported by Gradle Tooling API arguments passed: " + unsupportedArg)),
+                 "Expected: unsupported args are logged\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
 
@@ -111,7 +129,6 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
     // assert
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\nFull log:\n" + StringUtil.join("\n", messages));
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option '--unknown-arg'")), "Should fail with an exception due to unknown unsupported arg\nFull log:\n" + StringUtil.join("\n", messages));
-    assertTrue(messages.stream().noneMatch(line -> line.startsWith("The argument is not supported by the Gradle Tooling API and will not be used")), "Unknown by us unsupported args should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
@@ -161,9 +178,6 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
     if (arg.equals("-x") || arg.equals("--exclude-task")) {
       return arg + " generatedTask1";
     }
-    if (arg.equals("-t") || arg.equals("--continuous")) {
-      return arg + " --watch-fs";
-    }
     if (arg.equals("-F") || arg.equals("--dependency-verification")) {
       return arg + "=off";
     }
@@ -193,6 +207,12 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
     }
     if (arg.equals("-I") || arg.equals("--init-script")) {
       return arg + " " + getInitScript().getAbsolutePath();
+    }
+    if (arg.equals("--priority")) {
+      return arg + "=normal";
+    }
+    if (arg.equals("--foreground")) {
+      return arg + " --stop";
     }
 
     return arg;

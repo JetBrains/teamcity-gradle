@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.agent.ClasspathUtil;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
@@ -16,7 +14,6 @@ import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
 import jetbrains.buildServer.gradle.runtime.output.GradleOutputWrapper;
 import jetbrains.buildServer.gradle.runtime.output.OutputType;
 import jetbrains.buildServer.gradle.runtime.output.TestOutputParser;
-import jetbrains.buildServer.gradle.runtime.service.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.util.SortedProperties;
 import org.gradle.tooling.BuildLauncher;
@@ -31,12 +28,9 @@ import org.jetbrains.annotations.Nullable;
  */
 public class GradleBuildConfigurator {
 
-  private final CommandLineParametersProcessor commandLineParametersProcessor;
   private final GradleToolingLogger logger;
 
-  public GradleBuildConfigurator(CommandLineParametersProcessor commandLineParametersProcessor,
-                                 GradleToolingLogger logger) {
-    this.commandLineParametersProcessor = commandLineParametersProcessor;
+  public GradleBuildConfigurator(GradleToolingLogger logger) {
     this.logger = logger;
   }
 
@@ -90,14 +84,8 @@ public class GradleBuildConfigurator {
       launcher.addJvmArguments(overridedJvmArgs);
     }
 
-    Set<String> unsupportedArgs = commandLineParametersProcessor.obtainUnsupportedArguments(tasksAndParams);
-    if (!unsupportedArgs.isEmpty()) {
-      logger.warn("Not all of the Gradle command line options are supported by the Gradle Tooling API.");
-      unsupportedArgs.forEach(arg -> logger.warn("The argument is not supported by the Gradle Tooling API and will not be used: " + arg));
-    }
-
     launcher.addProgressListener(new GradleToolingApiProgressListener(buildListener, logger, buildNumber), OperationType.TASK);
-    launcher.addArguments(tasksAndParams.stream().filter(arg -> !unsupportedArgs.contains(arg)).collect(Collectors.toList()));
+    launcher.addArguments(tasksAndParams);
     launcher.setEnvironmentVariables(env);
     launcher.setStandardOutput(new GradleOutputWrapper(buildListener, OutputType.STD_OUT));
     launcher.setStandardError(new GradleOutputWrapper(buildListener, OutputType.STD_ERR));

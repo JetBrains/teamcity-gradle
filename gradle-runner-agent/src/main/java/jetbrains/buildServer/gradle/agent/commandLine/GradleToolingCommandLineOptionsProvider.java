@@ -1,4 +1,4 @@
-package jetbrains.buildServer.gradle.runtime.service.commandLine;
+package jetbrains.buildServer.gradle.agent.commandLine;
 
 import java.util.Collection;
 import java.util.List;

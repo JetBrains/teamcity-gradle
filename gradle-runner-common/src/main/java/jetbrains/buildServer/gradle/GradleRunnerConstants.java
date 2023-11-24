@@ -39,7 +39,8 @@ public class GradleRunnerConstants
   // internal configuration parameters
   public static final String GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM = "teamcity.internal.gradle.runner.launch.mode";
   public static final String GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE = "gradle-tooling-api";
-  public static final String GRADLE_RUNNER_GRADLE_LAUNCH_MODE = "gradle";
+  public static final String GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE = "gradle";
+  public static final String GRADLE_RUNNER_VERSION_BASED_LAUNCH_MODE = "version-based";
   /**
    * This param defaults to true. But if Gradle's configuration-cache feature is enabled, it switches to false.
    * That means, we won't read all the data from teamcity.build.parameters file.

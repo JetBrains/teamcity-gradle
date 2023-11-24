@@ -7,7 +7,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import jetbrains.buildServer.TempFiles;
-import jetbrains.buildServer.gradle.agent.GradleConfigurationCacheDetector;
+import jetbrains.buildServer.agent.BuildProgressLogger;
+import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
+import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -17,6 +21,8 @@ import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 
 public class GradleConfigurationCacheDetectorTest {
+
+  private final GradleConfigurationCacheDetector configurationCacheDetector = new GradleConfigurationCacheDetector(new GradleOptionValueFetcher());
 
   private static final String GRADLE_PROPERTIES_CONTENT = "version=2023.3.3\n" +
                                                           "#this.is.commented.param=value\n" +
@@ -36,11 +42,19 @@ public class GradleConfigurationCacheDetectorTest {
   private final TempFiles tempFiles = new TempFiles();
   private File projectDir;
   private File gradleUserHomeDir;
+  private Mockery context;
+  private BuildProgressLogger logger;
 
   @BeforeMethod
   public void beforeTest() throws IOException {
     projectDir = tempFiles.createTempDir();
     gradleUserHomeDir = tempFiles.createTempDir();
+
+    context = new Mockery() {{
+      setImposteriser(ClassImposteriser.INSTANCE);
+    }};
+
+    logger = context.mock(BuildProgressLogger.class);
   }
 
   @DataProvider
@@ -73,11 +87,10 @@ public class GradleConfigurationCacheDetectorTest {
     createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertTrue(isEnabled.isPresent());
-    assertTrue(isEnabled.get());
+    assertTrue(isEnabled);
   }
 
   @DataProvider
@@ -110,28 +123,27 @@ public class GradleConfigurationCacheDetectorTest {
     createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertTrue(isEnabled.isPresent());
-    assertFalse(isEnabled.get());
+    assertFalse(isEnabled);
   }
 
   @Test
-  public void should_ReturnEmptyResult_When_ThereIsNoInfoAboutConfigurationCacheInAllThePlaces() throws IOException {
+  public void should_ReturnFalse_When_ThereIsNoInfoAboutConfigurationCacheInAllThePlaces() {
     // arrange
     List<String> gradleTasks = Arrays.asList("clean", "build");
     List<String> gradleParams = Arrays.asList("--continue");
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertFalse(isEnabled.isPresent());
+    assertFalse(isEnabled);
   }
 
   @Test
-  public void should_ReturnEmptyResult_When_GradlePropertiesContainsCommentedInfoAboutConfigurationCache() throws IOException {
+  public void should_ReturnFalse_When_GradlePropertiesContainsCommentedInfoAboutConfigurationCache() throws IOException {
     // arrange
     List<String> gradleTasks = Arrays.asList("clean", "build");
     List<String> gradleParams = Arrays.asList("--continue");
@@ -139,10 +151,10 @@ public class GradleConfigurationCacheDetectorTest {
     createGradleProperties(gradleUserHomeDir, "#org.gradle.configuration-cache=true");
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertFalse(isEnabled.isPresent());
+    assertFalse(isEnabled);
   }
 
   @DataProvider
@@ -161,11 +173,10 @@ public class GradleConfigurationCacheDetectorTest {
     createGradleProperties(gradleUserHomeDir, gradleUserHomeGradlePropertiesContent);
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertTrue(isEnabled.isPresent());
-    assertTrue(isEnabled.get());
+    assertTrue(isEnabled);
   }
 
   @DataProvider
@@ -184,11 +195,10 @@ public class GradleConfigurationCacheDetectorTest {
     createGradleProperties(gradleUserHomeDir, gradleUserHomeGradlePropertiesContent);
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertTrue(isEnabled.isPresent());
-    assertFalse(isEnabled.get());
+    assertFalse(isEnabled);
   }
 
   @DataProvider
@@ -241,11 +251,10 @@ public class GradleConfigurationCacheDetectorTest {
                     .split(" "));
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertTrue(isEnabled.isPresent());
-    assertTrue(isEnabled.get());
+    assertTrue(isEnabled);
   }
 
   @DataProvider
@@ -278,11 +287,10 @@ public class GradleConfigurationCacheDetectorTest {
                      .split(" "));
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
 
     // assert
-    assertTrue(isEnabled.isPresent());
-    assertFalse(isEnabled.get());
+    assertFalse(isEnabled);
   }
 
 
@@ -297,16 +305,139 @@ public class GradleConfigurationCacheDetectorTest {
   }
   @Test(dataProvider = "ccGradlePropertiesInProjectDirProvider")
   public void should_DetectConfigurationCache_When_SetOnlyInProjectDirGradleProperties(String ccValue,
-                                                                                       Boolean expected) throws IOException {
+                                                                                       boolean expected) throws IOException {
     // arrange
     createGradleProperties(projectDir, ccValue);
 
     // act
-    Optional<Boolean> isEnabled = GradleConfigurationCacheDetector.isConfigurationCacheEnabled(Collections.emptyList(), Collections.emptyList(), gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, Collections.emptyList(), Collections.emptyList(), gradleUserHomeDir, projectDir);
 
     // assert
-    assertTrue(isEnabled.isPresent());
-    assertEquals(isEnabled.get(), expected);
+    assertEquals(isEnabled, expected);
+  }
+
+  @DataProvider
+  public Object[][] ccProblemsDisabledCommandLineProvider() {
+    return new Object[][]{
+      {
+        Arrays.asList("clean", "build"),
+        Arrays.asList("--continue", "--configuration-cache-problems", "warn", "--parallel"),
+        true
+      },
+      {
+        Arrays.asList("clean", "build"),
+        Arrays.asList("--continue", "--configuration-cache-problems=warn", "--parallel"),
+        true
+      },
+      {
+        Arrays.asList("clean", "build"),
+        Arrays.asList("--configuration-cache-problems", "warn", "--continue", "--parallel"),
+        true
+      },
+      {
+        Arrays.asList("clean", "build"),
+        Arrays.asList("--continue", "--parallel", "--configuration-cache-problems", "warn"),
+        true
+      },
+      {
+        Arrays.asList("clean", "build", "--configuration-cache-problems=warn"),
+        Arrays.asList("--continue", "--parallel"),
+        true
+      },
+      {
+        Arrays.asList("--configuration-cache-problems=warn", "clean", "build"),
+        Collections.emptyList(),
+        true
+      },
+      {
+        Arrays.asList("test", "--configuration-cache-problems=warn", "clean", "build"),
+        Collections.emptyList(),
+        true
+      },
+      {
+        Collections.emptyList(),
+        Arrays.asList("clean", "build", "--configuration-cache-problems", "warn"),
+        true,
+      },
+
+      {
+        Arrays.asList("clean", "build"),
+        Arrays.asList("--continue", "--configuration-cache-problems", "fail", "--parallel"),
+        false
+      },
+      {
+        Arrays.asList("clean", "build"),
+        Arrays.asList("--continue", "--configuration-cache-problems=fail", "--parallel"),
+        false
+      },
+      {
+        Arrays.asList("clean", "build"),
+        Arrays.asList("--configuration-cache-problems", "fail", "--continue", "--parallel"),
+        false
+      },
+    };
+  }
+  @Test(dataProvider = "ccProblemsDisabledCommandLineProvider")
+  public void should_DetectConfigurationProblemsIgnored_When_PassedThroughCommandLine(List<String> gradleTasks,
+                                                                                      List<String> gradleParams,
+                                                                                      boolean expected) throws IOException {
+    // arrange
+    String gradlePropertiesContent = GRADLE_PROPERTIES_CONTENT + "org.gradle.configuration-cache.problems=fail";
+    createGradleProperties(projectDir, gradlePropertiesContent);
+    createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
+
+    // act
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+
+    // assert
+    assertEquals(ccProblemsIgnored, expected);
+  }
+
+  @Test
+  public void should_DetectConfigurationProblemsIgnored_When_DefinedInGradleUserHome() throws IOException {
+    // arrange
+    List<String> gradleTasks = Arrays.asList("clean", "build");
+    List<String> gradleParams = Arrays.asList("--continue");
+    String gradlePropertiesContent = GRADLE_PROPERTIES_CONTENT + "org.gradle.configuration-cache.problems=warn";
+    createGradleProperties(projectDir, "");
+    createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
+
+    // act
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+
+    // assert
+    assertTrue(ccProblemsIgnored);
+  }
+
+  @Test
+  public void should_DetectConfigurationProblemsIgnored_When_DefinedInProject() throws IOException {
+    // arrange
+    List<String> gradleTasks = Arrays.asList("clean", "build");
+    List<String> gradleParams = Arrays.asList("--continue");
+    String gradlePropertiesContent = GRADLE_PROPERTIES_CONTENT + "org.gradle.configuration-cache.problems=warn";
+    createGradleProperties(gradleUserHomeDir, "");
+    createGradleProperties(projectDir, gradlePropertiesContent);
+
+    // act
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+
+    // assert
+    assertTrue(ccProblemsIgnored);
+  }
+
+  @Test
+  public void should_NotDetectConfigurationProblemsIgnored_When_NotDefinedInAnyPlace() throws IOException {
+    // arrange
+    List<String> gradleTasks = Arrays.asList("clean", "build");
+    List<String> gradleParams = Arrays.asList("--continue");
+    createGradleProperties(gradleUserHomeDir, "");
+    createGradleProperties(projectDir, "");
+
+    // act
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+
+    // assert
+    assertFalse(ccProblemsIgnored);
   }
 
   private File createGradleProperties(File parentDir,
