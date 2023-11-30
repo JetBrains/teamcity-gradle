@@ -81,14 +81,14 @@ public class GradleLaunchModeSelectorTest {
     // arrange
     GradleConnector connector = mockGradleConnector(gradleVersion);
     Map<String, String> configurationParameters = new HashMap<>();
-    configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_VERSION_BASED_LAUNCH_MODE);
+    configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
 
     // act
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
                                                                                                      .withProjectConnector(connector)
-                                                                                                     .withConfigurationCacheEnabled(false)
+                                                                                                     .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
                                                                                                      .build()).getLaunchMode();

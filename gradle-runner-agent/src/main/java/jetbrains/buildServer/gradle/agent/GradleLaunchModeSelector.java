@@ -47,15 +47,6 @@ public class GradleLaunchModeSelector {
                                             .build();
     }
 
-    if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_VERSION_BASED_LAUNCH_MODE)) {
-      if (!isVersionToolingApiCompatible(gradleVersion)) {
-        return defaultMode;
-      }
-      return GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.TOOLING_API)
-                                            .withReason(composeLaunchingViaToolingApiReason(configuredLaunchMode, true, false))
-                                            .build();
-    }
-
     return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode, gradleVersion)
       .orElse(defaultMode);
   }
