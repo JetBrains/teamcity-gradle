@@ -1,4 +1,4 @@
-
+rootProject.name = 'gradle-runner'
 include "gradle-runner-common",
         "gradle-runner-agent",
         "gradle-runner-server"

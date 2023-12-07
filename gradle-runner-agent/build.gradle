@@ -1,12 +1,13 @@
 
 plugins {
-    id 'com.github.rodm.teamcity-agent' version "1.4.1"
+    id 'com.github.rodm.teamcity-agent' version "1.5.2"
 }
 
 teamcity {
     version = teamcityVersion
     agent {
-        descriptor = project.file('src/main/resources/META-INF/build-agent-plugin-gradle-runner.xml')
+        descriptor {
+        }
         files {
             into("scripts") {
                 from(project.file("src/main/scripts"))
@@ -22,16 +23,9 @@ dependencies {
     implementation 'org.gradle:gradle-tooling-api:8.2.1'
     implementation 'org.slf4j:slf4j-api:1.7.30'
     implementation 'commons-cli:commons-cli:1.4'
-    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
-    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.2'
     compileOnly "org.jetbrains.teamcity:agent-api:${teamcityVersion}",
             "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
             "org.jetbrains.teamcity:common-api:${teamcityVersion}"
-    testImplementation fileTree(dir: teamcityLibs, include: ['*.jar'], exclude: ['httpcore*.jar', 'httpclient*.jar']),
-            fileTree(dir: teamcityTestLibs, include: ['*.jar']),
-            fileTree(dir: teamcityAgentLibs, include: ['*.jar'])
-
 }
 
 agentPlugin {
@@ -45,6 +39,7 @@ tasks.withType(JavaCompile) {
 }
 
 repositories {
+    maven { url = uri("https://repo.gradle.org/gradle/libs-releases") }
     ivy {
         url = uri("https://services.gradle.org/distributions")
         patternLayout {

@@ -2,40 +2,46 @@
 
 import com.github.jk1.license.render.JsonReportRenderer
 
+import java.nio.file.Paths
+
 plugins {
   id "com.github.jk1.dependency-license-report" version "1.17"
 }
 
 ext {
-  teamcityVersion = project.hasProperty('teamcityVersion') ? property('teamcityVersion') : '2021.2'
-  versionNumber = project.hasProperty('PluginVersion') ? property('PluginVersion') : teamcityVersion + "-SNAPSHOT"
-
-  teamCityDir = project.getProperties()["path.variable.teamcitydistribution"]
-
-  teamcityLibs = project.hasProperty("TeamCityLibs") ? "$TeamCityLibs" : teamCityDir + "/webapps/ROOT/WEB-INF/lib"
-  teamcityTestLibs = project.hasProperty("TeamCityTestLibs") ? "$TeamCityTestLibs" : teamCityDir + "/devPackage/tests"
-  teamcityAgentLibs = project.hasProperty("TeamCityAgentLibs") ? "$TeamCityTestLibs" : teamCityDir + "/buildAgent/lib"
+  teamcityVersion = anyParam('teamcityVersion') ?: '2021.2'
+  versionNumber = anyParam('PluginVersion') ?: teamcityVersion
 }
+def localRepo = anyParamPath('TC_LOCAL_REPO')
+def localGradleRepo = anyParamPath('TC_LOCAL_GRADLE_REPO') ?: 'local-gradle-repo'
 
-group = 'teamcity-gradle-plugin'
 version = versionNumber
 
-
 allprojects {
-  group = 'teamcity-gradle-plugin'
+  group = 'org.jetbrains.teamcity.plugins'
   version = versionNumber
 
   repositories {
     mavenLocal()
+    if (localRepo) {
+      maven {
+        name = "local-teamcity-artifacts"
+        url "file:///${localRepo}"
+      }
+    }
+    maven { url "https://repo.labs.intellij.net/teamcity" }
     maven {
       name = "jetbrains-teamcity"
       url = "https://download.jetbrains.com/teamcity-repository"
     }
+    maven { url 'https://repo.gradle.org/gradle/libs-releases' }
   }
+
 }
 
 subprojects {
   apply plugin: "java"
+  apply plugin: 'maven-publish'
 
   java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -44,8 +50,43 @@ subprojects {
 
   test.useTestNG()
   jar.archiveVersion.set('')
+
+  publishing {
+    publications {
+      myLib(MavenPublication) {
+        from components.java
+      }
+    }
+    repositories {
+      maven {
+        url = "file:${rootProject.projectDir}/local-gradle-repo"
+      }
+    }
+  }
 }
 
 licenseReport {
   renderers = [ new JsonReportRenderer('third-party-libs.json') ]
+}
+
+def anyParamPath(String... names) {
+  def param = anyParam(names);
+  if (param == null || param.isEmpty())
+    return null
+  return (Paths.get(param).isAbsolute()) ?
+         Paths.get(param) : getRootDir().toPath().resolve(param)
+}
+
+def anyParam(String... names) {
+  def param
+  try {
+    param = names.findResult {
+      project.hasProperty(it) ? project.getProperty(it) : System.getProperty(it) ?: System.getenv(it) ?: null
+    }
+    if (param == null || param.isEmpty())
+      param = null
+  } finally {
+    println("AnyParam: $names -> $param")
+  }
+  return param
 }
