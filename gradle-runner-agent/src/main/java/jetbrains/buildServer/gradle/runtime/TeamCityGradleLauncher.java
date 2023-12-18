@@ -122,7 +122,7 @@ public class TeamCityGradleLauncher {
 
       BuildLauncher launcher = buildConfigurator.prepareBuildExecutor(gradleEnv, tasksAndParams, jvmArgsForOverriding, buildLifecycleListener, buildNumber, connection);
 
-      String buildStartedMessage = composeBuildStartedMessage(buildNumber, tasksAndParams, jvmArgsForOverriding, buildEnvironment.orElse(null));
+      String buildStartedMessage = composeBuildStartedMessage(buildNumber, tasksAndParams, jvmArgsForOverriding, buildEnvironment.orElse(null), gradleEnv);
       buildLifecycleListener.onStart(new BuildStartedEventImpl(System.currentTimeMillis(), buildStartedMessage));
 
       launcher.run(new ResultHandler<Void>() {
@@ -187,7 +187,8 @@ public class TeamCityGradleLauncher {
   private static String composeBuildStartedMessage(@NotNull String buildNumber,
                                                    @NotNull Collection<String> tasksAndParams,
                                                    @NotNull Collection<String> overridedJvmArgs,
-                                                   @Nullable BuildEnvironment buildEnvironment) {
+                                                   @Nullable BuildEnvironment buildEnvironment,
+                                                   @NotNull Map<String, String> gradleEnv) {
     StringBuilder messageBuilder = new StringBuilder();
     messageBuilder.append("Starting Gradle in TeamCity build ").append(buildNumber).append(System.lineSeparator());
     messageBuilder.append("Gradle tasks and arguments: ").append(String.join(" ", tasksAndParams));
@@ -202,9 +203,13 @@ public class TeamCityGradleLauncher {
         messageBuilder.append(System.lineSeparator())
                       .append("Gradle version: ").append(version).append(System.lineSeparator())
                       .append("Gradle java home: ").append(javaHome).append(System.lineSeparator())
-                      .append("Gradle jvm arguments: ").append(jvmArgsStr);
+                      .append("Gradle jvm arguments: ").append(jvmArgsStr).append(System.lineSeparator());
       } catch (Throwable ignore) {}
     }
+
+
+    messageBuilder.append("Gradle environment variables size: ").append(gradleEnv.size()).append(System.lineSeparator());
+    messageBuilder.append("Gradle init script classpath: ").append(gradleEnv.get("TEAMCITY_BUILD_INIT_PATH"));
 
     return messageBuilder.toString();
   }
