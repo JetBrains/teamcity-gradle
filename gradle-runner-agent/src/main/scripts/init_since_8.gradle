@@ -33,7 +33,6 @@ if (!JavaVersion.current().isJava8Compatible()) return
 
 initscript {
   dependencies {
-    logger.info "System environment map size: ${System.getenv().size()}"
     def teamCityInitLib = System.getenv("TEAMCITY_BUILD_INIT_PATH")
     logger.info "Init lib: ${teamCityInitLib}"
     def classPathFiles = teamCityInitLib.split(File.pathSeparator)
