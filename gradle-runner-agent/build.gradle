@@ -5,6 +5,7 @@ plugins {
 
 teamcity {
     version = teamcityVersion
+    allowSnapshotVersions = true
     agent {
         descriptor {
         }
