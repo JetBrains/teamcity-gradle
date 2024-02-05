@@ -8,6 +8,8 @@ teamcity {
     allowSnapshotVersions = true
     agent {
         descriptor {
+            pluginDeployment {
+            }
         }
         files {
             into("scripts") {
