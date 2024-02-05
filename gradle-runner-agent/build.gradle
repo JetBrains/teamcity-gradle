@@ -31,7 +31,7 @@ dependencies {
 
 agentPlugin {
     archiveVersion.set('')
-    archiveBaseName.set('gradle-agent')
+    archiveBaseName.set('gradle-runner')
 }
 
 tasks.withType(JavaCompile) {
