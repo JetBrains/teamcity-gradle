@@ -1,5 +1,3 @@
-
-
 package jetbrains.buildServer.gradle.test.unit;
 
 import com.intellij.openapi.util.SystemInfo;

@@ -31,11 +31,6 @@ public class GradleLaunchModeSelector {
                                                  .flatMap(connector -> getGradleVersion(connector, parameters.getLogger()))
                                                  .orElse(null);
 
-    // currently we default to launching Gradle build in the old way when the launch mode is not configured with the appropriate config param
-    if (configuredLaunchMode.isEmpty()) {
-      return defaultMode;
-    }
-
     if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE)) {
       return defaultMode;
     }
