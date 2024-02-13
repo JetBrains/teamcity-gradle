@@ -73,6 +73,20 @@ public class GradleJvmArgsMergerTest {
   }
 
   @Test
+  public void should_MergeJvmArgsWithQuotes() {
+    // arrange
+    List<String> gradleProjectJvmArgs = Arrays.asList("\"-Dprop=val\"");
+    List<String> tcJvmArgs = Arrays.asList("-Dprop=newVal");
+    List<String> expectedResult = Arrays.asList("-Dprop=newVal");
+
+    // act
+    Collection<String> mergingResult = merger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs);
+
+    // assert
+    assertEquals(mergingResult, expectedResult);
+  }
+
+  @Test
   public void should_MergeGradleProjectJvmArgsWithTcJvmArgs_When_HaveDifferentProperties() {
     // arrange
     List<String> gradleProjectJvmArgs = Arrays.asList("-X:foo");

@@ -66,8 +66,9 @@ public class GradleJvmArgsMerger {
                                                                       @NotNull Collection<String> tcJvmArgs) {
     Map<String, LinkedHashSet<String>> result = new LinkedHashMap<>();
     Collection<String> concatenated = Stream.concat(gradleProjectJvmArgs.stream(), tcJvmArgs.stream())
-                                            .filter(arg -> isNotEmpty(arg))
-                                            .collect(Collectors.toList());
+            .filter(this::isNotEmpty)
+            .map(this::unquote)
+            .collect(Collectors.toList());
 
     String lastKey = null;
     for (String unparsedArg : concatenated) {
@@ -131,5 +132,12 @@ public class GradleJvmArgsMerger {
 
   private boolean isNotEmpty(@Nullable String val) {
     return val != null && !val.isEmpty();
+  }
+
+  private String unquote(@NotNull String str) {
+    if (str.startsWith("\"") && str.endsWith("\"")) {
+      return str.substring(1, str.length() - 1);
+    }
+    return str;
   }
 }
