@@ -222,7 +222,7 @@ public class GradleRunnerService extends BuildServiceAdapter
       "To make the build configuration cache compatible, build parameters that change from build to build (e.g.: build.id, build.number) " +
       "will be loaded lazily, only on demand.\n" +
       "That means, they could still be obtained using project.teamcity[\"build.number\"].\n" +
-      "But they aren’t accessible using project.findProperty(\"build.number\") or project[\"build.number\"].\n\n" +
+      "But they aren't accessible using project.findProperty(\"build.number\") or project[\"build.number\"].\n\n" +
       "Also, you can make the following steps:\n" +
       "1. Define BuildNumber=%build.number% configuration parameter in the build configuration.\n" +
       "2. Define system.buildNumber=%BuildNumber% system property in the build configuration.\n" +
