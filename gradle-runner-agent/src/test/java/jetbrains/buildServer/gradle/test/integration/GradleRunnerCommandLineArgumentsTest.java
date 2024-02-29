@@ -86,8 +86,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
 
       // assert
       assertTrue(messages.stream().noneMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
-      assertTrue(messages.stream().anyMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
-                                                                    "There are unsupported by Gradle Tooling API arguments passed: " + unsupportedArg)),
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("This build can only be run in legacy mode. " +
+                                                                    "Using configuration-cache requires launching the build via the Gradle Tooling API that is not compatible with the following Gradle argument(s): " + unsupportedArg)),
                  "Expected: unsupported args are logged\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
@@ -110,8 +110,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
 
       // assert
       assertTrue(messages.stream().noneMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
-      assertTrue(messages.stream().anyMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
-                                                                    "There are unsupported by Gradle Tooling API arguments passed: " + unsupportedArg)),
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("This build can only be run in legacy mode. " +
+                                                                    "Using configuration-cache requires launching the build via the Gradle Tooling API that is not compatible with the following Gradle argument(s): " + unsupportedArg)),
                  "Expected: unsupported args are logged\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
