@@ -59,16 +59,19 @@ public class GradleLaunchModeSelector {
     }
 
     if (parameters.isConfigurationCacheProblemsIgnored()) {
-      logger.warning("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
-                     "Reason: \"--configuration-cache-problems\" command line argument or \"org.gradle.configuration-cache.problems\" property is set to \"warn\".\n" +
-                     "Please set this argument to the default value and try again.");
+      logger.warning(
+        "The \"--configuration-cache-problems\" command line argument or the \"org.gradle.configuration-cache.problems\" property is set to \"warn\". " +
+        "This causes the build to run in legacy mode with the non-functional configuration-cache when the Tooling API (required to utilize configuration-cache) detects a problem.\n" +
+        "If you want to ensure the build uses configuration-cache, switch the argument/property to the default \"fail\" value.");
       return Optional.empty();
     }
 
     if (!parameters.getUnsupportedByToolingArgs().isEmpty()) {
-      logger.warning("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible.\n" +
-                     "There are unsupported by Gradle Tooling API arguments passed: " +
-                     String.join(", ", parameters.getUnsupportedByToolingArgs()));
+      String message = String.format("This build can only be run in legacy mode. " +
+                                     "Using configuration-cache requires launching the build via the Gradle Tooling API that is not compatible with the following Gradle argument(s): %s.\n" +
+                                     "Remove the unsupported argument(s) or disable the configuration-cache.",
+                                     String.join(", ", parameters.getUnsupportedByToolingArgs()));
+      logger.warning(message);
       return Optional.empty();
     }
 

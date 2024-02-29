@@ -218,16 +218,16 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
 
     getLogger().message(
-      "Gradle configuration-cache feature usage has been detected.\n" +
-      "To make the build configuration cache compatible, build parameters that change from build to build (e.g.: build.id, build.number) " +
-      "will be loaded lazily, only on demand.\n" +
-      "That means, they could still be obtained using project.teamcity[\"build.number\"].\n" +
-      "But they aren't accessible using project.findProperty(\"build.number\") or project[\"build.number\"].\n\n" +
-      "Also, you can make the following steps:\n" +
-      "1. Define BuildNumber=%build.number% configuration parameter in the build configuration.\n" +
-      "2. Define system.buildNumber=%BuildNumber% system property in the build configuration.\n" +
-      "3. Access this param in your gradle script like: def buildNumber = \"${findProperty(\"buildNumber\")}\"\n" +
-      "Note that these steps will not allow you to reuse configuration-cache, so the most correct way would be to disable this feature.");
+      "This Gradle step uses a configuration cache.\n" +
+      "To ensure the configuration cache operates as expected, parameters whose values always change from build to build (for example, build.id or build.number) " +
+      "will be loaded only on demand. \n" +
+      "You can still obtain values of these properties using direct references (for example, project.teamcity[\"build.number\"]), " +
+      "but the project.findProperty(\"build.number\") or project[\"build.number\"] yields no results.\n" +
+      "If you need to access these values in your Gradle script, use the following workaround:\n" +
+      "1. Create a new configuration parameter and map it to the affected parameter: MyBuildNumber=%build.number%\n" +
+      "2. Create a new system property and map it to your new configuration parameter: system.buildNumber=%MyBuildNumber%\n" +
+      "3. Use the \"${findProperty(\"buildNumber\")}\" syntax to obtain a required value in your Gradle script.\n" +
+      "Note that this workaround prevents your build configuration from reusing the configuration cache, so you may want to disable it.");
     return false;
   }
 
