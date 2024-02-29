@@ -222,12 +222,7 @@ public class GradleRunnerService extends BuildServiceAdapter
       "To ensure the configuration cache operates as expected, parameters whose values always change from build to build (for example, build.id or build.number) " +
       "will be loaded only on demand. \n" +
       "You can still obtain values of these properties using direct references (for example, project.teamcity[\"build.number\"]), " +
-      "but the project.findProperty(\"build.number\") or project[\"build.number\"] yields no results.\n" +
-      "If you need to access these values in your Gradle script, use the following workaround:\n" +
-      "1. Create a new configuration parameter and map it to the affected parameter: MyBuildNumber=%build.number%\n" +
-      "2. Create a new system property and map it to your new configuration parameter: system.buildNumber=%MyBuildNumber%\n" +
-      "3. Use the \"${findProperty(\"buildNumber\")}\" syntax to obtain a required value in your Gradle script.\n" +
-      "Note that this workaround prevents your build configuration from reusing the configuration cache, so you may want to disable it.");
+      "but the project.findProperty(\"build.number\") or project[\"build.number\"] yields no results.");
     return false;
   }
 
