@@ -8,12 +8,14 @@ plugins {
   id "com.github.jk1.dependency-license-report" version "1.17"
 }
 
+initializeWorkspace()
+
 ext {
   teamcityVersion = anyParam('teamcityVersion') ?: '2021.2'
   versionNumber = anyParam('PluginVersion') ?: teamcityVersion
 }
 def localRepo = anyParamPath('TC_LOCAL_REPO')
-def localGradleRepo = anyParamPath('TC_LOCAL_GRADLE_REPO') ?: 'local-gradle-repo'
+def localGradleRepo = anyParamPath('TC_GRADLE_LOCAL_REPO') ?: rootProject.projectDir.toPath().resolve('local-gradle-repo')
 
 version = versionNumber
 
@@ -59,7 +61,7 @@ subprojects {
     }
     repositories {
       maven {
-        url = "file:${rootProject.projectDir}/local-gradle-repo"
+        url = "file:${localGradleRepo.toAbsolutePath()}"
       }
     }
   }
@@ -89,4 +91,19 @@ def anyParam(String... names) {
     println("AnyParam: $names -> $param")
   }
   return param
+}
+
+def initializeWorkspace() {
+  if (System.getProperty("idea.active") != null) {
+    println "Attempt to configure workspace in IDEA"
+    def coreVersionProperties = project.projectDir.toPath().parent.parent.resolve(".version.properties")
+    if (coreVersionProperties.toFile().exists()) {
+      def p = new Properties().tap {
+        it.load(new FileInputStream(coreVersionProperties.toFile()))
+      }
+      p.forEach { k,v ->
+        System.setProperty(k, v);
+      }
+    }
+  }
 }
