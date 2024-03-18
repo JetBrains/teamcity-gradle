@@ -1,5 +1,3 @@
-
-
 package jetbrains.buildServer.gradle.agent;
 
 import com.intellij.openapi.util.SystemInfo;
@@ -111,12 +109,9 @@ public class GradleRunnerService extends BuildServiceAdapter
                                     gradleExe.getAbsolutePath() + "\n" +
                                     "Please, provide path to wrapper script in build configuration settings.");
 
-      gradleWrapperProperties = new File(workingDirectory,
-                                         relativeGradleWPath + File.separator + GRADLE_WRAPPER_PROPERTIES_DEFAULT_LOCATION);
+      gradleWrapperProperties = getGradleWrapperProperties(workingDirectory, relativeGradleWPath);
       if (!gradleWrapperProperties.exists()) {
-        throw new RunBuildException("gradle-wrapper.properties couldn't be found at " +
-                                    gradleWrapperProperties.getAbsolutePath() + "\n" +
-                                    "Please, provide correct path to wrapper in build configuration settings.");
+        getLogger().warning("gradle-wrapper.properties couldn't be found at " + gradleWrapperProperties.getAbsolutePath());
       }
     }
 
@@ -128,6 +123,10 @@ public class GradleRunnerService extends BuildServiceAdapter
     List<String> gradleTasks = getGradleTasks();
 
     Map<String, String> env = getEnvironments(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
+
+    if (useWrapper && !gradleWrapperProperties.exists()) {
+      return prepareCommandLine(params, gradleTasks, env, workingDirectory, exePath);
+    }
 
     GradleConnector projectConnector = getGradleConnector(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
     File gradleUserHome = Optional.ofNullable(projectConnector).flatMap(this::getGradleUserHome).orElse(null);
@@ -150,12 +149,22 @@ public class GradleRunnerService extends BuildServiceAdapter
         return prepareToolingApi(env, workingDirectory, gradleTasks, configurationCacheEnabled);
       case COMMAND_LINE:
       default:
-        params.addAll(getParams(GradleLaunchMode.COMMAND_LINE));
-        params.addAll(gradleTasks);
-        return new SimpleProgramCommandLine(env, workingDirectory.getPath(), exePath, params);
+        return prepareCommandLine(params, gradleTasks, env, workingDirectory, exePath);
     }
   }
 
+  @NotNull
+  private ProgramCommandLine prepareCommandLine(@NotNull List<String> params,
+                                                @NotNull List<String> gradleTasks,
+                                                @NotNull Map<String, String> env,
+                                                @NotNull File workingDirectory,
+                                                @NotNull String exePath) {
+    params.addAll(getParams(GradleLaunchMode.COMMAND_LINE));
+    params.addAll(gradleTasks);
+    return new SimpleProgramCommandLine(env, workingDirectory.getPath(), exePath, params);
+  }
+
+  @NotNull
   private ProgramCommandLine prepareToolingApi(@NotNull final Map<String, String> env,
                                                @NotNull final File workingDirectory,
                                                @NotNull final List<String> gradleTasks,
@@ -205,6 +214,17 @@ public class GradleRunnerService extends BuildServiceAdapter
       .withClassPath(composeToolingApiProcessClasspath())
       .withMainClass(TeamCityGradleLauncher.class.getCanonicalName())
       .build();
+  }
+
+  @NotNull
+  private File getGradleWrapperProperties(@NotNull File workingDirectory,
+                                          @NotNull String relativeGradleWPath) {
+    String wrapperPropertiesPath = ConfigurationParamsUtil.getGradleWrapperPropertiesPath(getConfigParameters());
+    if (StringUtil.isNotEmpty(wrapperPropertiesPath)) {
+      return new File(workingDirectory, wrapperPropertiesPath + File.separator + GRADLE_WRAPPER_PROPERTIES_FILENAME);
+    }
+
+    return new File(workingDirectory, relativeGradleWPath + File.separator + GRADLE_WRAPPER_PROPERTIES_DEFAULT_LOCATION);
   }
 
   private Boolean readAllBuildParamsRequired(final boolean configurationCacheEnabled) {
