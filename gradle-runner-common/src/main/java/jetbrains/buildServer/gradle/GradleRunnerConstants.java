@@ -31,6 +31,12 @@ public class GradleRunnerConstants
    */
   public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = "teamcity.internal.gradle.runner.read.all.params";
   public static final String GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM = "teamcity.internal.gradle.runner.allow.jvm.args.overriding";
+  /**
+   * A relative path to the gradle-wrapper.properties without a filename.
+   * In case the file is located under <PROJECT_DIR>/wrapper/custom-location/gradle-wrapper.properties,
+   * the value should be: /wrapper/custom-location
+   */
+  public static final String GRADLE_RUNNER_WRAPPER_PROPERTIES_PATH_CONFIG_PARAM = "teamcity.internal.gradle.runner.wrapperPropertiesPath";
 
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";
@@ -43,7 +49,8 @@ public class GradleRunnerConstants
   public static final String INIT_SCRIPT_SINCE_8_NAME = "init_since_8.gradle";
   public static final String GRADLE_BUILD_PROBLEM_TYPE = "gradleBuildProblem";
 
-  public static final String GRADLE_WRAPPER_PROPERTIES_DEFAULT_LOCATION = "gradle" + File.separator + "wrapper" + File.separator + "gradle-wrapper.properties";
+  public static final String GRADLE_WRAPPER_PROPERTIES_FILENAME = "gradle-wrapper.properties";
+  public static final String GRADLE_WRAPPER_PROPERTIES_DEFAULT_LOCATION = "gradle" + File.separator + "wrapper" + File.separator + GRADLE_WRAPPER_PROPERTIES_FILENAME;
 
   public static final String GRADLE_HOME_ENV_KEY = "GRADLE_HOME";
   public static final String GRADLE_WRAPPED_DISTRIBUTION_ENV_KEY = "GRADLE_WRAPPED_DISTRIBUTION_PATH";
