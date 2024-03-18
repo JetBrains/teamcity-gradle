@@ -63,6 +63,11 @@ public class ConfigurationParamsUtil
   }
 
   @NotNull
+  public static String getGradleWrapperPropertiesPath(@NotNull final Map<String, String> configurationParameters) {
+    return emptyIfNull(configurationParameters.get(GradleRunnerConstants.GRADLE_RUNNER_WRAPPER_PROPERTIES_PATH_CONFIG_PARAM));
+  }
+
+  @NotNull
   public static Boolean getBooleanOrDefault(@NotNull final Map<String, String> configurationParameters,
                                             @NotNull final String key,
                                             final boolean defaultValue) {
