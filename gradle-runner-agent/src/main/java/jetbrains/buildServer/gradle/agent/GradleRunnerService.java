@@ -281,6 +281,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
   }
 
+  @NotNull
   private String composeToolingApiProcessClasspath() throws RunBuildException {
     final StringBuilder classPath = new StringBuilder();
     try {
@@ -290,37 +291,74 @@ public class GradleRunnerService extends BuildServiceAdapter
                .append(File.pathSeparator)
                .append(getClasspathElement(GradleRunnerConstants.class))
                .append(File.pathSeparator)
-               .append(getClasspathElement(ServiceMessage.class))
+               .append(getClasspathElement(OptionGroup.class))
                .append(File.pathSeparator)
-               .append(getClasspathElement(com.google.gson.Gson.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(LoggerFactory.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(StaticLoggerBinder.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(AbstractLoggerAdapter.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(LoggerContextAccessor.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(ClasspathUtil.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(ComparisonFailureUtil.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(jetbrains.buildServer.util.FileUtil.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(com.intellij.openapi.util.io.FileUtil.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(com.intellij.openapi.diagnostic.Logger.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(JDOMException.class))
-               .append(File.pathSeparator)
-               .append(getClasspathElement(OptionGroup.class));
+               .append(prepareClasspathForCommonAgentLibs());
 
     } catch (IOException e) {
       throw new RunBuildException("Failed to create init script classpath", e);
     }
 
     return classPath.toString();
+  }
+
+  // libs from <buildAgentDir>/lib won't be accessible in case of Docker-in-Docker / Docker Wormhole builds
+  // see https://youtrack.jetbrains.com/issue/TW-87034
+  @NotNull
+  private String prepareClasspathForCommonAgentLibs() throws RunBuildException, IOException {
+    final List<Class<?>> classesFromCommonAgentLibs = Arrays.asList(
+      ServiceMessage.class,
+      com.google.gson.Gson.class,
+      LoggerFactory.class,
+      StaticLoggerBinder.class,
+      AbstractLoggerAdapter.class,
+      LoggerContextAccessor.class,
+      ClasspathUtil.class,
+      ComparisonFailureUtil.class,
+      jetbrains.buildServer.util.FileUtil.class,
+      com.intellij.openapi.util.io.FileUtil.class,
+      com.intellij.openapi.diagnostic.Logger.class,
+      JDOMException.class
+    );
+    final StringBuilder classPath = new StringBuilder();
+    final File agentLibs = new File(getBuildTempDirectory(), "agentLibs");
+    agentLibs.mkdirs();
+    final boolean changeLocation = getRunnerContext().isVirtualContext() &&
+                                   getBooleanOrDefault(getConfigParameters(), GRADLE_RUNNER_PLACE_LIBS_FOR_TOOLING_IN_TEMP_DIR, true);
+
+    for (int i = 0; i < classesFromCommonAgentLibs.size(); i++) {
+      final Class<?> classFromAgentLib = classesFromCommonAgentLibs.get(i);
+      final String originalLibPath = getClasspathElement(classFromAgentLib);
+
+      if (changeLocation) {
+        classPath.append(changeLibLocation(agentLibs, originalLibPath));
+      } else {
+        classPath.append(originalLibPath);
+      }
+
+      if (i < classesFromCommonAgentLibs.size() - 1) {
+        classPath.append(File.pathSeparator);
+      }
+    }
+
+    return classPath.toString();
+  }
+
+  @NotNull
+  private String changeLibLocation(@NotNull File newLocation,
+                                   @NotNull String originalLibPath) throws IOException {
+    final File originalLib = new File(originalLibPath);
+    final File relocatedLib = new File(newLocation, originalLib.getName());
+
+    if (!relocatedLib.exists()) {
+      if (originalLib.isFile()) {
+        FileUtil.copy(originalLib, relocatedLib);
+      } else {
+        FileUtil.copyDir(originalLib, relocatedLib);
+      }
+    }
+
+    return relocatedLib.getAbsolutePath();
   }
 
   private String getClasspathElement(Class<?> utilClass) throws IOException, RunBuildException {
