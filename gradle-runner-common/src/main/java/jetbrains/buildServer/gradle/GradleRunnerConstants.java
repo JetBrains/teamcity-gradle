@@ -37,6 +37,7 @@ public class GradleRunnerConstants
    * the value should be: /wrapper/custom-location
    */
   public static final String GRADLE_RUNNER_WRAPPER_PROPERTIES_PATH_CONFIG_PARAM = "teamcity.internal.gradle.runner.wrapperPropertiesPath";
+  public static final String GRADLE_RUNNER_PLACE_LIBS_FOR_TOOLING_IN_TEMP_DIR = "teamcity.internal.gradle.runner.placeLibsForToolingApiInTempDir";
 
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";
