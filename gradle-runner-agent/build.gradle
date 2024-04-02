@@ -23,8 +23,8 @@ sourceSets.main.java.srcDirs += 'src/main/scripts'
 
 dependencies {
     implementation project(':gradle-runner-common')
-    implementation 'org.gradle:gradle-tooling-api:8.2.1'
-    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'org.gradle:gradle-tooling-api:8.7'
+    implementation 'org.slf4j:slf4j-api:1.7.36'
     implementation 'commons-cli:commons-cli:1.4'
     compileOnly "org.jetbrains.teamcity:agent-api:${teamcityVersion}",
             "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
@@ -54,7 +54,7 @@ repositories {
 
 task downloadDistributive {
     doLast {
-        def versions = ["2.0", "2.5", "4.0.2", "3.4.1", "4.4", "4.10.3", "5.6.4", "6.5.1", "8.2"]
+        def versions = ["2.0", "2.5", "4.0.2", "3.4.1", "4.4", "4.10.3", "5.6.4", "6.5.1", "8.2", "8.7"]
         versions.each { version ->
             if (new File("../.tools/gradle/gradle-$version").exists()) return
             def configuration = configurations.detachedConfiguration()

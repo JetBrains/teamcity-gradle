@@ -67,7 +67,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
 
     // when: changing custom property and run build again
     customParam = "Custom Parameter Changed";
-    myTeamCitySystemProps.put("system.custom.static.property", customParam);
+    myTeamCitySystemProps.put("custom.static.property", customParam);
     config = new GradleRunConfiguration(PROJECT_WITH_STATIC_PROPERTY_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
     config.setGradleVersion(gradleVersion);
     messages = run(config).getAllMessages();
