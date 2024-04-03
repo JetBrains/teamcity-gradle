@@ -34,6 +34,7 @@ import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.model.build.BuildEnvironment;
+import org.gradle.util.internal.DefaultGradleVersion;
 import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,19 +53,22 @@ public class GradleRunnerService extends BuildServiceAdapter
   private final GradleLaunchModeSelector gradleLaunchModeSelector;
   private final GradleConfigurationCacheDetector gradleConfigurationCacheDetector;
   private final CommandLineParametersProcessor commandLineParametersProcessor;
+  private final GradleVersionDetector gradleVersionDetector;
 
   public GradleRunnerService(final String exePath,
                              final String wrapperName,
                              final Map<SplitablePropertyFile, GradleBuildPropertiesSplitter> propertySplitters,
                              final GradleLaunchModeSelector gradleLaunchModeSelector,
                              final GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
-                             final CommandLineParametersProcessor commandLineParametersProcessor) {
+                             final CommandLineParametersProcessor commandLineParametersProcessor,
+                             final GradleVersionDetector gradleVersionDetector) {
     this.exePath = exePath;
     this.wrapperName = wrapperName;
     this.propertySplitters = propertySplitters;
     this.gradleLaunchModeSelector = gradleLaunchModeSelector;
     this.gradleConfigurationCacheDetector = gradleConfigurationCacheDetector;
     this.commandLineParametersProcessor = commandLineParametersProcessor;
+    this.gradleVersionDetector = gradleVersionDetector;
     listeners = new Lazy<List<ProcessListener>>() {
       @Override
       protected List<ProcessListener> createValue() {
@@ -130,14 +134,15 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     GradleConnector projectConnector = getGradleConnector(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
     File gradleUserHome = Optional.ofNullable(projectConnector).flatMap(this::getGradleUserHome).orElse(null);
+    DefaultGradleVersion gradleVersion = gradleVersionDetector.detect(projectConnector, getLogger()).orElse(null);
     List<String> userDefinedParams = ConfigurationParamsUtil.getGradleParams(getRunnerParameters());
-    boolean configurationCacheEnabled = gradleConfigurationCacheDetector.isConfigurationCacheEnabled(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory);
-    boolean configurationCacheProblemsIgnored = gradleConfigurationCacheDetector.areConfigurationCacheProblemsIgnored(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory);
+    boolean configurationCacheEnabled = gradleConfigurationCacheDetector.isConfigurationCacheEnabled(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
+    boolean configurationCacheProblemsIgnored = gradleConfigurationCacheDetector.areConfigurationCacheProblemsIgnored(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
     Set<String> unsupportedByToolingArgs = commandLineParametersProcessor.obtainUnsupportedArguments(Stream.concat(gradleTasks.stream(), userDefinedParams.stream()).collect(Collectors.toList()));
     GradleLaunchModeSelectionResult selectionResult = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                                              .withLogger(getLogger())
                                                                                                                              .withConfigurationParameters(getConfigParameters())
-                                                                                                                             .withProjectConnector(projectConnector)
+                                                                                                                             .withGradleVersion(gradleVersion)
                                                                                                                              .withConfigurationCacheEnabled(configurationCacheEnabled)
                                                                                                                              .withConfigurationCacheProblemsIgnored(configurationCacheProblemsIgnored)
                                                                                                                              .withUnsupportedByToolingArgs(unsupportedByToolingArgs)

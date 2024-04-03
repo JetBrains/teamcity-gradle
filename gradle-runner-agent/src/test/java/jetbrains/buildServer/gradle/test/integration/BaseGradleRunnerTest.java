@@ -18,6 +18,7 @@ import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
 import jetbrains.buildServer.agent.runner2.SingleCommandLineBuildSessionFactoryAdapter;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil;
+import jetbrains.buildServer.gradle.agent.GradleVersionDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
@@ -337,7 +338,8 @@ public class BaseGradleRunnerTest {
 
     List<GradleBuildPropertiesSplitter> splitters = Arrays.asList(new TeamCityBuildPropertiesGradleSplitter());
     final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory(
-      splitters, new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor()));
+      splitters, new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor(),
+      new GradleVersionDetector()));
     final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
     final GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, session, myMockExtensionHolder);
     proc.start();

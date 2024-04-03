@@ -1,5 +1,3 @@
-
-
 package jetbrains.buildServer.gradle.agent;
 
 import com.intellij.openapi.util.SystemInfo;
@@ -30,15 +28,18 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
   private final GradleLaunchModeSelector gradleLaunchModeSelector;
   private final GradleConfigurationCacheDetector gradleConfigurationCacheDetector;
   private final CommandLineParametersProcessor commandLineParametersProcessor;
+  private final GradleVersionDetector gradleVersionDetector;
 
   public GradleRunnerServiceFactory(List<GradleBuildPropertiesSplitter> propertySplitters,
                                     GradleLaunchModeSelector gradleLaunchModeSelector,
                                     GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
-                                    CommandLineParametersProcessor commandLineParametersProcessor) {
+                                    CommandLineParametersProcessor commandLineParametersProcessor,
+                                    GradleVersionDetector gradleVersionDetector) {
     this.propertySplitters = propertySplitters;
     this.gradleLaunchModeSelector = gradleLaunchModeSelector;
     this.gradleConfigurationCacheDetector = gradleConfigurationCacheDetector;
     this.commandLineParametersProcessor = commandLineParametersProcessor;
+    this.gradleVersionDetector = gradleVersionDetector;
   }
 
   @NotNull public CommandLineBuildService createService()
@@ -61,7 +62,8 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
                                    propertySplitters.stream().collect(Collectors.toMap(it -> it.getType(), Function.identity())),
                                    gradleLaunchModeSelector,
                                    gradleConfigurationCacheDetector,
-                                   commandLineParametersProcessor);
+                                   commandLineParametersProcessor,
+                                   gradleVersionDetector);
    }
 
    @NotNull public AgentBuildRunnerInfo getBuildRunnerInfo()

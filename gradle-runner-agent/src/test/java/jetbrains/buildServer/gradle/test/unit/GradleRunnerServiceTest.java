@@ -90,7 +90,8 @@ public class GradleRunnerServiceTest {
       });
     }});
     myService = (GradleRunnerService) new GradleRunnerServiceFactory(
-      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor()).createService();
+      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor(),
+      new GradleVersionDetector()).createService();
 
     myCoDir = myTempFiles.createTempDir();
 
@@ -395,7 +396,8 @@ public class GradleRunnerServiceTest {
   @Test(expectedExceptions = RunBuildException.class)
   public void gradleExeDoesNotExistTest() throws RunBuildException, IOException {
     GradleRunnerService service = (GradleRunnerService) new GradleRunnerServiceFactory(
-      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor()).createService();
+      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor(),
+      new GradleVersionDetector()).createService();
 
     myContext.checking(new Expectations() {{
       allowing(myRunnerContext).getToolPath("gradle"); will(returnValue(myTempFiles.createTempDir().getAbsolutePath()));
