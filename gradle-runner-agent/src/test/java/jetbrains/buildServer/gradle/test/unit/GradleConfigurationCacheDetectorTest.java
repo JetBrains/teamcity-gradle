@@ -10,8 +10,10 @@ import jetbrains.buildServer.TempFiles;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
+import org.gradle.util.internal.DefaultGradleVersion;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
+import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -83,11 +85,12 @@ public class GradleConfigurationCacheDetectorTest {
                                                                                                              List<String> gradleParams) throws IOException {
     // arrange
     String gradlePropertiesContent = String.format(GRADLE_PROPERTIES_CONTENT, "org.gradle.configuration-cache=false");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
     createGradleProperties(projectDir, gradlePropertiesContent);
     createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertTrue(isEnabled);
@@ -119,11 +122,12 @@ public class GradleConfigurationCacheDetectorTest {
                                                                                                              List<String> gradleParams) throws IOException {
     // arrange
     String gradlePropertiesContent = String.format(GRADLE_PROPERTIES_CONTENT, "org.gradle.configuration-cache=true");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
     createGradleProperties(projectDir, gradlePropertiesContent);
     createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertFalse(isEnabled);
@@ -134,9 +138,10 @@ public class GradleConfigurationCacheDetectorTest {
     // arrange
     List<String> gradleTasks = Arrays.asList("clean", "build");
     List<String> gradleParams = Arrays.asList("--continue");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertFalse(isEnabled);
@@ -149,9 +154,10 @@ public class GradleConfigurationCacheDetectorTest {
     List<String> gradleParams = Arrays.asList("--continue");
     createGradleProperties(projectDir, "#org.gradle.configuration-cache=false");
     createGradleProperties(gradleUserHomeDir, "#org.gradle.configuration-cache=true");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertFalse(isEnabled);
@@ -160,20 +166,22 @@ public class GradleConfigurationCacheDetectorTest {
   @DataProvider
   public Object[][] ccGradlePropertiesInGradleUserHomeEnabledProvider() {
     return new Object[][]{
-      { "org.gradle.configuration-cache=true" },
-      { "org.gradle.unsafe.configuration-cache=true" },
+      { "org.gradle.configuration-cache=true", "8.2" },
+      { "org.gradle.unsafe.configuration-cache=true", "8.0" },
     };
   }
   @Test(dataProvider = "ccGradlePropertiesInGradleUserHomeEnabledProvider")
-  public void should_DetectConfigurationCacheEnabled_When_SetInGradleUserHome_And_DisabledInProjectDir(String gradleUserHomeGradlePropertiesContent) throws IOException {
+  public void should_DetectConfigurationCacheEnabled_When_SetInGradleUserHome_And_DisabledInProjectDir(String gradleUserHomeGradlePropertiesContent,
+                                                                                                       String gradleVersionStr) throws IOException {
     // arrange
     List<String> gradleTasks = Arrays.asList("clean", "build");
     List<String> gradleParams = Collections.emptyList();
     createGradleProperties(projectDir, "org.gradle.configuration-cache=false");
     createGradleProperties(gradleUserHomeDir, gradleUserHomeGradlePropertiesContent);
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version(gradleVersionStr);
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertTrue(isEnabled);
@@ -182,20 +190,22 @@ public class GradleConfigurationCacheDetectorTest {
   @DataProvider
   public Object[][] ccGradlePropertiesInGradleUserHomeDisabledProvider() {
     return new Object[][]{
-      { "org.gradle.configuration-cache=false" },
-      { "org.gradle.unsafe.configuration-cache=false" },
+      { "org.gradle.configuration-cache=false", "8.2" },
+      { "org.gradle.unsafe.configuration-cache=false", "8.0" },
     };
   }
   @Test(dataProvider = "ccGradlePropertiesInGradleUserHomeDisabledProvider")
-  public void should_DetectConfigurationCacheDisabled_When_SetInGradleUserHome_And_EnabledInProjectDir(String gradleUserHomeGradlePropertiesContent) throws IOException {
+  public void should_DetectConfigurationCacheDisabled_When_SetInGradleUserHome_And_EnabledInProjectDir(String gradleUserHomeGradlePropertiesContent,
+                                                                                                       String gradleVersionStr) throws IOException {
     // arrange
     List<String> gradleTasks = Arrays.asList("clean", "build");
     List<String> gradleParams = Collections.emptyList();
     createGradleProperties(projectDir, "org.gradle.configuration-cache=true");
     createGradleProperties(gradleUserHomeDir, gradleUserHomeGradlePropertiesContent);
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version(gradleVersionStr);
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertFalse(isEnabled);
@@ -240,6 +250,7 @@ public class GradleConfigurationCacheDetectorTest {
     createGradleProperties(gradleUserHomeForSystemPropertyDir, "org.gradle.configuration-cache=false");
     File gradleUserHomeForCLArgDir = tempFiles.createTempDir();
     createGradleProperties(gradleUserHomeForCLArgDir, "org.gradle.configuration-cache=true");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     List<String> gradleTasks = Arrays.asList(
       gradleTasksStr.replaceAll("\\{gUHOverriddenViaSystemProperty\\}", gradleUserHomeForSystemPropertyDir.getAbsolutePath().replace("\\", "/"))
@@ -251,7 +262,7 @@ public class GradleConfigurationCacheDetectorTest {
                     .split(" "));
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertTrue(isEnabled);
@@ -278,6 +289,7 @@ public class GradleConfigurationCacheDetectorTest {
     createGradleProperties(gradleUserHomeDir, "org.gradle.configuration-cache=true");
     File gradleUserHomeForSystemPropertyDir = tempFiles.createTempDir();
     createGradleProperties(gradleUserHomeForSystemPropertyDir, "org.gradle.configuration-cache=false");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     List<String> gradleTasks = Arrays.asList(
       gradleTasksStr.replaceAll("\\{gUHOverriddenViaSystemProperty\\}", gradleUserHomeForSystemPropertyDir.getAbsolutePath().replace("\\", "/"))
@@ -287,7 +299,7 @@ public class GradleConfigurationCacheDetectorTest {
                      .split(" "));
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertFalse(isEnabled);
@@ -297,23 +309,38 @@ public class GradleConfigurationCacheDetectorTest {
   @DataProvider
   public Object[][] ccGradlePropertiesInProjectDirProvider() {
     return new Object[][]{
-      { "org.gradle.configuration-cache=true", true },
-      { "org.gradle.unsafe.configuration-cache=true", true },
-      { "org.gradle.configuration-cache=false", false },
-      { "org.gradle.unsafe.configuration-cache=false", false },
+      { "org.gradle.configuration-cache=true", "8.2", true },
+      { "org.gradle.unsafe.configuration-cache=true", "8.0", true },
+      { "org.gradle.configuration-cache=false", "8.2", false },
+      { "org.gradle.unsafe.configuration-cache=false", "8.0", false },
     };
   }
   @Test(dataProvider = "ccGradlePropertiesInProjectDirProvider")
   public void should_DetectConfigurationCache_When_SetOnlyInProjectDirGradleProperties(String ccValue,
+                                                                                       String gradleVersionStr,
                                                                                        boolean expected) throws IOException {
     // arrange
     createGradleProperties(projectDir, ccValue);
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version(gradleVersionStr);
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, Collections.emptyList(), Collections.emptyList(), gradleUserHomeDir, projectDir);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, Collections.emptyList(), Collections.emptyList(), gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertEquals(isEnabled, expected);
+  }
+
+  @Test
+  public void should_NotDetectConfigurationCache_When_WrongPropertyKeyIsUsedForGradleProperties() throws IOException {
+    // arrange
+    createGradleProperties(projectDir, "org.gradle.configuration-cache=true");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.0.2");
+
+    // act
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, Collections.emptyList(), Collections.emptyList(), gradleUserHomeDir, projectDir, gradleVersion);
+
+    // assert
+    Assert.assertFalse(isEnabled);
   }
 
   @DataProvider
@@ -385,9 +412,10 @@ public class GradleConfigurationCacheDetectorTest {
     String gradlePropertiesContent = GRADLE_PROPERTIES_CONTENT + "org.gradle.configuration-cache.problems=fail";
     createGradleProperties(projectDir, gradlePropertiesContent);
     createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     // act
-    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertEquals(ccProblemsIgnored, expected);
@@ -401,9 +429,10 @@ public class GradleConfigurationCacheDetectorTest {
     String gradlePropertiesContent = GRADLE_PROPERTIES_CONTENT + "org.gradle.configuration-cache.problems=warn";
     createGradleProperties(projectDir, "");
     createGradleProperties(gradleUserHomeDir, gradlePropertiesContent);
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     // act
-    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertTrue(ccProblemsIgnored);
@@ -417,9 +446,10 @@ public class GradleConfigurationCacheDetectorTest {
     String gradlePropertiesContent = GRADLE_PROPERTIES_CONTENT + "org.gradle.configuration-cache.problems=warn";
     createGradleProperties(gradleUserHomeDir, "");
     createGradleProperties(projectDir, gradlePropertiesContent);
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     // act
-    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertTrue(ccProblemsIgnored);
@@ -432,12 +462,76 @@ public class GradleConfigurationCacheDetectorTest {
     List<String> gradleParams = Arrays.asList("--continue");
     createGradleProperties(gradleUserHomeDir, "");
     createGradleProperties(projectDir, "");
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version("8.2");
 
     // act
-    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir);
+    boolean ccProblemsIgnored = configurationCacheDetector.areConfigurationCacheProblemsIgnored(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
 
     // assert
     assertFalse(ccProblemsIgnored);
+  }
+
+  @DataProvider
+  public Object[][] gradleConfigCacheVersionsProvider() {
+    return new Object[][]{
+      {"6.6", false},
+      {"6.6.1", false},
+      {"6.7", false},
+      {"6.7.1", false},
+      {"6.8", false},
+      {"6.8.1", false},
+      {"6.8.2", false},
+      {"6.8.3", false},
+      {"6.9", false},
+      {"6.9.1", false},
+      {"6.9.2", false},
+      {"6.9.3", false},
+      {"6.9.4", false},
+      {"7.0", false},
+      {"7.0.1", false},
+      {"7.0.2", false},
+      {"7.1", false},
+      {"7.1.1", false},
+      {"7.2", false},
+      {"7.3", false},
+      {"7.3.1", false},
+      {"7.3.2", false},
+      {"7.3.3", false},
+      {"7.4", false},
+      {"7.4.1", false},
+      {"7.4.2", false},
+      {"7.5", false},
+      {"7.5.1", false},
+      {"7.6", false},
+      {"7.6.1", false},
+      {"7.6.2", false},
+      {"7.6.3", false},
+      {"7.6.4", false},
+      {"8.0", false},
+      {"8.0.1", false},
+      {"8.0.2", false},
+      {"8.1", true},
+      {"8.1.1", true},
+      {"8.2", true},
+      {"8.2.1", true},
+      {"8.3", true},
+      {"8.4", true},
+      {"8.5", true},
+      {"8.6", true},
+      {"8.7", true},
+    };
+  }
+
+  @Test(dataProvider = "gradleConfigCacheVersionsProvider")
+  public void should_DetectConfigurationCacheStableVersions(String gradleVersionStr, boolean expected) {
+    // arrange
+    DefaultGradleVersion gradleVersion = DefaultGradleVersion.version(gradleVersionStr);
+
+    // act
+    boolean result = configurationCacheDetector.isVersionWithStableConfigCache(gradleVersion);
+
+    // assert
+    assertEquals(result, expected);
   }
 
   private File createGradleProperties(File parentDir,

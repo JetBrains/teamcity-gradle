@@ -9,9 +9,6 @@ import java.util.Set;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.util.VersionComparatorUtil;
-import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.model.build.BuildEnvironment;
 import org.gradle.util.internal.DefaultGradleVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,9 +24,6 @@ public class GradleLaunchModeSelector {
   public GradleLaunchModeSelectionResult selectMode(@NotNull Parameters parameters) {
     String configuredLaunchMode = ConfigurationParamsUtil.getGradleLaunchMode(parameters.getConfigurationParameters());
     GradleLaunchModeSelectionResult defaultMode = GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.COMMAND_LINE).build();
-    DefaultGradleVersion gradleVersion = Optional.ofNullable(parameters.getProjectConnector())
-                                                 .flatMap(connector -> getGradleVersion(connector, parameters.getLogger()))
-                                                 .orElse(null);
 
     if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE)) {
       return defaultMode;
@@ -42,14 +36,14 @@ public class GradleLaunchModeSelector {
                                             .build();
     }
 
-    return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode, gradleVersion)
-      .orElse(defaultMode);
+    return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode).orElse(defaultMode);
   }
 
   private Optional<GradleLaunchModeSelectionResult> tryToIdentifyModeIndirectly(@NotNull Parameters parameters,
-                                                                                @NotNull String configuredLaunchMode,
-                                                                                @Nullable DefaultGradleVersion gradleVersion) {
+                                                                                @NotNull String configuredLaunchMode) {
     BuildProgressLogger logger = parameters.getLogger();
+    DefaultGradleVersion gradleVersion = parameters.getGradleVersion();
+
     if (!isVersionToolingApiCompatible(gradleVersion)) {
       return Optional.empty();
     }
@@ -112,32 +106,13 @@ public class GradleLaunchModeSelector {
     return !result.isEmpty() ? String.join(", ", result) : "unknown reason";
   }
 
-  @NotNull
-  private Optional<DefaultGradleVersion> getGradleVersion(@NotNull GradleConnector projectConnector,
-                                                          @NotNull BuildProgressLogger logger) {
-    try (ProjectConnection connection = projectConnector.connect()) {
-      BuildEnvironment buildEnvironment = connection.getModel(BuildEnvironment.class);
-
-      String gradleVersionStr = buildEnvironment.getGradle().getGradleVersion();
-      if (gradleVersionStr == null) {
-        logger.warning("Couldn't detect the Gradle version in the project: null value");
-        return Optional.empty();
-      }
-
-      return Optional.of(DefaultGradleVersion.version(gradleVersionStr));
-    } catch (Throwable t) {
-      logger.warning("Couldn't detect the Gradle version in the project: " + t.getMessage());
-      return Optional.empty();
-    }
-  }
-
   public static class Parameters {
     @NotNull
     private final BuildProgressLogger logger;
     @NotNull
     private final Map<String, String> configurationParameters;
     @Nullable
-    private final GradleConnector projectConnector;
+    private final DefaultGradleVersion gradleVersion;
     private final boolean configurationCacheEnabled;
     private final boolean configurationCacheProblemsIgnored;
     @NotNull
@@ -145,13 +120,13 @@ public class GradleLaunchModeSelector {
 
     private Parameters(@NotNull BuildProgressLogger logger,
                        @NotNull Map<String, String> configurationParameters,
-                       @Nullable GradleConnector projectConnector,
+                       @Nullable DefaultGradleVersion gradleVersion,
                        boolean configurationCacheEnabled,
                        boolean configurationCacheProblemsIgnored,
                        @NotNull Set<String> unsupportedByToolingArgs) {
       this.logger = logger;
       this.configurationParameters = Collections.unmodifiableMap(configurationParameters);
-      this.projectConnector = projectConnector;
+      this.gradleVersion = gradleVersion;
       this.configurationCacheEnabled = configurationCacheEnabled;
       this.configurationCacheProblemsIgnored = configurationCacheProblemsIgnored;
       this.unsupportedByToolingArgs = Collections.unmodifiableSet(unsupportedByToolingArgs);
@@ -168,8 +143,8 @@ public class GradleLaunchModeSelector {
     }
 
     @Nullable
-    public GradleConnector getProjectConnector() {
-      return projectConnector;
+    public DefaultGradleVersion getGradleVersion() {
+      return gradleVersion;
     }
 
     public boolean isConfigurationCacheEnabled() {
@@ -193,7 +168,7 @@ public class GradleLaunchModeSelector {
     public static final class Builder {
       private BuildProgressLogger logger;
       private Map<String, String> configurationParameters;
-      private GradleConnector projectConnector;
+      private DefaultGradleVersion gradleVersion;
       private boolean configurationCacheEnabled;
       private boolean configurationCacheProblemsIgnored;
       private Set<String> unsupportedByToolingArgs;
@@ -211,8 +186,8 @@ public class GradleLaunchModeSelector {
         return this;
       }
 
-      public Builder withProjectConnector(@Nullable GradleConnector projectConnector) {
-        this.projectConnector = projectConnector;
+      public Builder withGradleVersion(DefaultGradleVersion gradleVersion) {
+        this.gradleVersion = gradleVersion;
         return this;
       }
 
@@ -233,7 +208,7 @@ public class GradleLaunchModeSelector {
 
       @NotNull
       public Parameters build() {
-        return new Parameters(logger, configurationParameters, projectConnector, configurationCacheEnabled, configurationCacheProblemsIgnored,
+        return new Parameters(logger, configurationParameters, gradleVersion, configurationCacheEnabled, configurationCacheProblemsIgnored,
                               unsupportedByToolingArgs);
       }
     }

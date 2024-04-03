@@ -9,11 +9,7 @@ import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleLaunchMode;
 import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
-import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
-import org.gradle.tooling.model.build.BuildEnvironment;
-import org.gradle.tooling.model.build.GradleEnvironment;
+import org.gradle.util.internal.DefaultGradleVersion;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
@@ -66,20 +62,11 @@ public class GradleLaunchModeSelectorTest {
       { "8.1", GradleLaunchMode.TOOLING_API},
       { "8.1.1", GradleLaunchMode.TOOLING_API},
       { "9.1.3", GradleLaunchMode.TOOLING_API},
-
-      { "0", GradleLaunchMode.COMMAND_LINE},
-      { "!", GradleLaunchMode.COMMAND_LINE},
-      { "81", GradleLaunchMode.COMMAND_LINE},
-      { "ver", GradleLaunchMode.COMMAND_LINE},
-      { "������", GradleLaunchMode.COMMAND_LINE},
-      { "!", GradleLaunchMode.COMMAND_LINE},
-      { null, GradleLaunchMode.COMMAND_LINE},
     };
   }
   @Test(dataProvider = "gradleVersionProvider")
   public void should_ReturnExpectedLaunchMode_When_CorrectGradleVersionPassed(String gradleVersion, GradleLaunchMode expectedMode) {
     // arrange
-    GradleConnector connector = mockGradleConnector(gradleVersion);
     Map<String, String> configurationParameters = new HashMap<>();
     configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
 
@@ -87,7 +74,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(connector)
+                                                                                                     .withGradleVersion(DefaultGradleVersion.version(gradleVersion))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -100,7 +87,6 @@ public class GradleLaunchModeSelectorTest {
   @Test
   public void should_ReturnToolingApiLaunchMode_When_VersionIsConfigurationCacheCompatible_And_ConfigurationCacheIsEnabled() {
     // arrange
-    GradleConnector connector = mockGradleConnector("8.0");
     Map<String, String> configurationParameters = new HashMap<>();
     configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
 
@@ -108,7 +94,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(connector)
+                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -121,7 +107,6 @@ public class GradleLaunchModeSelectorTest {
   @Test
   public void should_ReturnGradleLaunchMode_When_VersionIsConfigurationCacheCompatible_And_ConfigurationCacheIsDisabled() {
     // arrange
-    GradleConnector connector = mockGradleConnector("8.0");
     Map<String, String> configurationParameters = new HashMap<>();
     configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
 
@@ -129,7 +114,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(connector)
+                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
                                                                                                      .withConfigurationCacheEnabled(false)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -142,7 +127,6 @@ public class GradleLaunchModeSelectorTest {
   @Test
   public void should_ReturnGradleLaunchMode_When_VersionIsConfigurationCacheCompatible_And_ConfigurationCacheIsEnabled_And_ConfigurationCacheProblemsDisabled() {
     // arrange
-    GradleConnector connector = mockGradleConnector("8.0");
     Map<String, String> configurationParameters = new HashMap<>();
     configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
 
@@ -150,7 +134,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(connector)
+                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(true)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -163,7 +147,6 @@ public class GradleLaunchModeSelectorTest {
   @Test
   public void should_ReturnGradleLaunchMode_When_VersionIsConfigurationCacheCompatible_And_ConfigurationCacheIsEnabled_And_UnsupportedArgsPassed() {
     // arrange
-    GradleConnector connector = mockGradleConnector("8.0");
     Map<String, String> configurationParameters = new HashMap<>();
     configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
     Set<String> unsupported = new HashSet<>();
@@ -173,7 +156,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(connector)
+                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(unsupported)
@@ -186,7 +169,6 @@ public class GradleLaunchModeSelectorTest {
   @Test
   public void should_ReturnGradleLaunchMode_When_GradleVersionNotDetected() {
     // arrange
-    GradleConnector connector = GradleConnector.newConnector();
     Map<String, String> configurationParameters = new HashMap<>();
     configurationParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, "auto");
 
@@ -194,7 +176,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(connector)
+                                                                                                     .withGradleVersion(null)
                                                                                                      .withConfigurationCacheEnabled(false)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -214,7 +196,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(null)
+                                                                                                     .withGradleVersion(null)
                                                                                                      .withConfigurationCacheEnabled(false)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -235,7 +217,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(null)
+                                                                                                     .withGradleVersion(null)
                                                                                                      .withConfigurationCacheEnabled(false)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -256,7 +238,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withProjectConnector(null)
+                                                                                                     .withGradleVersion(null)
                                                                                                      .withConfigurationCacheEnabled(false)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -264,20 +246,5 @@ public class GradleLaunchModeSelectorTest {
 
     // assert
     assertEquals(result, expectedMode);
-  }
-
-  private GradleConnector mockGradleConnector(String gradleVersion) {
-    GradleEnvironment gradleEnvironment = context.mock(GradleEnvironment.class);
-    BuildEnvironment environment = context.mock(BuildEnvironment.class);
-    ProjectConnection connection = context.mock(ProjectConnection.class);
-    DefaultGradleConnector connector = context.mock(DefaultGradleConnector.class);
-    context.checking(new Expectations() {{
-      allowing(gradleEnvironment).getGradleVersion(); will(returnValue(gradleVersion));
-      allowing(environment).getGradle(); will(returnValue(gradleEnvironment));
-      allowing(connection).getModel(with(BuildEnvironment.class)); will(returnValue(environment));
-      allowing(connection).close();
-      allowing(connector).connect(); will(returnValue(connection));
-    }});
-    return connector;
   }
 }
