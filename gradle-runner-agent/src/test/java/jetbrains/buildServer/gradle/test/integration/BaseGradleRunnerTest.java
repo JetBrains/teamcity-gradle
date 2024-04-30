@@ -1,5 +1,3 @@
-
-
 package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
@@ -19,13 +17,16 @@ import jetbrains.buildServer.agent.runner2.SingleCommandLineBuildSessionFactoryA
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil;
 import jetbrains.buildServer.gradle.agent.GradleVersionDetector;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
-import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
-import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
+import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
@@ -336,10 +337,18 @@ public class BaseGradleRunnerTest {
   protected void runTest(final Expectations expectations, final Mockery context) throws RunBuildException {
     context.checking(expectations);
 
-    List<GradleBuildPropertiesSplitter> splitters = Arrays.asList(new TeamCityBuildPropertiesGradleSplitter());
-    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory(
-      splitters, new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor(),
-      new GradleVersionDetector()));
+    GradleTasksComposer tasksComposer = new GradleTasksComposer();
+    List<GradleCommandLineComposer> composers = Arrays.asList(
+      new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
+    );
+    GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
+    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(
+      new GradleRunnerServiceFactory(composerHolder,
+                                     tasksComposer,
+                                     new GradleLaunchModeSelector(),
+                                     new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
+                                     new CommandLineParametersProcessor(),
+                                     new GradleVersionDetector()));
     final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
     final GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, session, myMockExtensionHolder);
     proc.start();

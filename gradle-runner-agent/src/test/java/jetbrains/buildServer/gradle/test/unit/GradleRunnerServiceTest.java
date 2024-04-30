@@ -14,9 +14,14 @@ import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.*;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
+import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
@@ -89,8 +94,17 @@ public class GradleRunnerServiceTest {
         }
       });
     }});
+    GradleTasksComposer tasksComposer = new GradleTasksComposer();
+    List<GradleCommandLineComposer> composers = Arrays.asList(
+      new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
+    );
+    GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
     myService = (GradleRunnerService) new GradleRunnerServiceFactory(
-      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor(),
+      composerHolder,
+      tasksComposer,
+      new GradleLaunchModeSelector(),
+      new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
+      new CommandLineParametersProcessor(),
       new GradleVersionDetector()).createService();
 
     myCoDir = myTempFiles.createTempDir();
@@ -395,8 +409,16 @@ public class GradleRunnerServiceTest {
 
   @Test(expectedExceptions = RunBuildException.class)
   public void gradleExeDoesNotExistTest() throws RunBuildException, IOException {
+    GradleTasksComposer tasksComposer = new GradleTasksComposer();
+    List<GradleCommandLineComposer> composers = Arrays.asList(
+      new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
+    );
+    GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
     GradleRunnerService service = (GradleRunnerService) new GradleRunnerServiceFactory(
-      Collections.emptyList(), new GradleLaunchModeSelector(), new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()), new CommandLineParametersProcessor(),
+      composerHolder, tasksComposer,
+      new GradleLaunchModeSelector(),
+      new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
+      new CommandLineParametersProcessor(),
       new GradleVersionDetector()).createService();
 
     myContext.checking(new Expectations() {{
