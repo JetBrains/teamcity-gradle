@@ -1,17 +1,15 @@
 package jetbrains.buildServer.gradle.agent;
 
 import com.intellij.openapi.util.SystemInfo;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import jetbrains.buildServer.agent.AgentBuildRunnerInfo;
 import jetbrains.buildServer.agent.BuildAgentConfiguration;
 import jetbrains.buildServer.agent.runner.CommandLineBuildService;
 import jetbrains.buildServer.agent.runner.CommandLineBuildServiceFactory;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
-import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
+import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.log.Loggers;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,18 +22,21 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
 
   private static final Info info = new Info();
 
-  private final List<GradleBuildPropertiesSplitter> propertySplitters;
+  private final GradleCommandLineComposerHolder composerHolder;
+  private final GradleTasksComposer tasksComposer;
   private final GradleLaunchModeSelector gradleLaunchModeSelector;
   private final GradleConfigurationCacheDetector gradleConfigurationCacheDetector;
   private final CommandLineParametersProcessor commandLineParametersProcessor;
   private final GradleVersionDetector gradleVersionDetector;
 
-  public GradleRunnerServiceFactory(List<GradleBuildPropertiesSplitter> propertySplitters,
+  public GradleRunnerServiceFactory(GradleCommandLineComposerHolder composerHolder,
+                                    GradleTasksComposer tasksComposer,
                                     GradleLaunchModeSelector gradleLaunchModeSelector,
                                     GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
                                     CommandLineParametersProcessor commandLineParametersProcessor,
                                     GradleVersionDetector gradleVersionDetector) {
-    this.propertySplitters = propertySplitters;
+    this.composerHolder = composerHolder;
+    this.tasksComposer = tasksComposer;
     this.gradleLaunchModeSelector = gradleLaunchModeSelector;
     this.gradleConfigurationCacheDetector = gradleConfigurationCacheDetector;
     this.commandLineParametersProcessor = commandLineParametersProcessor;
@@ -59,7 +60,8 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
 
     return new GradleRunnerService(exePath,
                                    wrapperName,
-                                   propertySplitters.stream().collect(Collectors.toMap(it -> it.getType(), Function.identity())),
+                                   composerHolder,
+                                   tasksComposer,
                                    gradleLaunchModeSelector,
                                    gradleConfigurationCacheDetector,
                                    commandLineParametersProcessor,

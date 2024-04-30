@@ -12,5 +12,9 @@
   <bean id="gradleOptionValueFetcher" class="jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher"/>
   <bean id="commandLineParametersProcessor" class="jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor"/>
   <bean id="gradleToolProvider" class="jetbrains.buildServer.gradle.agent.GradleToolProvider" autowire="constructor"/>
+  <bean id="gradleToolingApiCommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer" autowire="constructor"/>
+  <bean id="gradleSimpleCommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleCommandLineComposer" autowire="constructor"/>
+  <bean id="gradleCommandLineComposerHolder" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder" autowire="constructor"/>
+  <bean id="gradleTasksComposer" class="jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer" autowire="constructor"/>
 
 </beans>
