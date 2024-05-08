@@ -632,7 +632,6 @@ public class TeamcityRerunTestsListener implements ProjectEvaluationListener {
     project.gradle.taskGraph.whenReady { graph ->
       for (Task task : graph.allTasks) {
         if (!(task instanceof AbstractTestTask)) continue
-        if (!task.project.plugins.hasPlugin("org.gradle.test-retry")) continue
         def plugin = task.extensions.findByName("retry")
         if (plugin == null) continue
         def retries = plugin.maxRetries

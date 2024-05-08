@@ -940,7 +940,6 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
     gradle.taskGraph.whenReady { graph ->
       for (Task task : graph.allTasks) {
         if (!TestTaskWrapper.type.isAssignableFrom(task.class)) continue
-        if (!task.project.plugins.hasPlugin("org.gradle.test-retry")) continue
         def wrapper = new TestTaskWrapper(task)
         def plugin = wrapper.getExtensions()?.findByName("retry")
         if (plugin == null) continue
