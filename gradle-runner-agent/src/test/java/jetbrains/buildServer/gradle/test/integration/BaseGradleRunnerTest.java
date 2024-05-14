@@ -26,6 +26,8 @@ import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
 import jetbrains.buildServer.gradle.agent.GradleRunnerServiceFactory;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
+import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
+import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -337,9 +339,10 @@ public class BaseGradleRunnerTest {
   protected void runTest(final Expectations expectations, final Mockery context) throws RunBuildException {
     context.checking(expectations);
 
-    GradleTasksComposer tasksComposer = new GradleTasksComposer();
+    List<GradleBuildPropertiesSplitter> splitters = Arrays.asList(new TeamCityBuildPropertiesGradleSplitter());
+    GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
-      new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
+      new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(splitters, tasksComposer)
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
     final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(
@@ -476,6 +479,11 @@ public class BaseGradleRunnerTest {
       allowing(myMockLogger).ignoreServiceMessages(with(any(Runnable.class)));
 
       allowing(myMockExtensionHolder).getExtensions(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(Collections.emptyList()));
+
+      final BuildAgentConfiguration agentConfiguration = context.mock(BuildAgentConfiguration.class);
+      final File agentPluginDir = myTempFiles.createTempDir();
+      allowing(myMockBuild).getAgentConfiguration(); will(returnValue(agentConfiguration));
+      allowing(agentConfiguration).getAgentPluginsDirectory(); will(returnValue(agentPluginDir));
     }};
 
     context.checking(initMockingCtx);

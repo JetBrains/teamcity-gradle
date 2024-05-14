@@ -19,17 +19,17 @@ public class GradleCommandLineComposerHolderTest {
 
   @DataProvider
   public Object[][] launchModeProvider() {
-    GradleLaunchMode[] statuses = GradleLaunchMode.values();
-    Object[][] data = new Object[statuses.length][1];
-    for (int i = 0; i < statuses.length; i++) {
-      data[i][0] = statuses[i];
+    GradleLaunchMode[] modes = GradleLaunchMode.values();
+    Object[][] data = new Object[modes.length][1];
+    for (int i = 0; i < modes.length; i++) {
+      data[i][0] = modes[i];
     }
     return data;
   }
   @Test(dataProvider = "launchModeProvider")
   public void should_GetComposerByLaunchMode(GradleLaunchMode launchMode) throws RunBuildException {
     // arrange
-    GradleTasksComposer tasksComposer = new GradleTasksComposer();
+    GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
       new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
     );

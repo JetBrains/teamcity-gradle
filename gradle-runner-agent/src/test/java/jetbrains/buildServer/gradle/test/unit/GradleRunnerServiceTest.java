@@ -94,7 +94,7 @@ public class GradleRunnerServiceTest {
         }
       });
     }});
-    GradleTasksComposer tasksComposer = new GradleTasksComposer();
+    GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
       new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
     );
@@ -409,7 +409,7 @@ public class GradleRunnerServiceTest {
 
   @Test(expectedExceptions = RunBuildException.class)
   public void gradleExeDoesNotExistTest() throws RunBuildException, IOException {
-    GradleTasksComposer tasksComposer = new GradleTasksComposer();
+    GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
       new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
     );

@@ -18,14 +18,25 @@ import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_DIR
 
 public class GradleTasksComposer {
 
+  private final List<GradleTasksPostProcessor> gradleTasksPostProcessors;
+
+  public GradleTasksComposer(List<GradleTasksPostProcessor> gradleTasksPostProcessors) {
+    this.gradleTasksPostProcessors = gradleTasksPostProcessors;
+  }
+
   @NotNull
   public List<String> getGradleTasks(@NotNull Map<String, String> runnerParameters) {
     String gradleTasks = ConfigurationParamsUtil.getGradleTasks(runnerParameters);
-    return gradleTasks.length() > 0
-           ? StringUtil.splitHonorQuotes(gradleTasks, GRADLE_TASKS_DELIMITER).stream()
+
+    List<String> tasksAsList = gradleTasks.isEmpty()
+           ? Collections.emptyList()
+           : StringUtil.splitHonorQuotes(gradleTasks, GRADLE_TASKS_DELIMITER).stream()
                        .map(String::trim)
-                       .collect(Collectors.toList())
-           : Collections.emptyList();
+                       .collect(Collectors.toList());
+
+    gradleTasksPostProcessors.forEach(postProcessor -> postProcessor.process(tasksAsList));
+
+    return tasksAsList;
   }
 
   @NotNull

@@ -16,5 +16,6 @@
   <bean id="gradleSimpleCommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleCommandLineComposer" autowire="constructor"/>
   <bean id="gradleCommandLineComposerHolder" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder" autowire="constructor"/>
   <bean id="gradleTasksComposer" class="jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer" autowire="constructor"/>
+  <bean id="gradleTestFilterPostProcessor" class="jetbrains.buildServer.gradle.agent.tasks.GradleTestFilterPostProcessor" autowire="constructor"/>
 
 </beans>
