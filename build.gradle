@@ -24,13 +24,13 @@ allprojects {
   version = versionNumber
 
   repositories {
-    mavenLocal()
     if (localRepo) {
       maven {
         name = "local-teamcity-artifacts"
         url "file:///${localRepo}"
       }
     }
+    mavenLocal()
     maven { url "https://repo.labs.intellij.net/teamcity" }
     maven {
       name = "jetbrains-teamcity"
