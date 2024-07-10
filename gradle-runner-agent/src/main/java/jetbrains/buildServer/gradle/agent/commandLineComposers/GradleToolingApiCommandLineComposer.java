@@ -19,6 +19,7 @@ import jetbrains.buildServer.agent.ClasspathUtil;
 import jetbrains.buildServer.agent.runner.JavaCommandLineBuilder;
 import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.gradle.agent.GradleDaemonEnhancementClassesProvider;
 import jetbrains.buildServer.gradle.agent.GradleLaunchMode;
 import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelectionResult;
 import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
@@ -92,6 +93,10 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
     envs.put(GRADLE_JVM_PARAMS_FILE_ENV_KEY, jvmParamsFile.getAbsolutePath());
     envs.put(GRADLE_TASKS_FILE_ENV_KEY, gradleTasksFile.getAbsolutePath());
 
+    if (gradleDaemonClasspathEnhancementEnabled(parameters.getConfigParameters())) {
+      envs.put(GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY, GradleDaemonEnhancementClassesProvider.provide());
+    }
+
     final Map<String, String> systemProperties = new HashMap<>();
     systemProperties.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, readAllBuildParamsRequired(parameters.isConfigurationCacheEnabled(),
                                                                                          parameters.getConfigParameters(), parameters.getLogger()).toString());
@@ -133,6 +138,15 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
       Loggers.AGENT.warnAndDebugDetails("Failed patch temp dir for Gradle runtime environment: " + e, e);
       return Optional.empty();
     }
+  }
+
+  @NotNull
+  private Boolean gradleDaemonClasspathEnhancementEnabled(@NotNull final Map<String, String> configParams) {
+    if (configParams.containsKey(GRADLE_RUNNER_ENHANCE_GRADLE_DAEMON_CLASSPATH)) {
+      return Boolean.valueOf(configParams.get(GRADLE_RUNNER_ENHANCE_GRADLE_DAEMON_CLASSPATH));
+    }
+
+    return true;
   }
 
   @NotNull

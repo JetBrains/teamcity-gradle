@@ -833,6 +833,109 @@ class TestFilterWrapper {
   }
 }
 
+class GradleDaemonClasspathEnhancer implements Action<Test> {
+
+  private final Logger logger
+  private final List<String> classNames
+
+  GradleDaemonClasspathEnhancer(Logger logger, List<String> classNames) {
+    this.logger = logger
+    this.classNames = classNames
+  }
+
+  @Override
+  void execute(Test task) {
+    enhanceGradleDaemonClasspath(logger, task, classNames)
+  }
+
+  private static void enhanceGradleDaemonClasspath(Logger logger, Test task, List<String> classNames) {
+    try {
+      def testClasspath = getTestClasspath(task)
+      def classpath = findJarsForClasses(testClasspath, classNames)
+      logger.debug("Test classpath:")
+      for (def url : testClasspath) {
+        logger.debug(url.toString())
+      }
+      logger.debug("Reduced classpath:")
+      for (def url : classpath) {
+        logger.debug(url.toString())
+      }
+      logger.debug("End of classpath")
+      if (!classpath.isEmpty()) {
+        def classLoader = getDaemonClassLoader()
+        addClasspath(classLoader, classpath)
+      }
+    } catch (Throwable t) {
+      logger.error("Unable to enhance Gradle Daemon by $classNames", t)
+    }
+  }
+
+  private static URLClassLoader getDaemonClassLoader() {
+    try {
+      def daemonMainClass = Class.forName("org.gradle.launcher.daemon.bootstrap.DaemonMain")
+      def classLoader = daemonMainClass.getClassLoader()
+      if (classLoader instanceof URLClassLoader) {
+        return classLoader
+      }
+      throw new IllegalStateException("Unsupported Gradle daemon class loader: $classLoader")
+    }
+    catch (ClassNotFoundException exception) {
+      throw new IllegalStateException("Daemon class loader not found.", exception)
+    }
+  }
+
+  private static List<URL> getTestClasspath(Test task) {
+    return task.classpath.files.collect { it.toURI().toURL() }
+  }
+
+  private static List<URL> findJarsForClasses(List<URL> classpath, List<String> classNames) {
+    def foundClassNames = new HashSet<String>()
+    def reducedClasspath = new ArrayList<URL>()
+    for (def url : classpath) {
+      new URLClassLoader([url] as URL[]).withCloseable { classLoader ->
+        for (def className : classNames) {
+          if (hasClass(classLoader, className)) {
+            foundClassNames.add(className)
+            reducedClasspath.add(url)
+            break
+          }
+        }
+      }
+    }
+    if (foundClassNames.size() != classNames.size()) {
+      return []
+    }
+    return reducedClasspath
+  }
+
+  private static boolean hasClass(URLClassLoader classLoader, String className) {
+    def classFile = className.replace(".", "/") + ".class"
+    return classLoader.findResource(classFile) != null
+  }
+
+  private static void addClasspath(URLClassLoader classLoader, Iterable<URL> classpath) {
+    for (def url : classpath) {
+      classLoader.addURL(url)
+    }
+  }
+}
+
+List<String> gradleDaemonEnhancementClassNames = initGradleDaemonEnhancementClassNames()
+
+def initGradleDaemonEnhancementClassNames() {
+  try {
+    def classNamesAsString = System.getenv(GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY)
+    if (classNamesAsString == null) {
+      return []
+    } else {
+      return evaluate(classNamesAsString)
+    }
+  } catch (Throwable t) {
+    logger.debug("Error while trying to initialize class names for Gradle daemon classpath enhancing", t)
+    return []
+  }
+}
+
 final AtomicLong testCounter = new AtomicLong(0)
 
 String propsFilePath = System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY)
@@ -873,6 +976,10 @@ gradle.projectsEvaluated { Gradle gradle ->
 
       // add executable tests
       testTask.filter.updateFilters(System.getenv("TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"), logger)
+
+      if (!gradleDaemonEnhancementClassNames.isEmpty() && task instanceof Test) {
+        task.doFirst(new GradleDaemonClasspathEnhancer(logger, gradleDaemonEnhancementClassNames))
+      }
     }
   }
 }
