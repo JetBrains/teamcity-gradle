@@ -1293,6 +1293,8 @@ gradle.projectsEvaluated { Gradle gradle ->
       }
       // add executable tests
       testTask.filter.updateFilters(System.getenv("TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"), logger)
+      // will be empty if parallel tests enabled
+      testTask.filter.updateFilters(System.getenv("TEAMCITY_RISK_TESTS_ARTIFACT_PATH"), logger)
     }
   }
 

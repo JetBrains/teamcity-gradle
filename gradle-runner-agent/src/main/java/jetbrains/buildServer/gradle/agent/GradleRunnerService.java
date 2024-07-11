@@ -224,7 +224,14 @@ public class GradleRunnerService extends BuildServiceAdapter
     env.put(GradleRunnerConstants.ENV_GRADLE_OPTS, appendTmpDir(buildGradleOpts(), getBuildTempDirectory()));
     env.put(GradleRunnerConstants.ENV_INCREMENTAL_PARAM, getIncrementalMode());
     env.put(GradleRunnerConstants.ENV_SUPPORT_TEST_RETRY, getBuild().getBuildTypeOptionValue(BuildTypeOptions.BT_SUPPORT_TEST_RETRY).toString());
-    env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, getBuildParameters().getSystemProperties().getOrDefault("teamcity.build.parallelTests.excludesFile", ""));
+
+    final String parallelTestsParam = getBuildParameters().getSystemProperties().getOrDefault("teamcity.build.parallelTests.excludesFile", "");
+    final String riskTestsParam = getBuildParameters().getSystemProperties().getOrDefault("teamcity.build.testPrioritization.riskTests.excludesFile", "");
+    if (!parallelTestsParam.isEmpty() && !riskTestsParam.isEmpty()) {
+      getLogger().warning("Both filter parameters for parallel tests and risk tests are present");
+    }
+    env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, parallelTestsParam);
+    env.put(GradleRunnerConstants.TEAMCITY_RISK_TESTS_ARTIFACT_PATH, riskTestsParam);
 
     if (gradleWrapperProperties != null) env.put(GRADLE_WRAPPED_DISTRIBUTION_ENV_KEY, gradleWrapperProperties.getAbsolutePath());
 

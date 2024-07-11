@@ -45,6 +45,7 @@ public class GradleRunnerConstants
   public static final String ENV_GRADLE_OPTS = "GRADLE_OPTS";
   public static final String ENV_SUPPORT_TEST_RETRY = "TEAMCITY_SUPPORT_TEST_RETRY";
   public static final String TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH = "TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH";
+  public static final String TEAMCITY_RISK_TESTS_ARTIFACT_PATH = "TEAMCITY_RISK_TESTS_ARTIFACT_PATH";
 
   public static final String INIT_SCRIPT_DIR = "scripts";
   public static final String INIT_SCRIPT_NAME = "init.gradle";

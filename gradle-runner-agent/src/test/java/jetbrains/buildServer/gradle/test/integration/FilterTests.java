@@ -88,6 +88,23 @@ public class FilterTests extends GradleRunnerServiceMessageTest {
     testTest(PROJECT_S_NAME, "test", "filterTests/plainExcludeAndNotExistTests.txt", gradleVersion, "(##teamcity\\[(testStarted|testFinished)(.*?)(?<!\\|)\\])");
   }
 
+  @Test(dataProvider = "gradle-version-provider>=5.0")
+  public void plainFilterRiskTests(final String gradleVersion) throws Exception {
+    final File excludes = createFilterFile(
+      "#current_batch=1\n" +
+      "#total_batches=2\n" +
+      "test.My1Test\n" +
+      "test.My4Test\n"
+    );
+    myTeamCitySystemProps.remove("teamcity.build.parallelTests.excludesFile");
+    myTeamCitySystemProps.remove("teamcity.build.parallelTests.includesFile");
+    myTeamCitySystemProps.put("teamcity.build.testPrioritization.riskTests.excludesFile", excludes.getCanonicalPath());
+    myTeamCitySystemProps.put("teamcity.build.testPrioritization.riskTests.includesFile", excludes.getCanonicalPath());
+    testTest(PROJECT_S_NAME, "test", "filterTests/plainRiskTests.txt", gradleVersion, "##teamcity\\[(testStarted|testFinished)(.*?)(?<!\\|)\\]");
+    myTeamCitySystemProps.remove("teamcity.build.testPrioritization.riskTests.excludesFile");
+    myTeamCitySystemProps.remove("teamcity.build.testPrioritization.riskTests.includesFile");
+  }
+
   // Multimodule
   @Test(dataProvider = "gradle-version-provider>=5.0")
   public void multimoduleIncludeTests(final String gradleVersion) throws Exception {
