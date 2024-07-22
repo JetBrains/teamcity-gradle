@@ -92,9 +92,11 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
     envs.put(GRADLE_PARAMS_FILE_ENV_KEY, gradleParamsFile.getAbsolutePath());
     envs.put(GRADLE_JVM_PARAMS_FILE_ENV_KEY, jvmParamsFile.getAbsolutePath());
     envs.put(GRADLE_TASKS_FILE_ENV_KEY, gradleTasksFile.getAbsolutePath());
-
     if (gradleDaemonClasspathEnhancementEnabled(parameters.getConfigParameters())) {
       envs.put(GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY, GradleDaemonEnhancementClassesProvider.provide());
+    }
+    if (testTaskJvmArgumentsProviderDisabled(parameters.getConfigParameters())) {
+      envs.put(TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_KEY, "true");
     }
 
     final Map<String, String> systemProperties = new HashMap<>();
@@ -147,6 +149,14 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
     }
 
     return true;
+  }
+
+  private boolean testTaskJvmArgumentsProviderDisabled(@NotNull final Map<String, String> configParams) {
+    if (configParams.containsKey(GRADLE_RUNNER_TEST_TASK_JVM_ARG_PROVIDER_DISABLED)) {
+      return Boolean.parseBoolean(configParams.get(GRADLE_RUNNER_TEST_TASK_JVM_ARG_PROVIDER_DISABLED));
+    }
+
+    return false;
   }
 
   @NotNull

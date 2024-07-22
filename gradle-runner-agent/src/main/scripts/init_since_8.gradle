@@ -796,8 +796,15 @@ class TestTaskWrapper {
   void addTestOutputListener(def listener) { testTask.addTestOutputListener(listener) }
   Project getProject() { testTask.project }
 
-  TestTaskWrapper jvmArgs(Object... arguments) {
-    if (testTask instanceof Test) testTask.jvmArgs(arguments)
+  TestTaskWrapper jvmArgs(String[] arguments) {
+    Boolean jvmArgsProviderDisabled = Boolean.valueOf(System.getenv("TEST_TASK_JVM_ARG_PROVIDER_DISABLED"))
+    if (testTask instanceof Test) {
+      if (jvmArgsProviderDisabled) {
+        testTask.jvmArgs(arguments)
+      } else {
+        testTask.jvmArgumentProviders.add(new TestTaskJvmArgumentsProvider(arguments))
+      }
+    }
     return this
   }
 
@@ -830,6 +837,19 @@ class TestFilterWrapper {
     new File(fileName).eachLine { line ->
       if (!line.startsWith("#")) excludeTest(line, null)
     }
+  }
+}
+
+class TestTaskJvmArgumentsProvider implements CommandLineArgumentProvider {
+  private final List<String> arguments
+
+  TestTaskJvmArgumentsProvider(String[] arguments) {
+    this.arguments = Arrays.asList(arguments)
+  }
+
+  @Override
+  Iterable<String> asArguments() {
+    return arguments
   }
 }
 
