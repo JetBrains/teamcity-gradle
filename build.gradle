@@ -15,7 +15,7 @@ ext {
   versionNumber = anyParam('PluginVersion') ?: teamcityVersion
 }
 def localRepo = anyParamPath('TC_LOCAL_REPO')
-def localGradleRepo = anyParamPath('TC_GRADLE_LOCAL_REPO') ?: rootProject.projectDir.toPath().resolve('local-gradle-repo')
+def localGradleRepo = anyParamPath('TC_GRADLE_LOCAL_REPO') ?: anyParamPath('TC_LOCAL_REPO') ?: rootProject.projectDir.toPath().resolve('local-gradle-repo')
 
 version = versionNumber
 
