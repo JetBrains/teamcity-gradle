@@ -38,7 +38,14 @@ public class GradleRunnerConstants
    */
   public static final String GRADLE_RUNNER_WRAPPER_PROPERTIES_PATH_CONFIG_PARAM = "teamcity.internal.gradle.runner.wrapperPropertiesPath";
   public static final String GRADLE_RUNNER_PLACE_LIBS_FOR_TOOLING_IN_TEMP_DIR = "teamcity.internal.gradle.runner.placeLibsForToolingApiInTempDir";
+  /**
+   * Defaults to true
+   */
   public static final String GRADLE_RUNNER_ENHANCE_GRADLE_DAEMON_CLASSPATH = "teamcity.internal.gradle.runner.enhanceGradleDaemonClasspath";
+  /**
+   * Defaults to false
+   */
+  public static final String GRADLE_RUNNER_TEST_TASK_JVM_ARG_PROVIDER_DISABLED = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled";
 
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";
@@ -70,6 +77,7 @@ public class GradleRunnerConstants
   public static final String GRADLE_JVM_PARAMS_FILE_ENV_KEY = "TEAMCITY_GRADLE_JVM_PARAMETERS";
   public static final String GRADLE_TASKS_FILE_ENV_KEY = "TEAMCITY_GRADLE_TASKS";
   public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = "GRADLE_DAEMON_ENHANCEMENT_CLASSES";
+  public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_KEY = "TEST_TASK_JVM_ARG_PROVIDER_DISABLED";
 
   public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = "teamcity.build.properties.file";
   public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";

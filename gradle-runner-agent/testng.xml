@@ -15,6 +15,7 @@
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerJvmArgumentsTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerToolingApiClasspathTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerOpentest4jTest"/>
+      <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerBuildCacheTest"/>
 
       <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerServiceTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.TeamCityBuildPropertiesGradleSplitterTest"/>
