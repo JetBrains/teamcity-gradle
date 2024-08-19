@@ -5,6 +5,7 @@ import java.io.File;
 public class GradleRunnerConstants
 {
   public static final String RUNNER_TYPE = "gradle-runner";
+  public static final String DISPLAY_NAME = "Gradle";
 
   public static final String GRADLE_INIT_SCRIPT = "ui.gradleRunner.gradle.init.script";
   public static final String GRADLE_HOME = "ui.gradleRunner.gradle.home";
@@ -46,6 +47,10 @@ public class GradleRunnerConstants
    * Defaults to false
    */
   public static final String GRADLE_RUNNER_TEST_TASK_JVM_ARG_PROVIDER_DISABLED = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled";
+
+  // Tooling API configuration parameters
+  public static final String TOOLING_PREPARATION_PHASE_DAEMON_MAX_IDLE_TIME_ENABLED = "teamcity.internal.gradle.runner.toolingApi.buildPreparationPhase.daemonMaxIdleTimeEnabled";
+  public static final String TOOLING_PREPARATION_PHASE_DAEMON_MAX_IDLE_TIME_MS = "teamcity.internal.gradle.runner.toolingApi.buildPreparationPhase.daemonMaxIdleTimeMs";
 
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";

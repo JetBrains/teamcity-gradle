@@ -12,11 +12,12 @@ import jetbrains.buildServer.agent.IncrementalBuild;
 import jetbrains.buildServer.agent.ToolCannotBeFoundException;
 import jetbrains.buildServer.agent.runner.*;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerParameters;
-import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
-import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
+import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.ErrorData;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -25,8 +26,6 @@ import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.StringUtil;
 import jetbrains.buildServer.util.impl.Lazy;
 import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.model.build.BuildEnvironment;
 import org.gradle.util.internal.DefaultGradleVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +43,8 @@ public class GradleRunnerService extends BuildServiceAdapter
   private final GradleConfigurationCacheDetector gradleConfigurationCacheDetector;
   private final CommandLineParametersProcessor commandLineParametersProcessor;
   private final GradleVersionDetector gradleVersionDetector;
+  private final GradleUserHomeDetector gradleUserHomeDetector;
+  private final GradleDependencyCacheManager gradleDependencyCacheManager;
 
   public GradleRunnerService(final String exePath,
                              final String wrapperName,
@@ -52,7 +53,9 @@ public class GradleRunnerService extends BuildServiceAdapter
                              final GradleLaunchModeSelector gradleLaunchModeSelector,
                              final GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
                              final CommandLineParametersProcessor commandLineParametersProcessor,
-                             final GradleVersionDetector gradleVersionDetector) {
+                             final GradleVersionDetector gradleVersionDetector,
+                             final GradleUserHomeDetector gradleUserHomeDetector,
+                             final GradleDependencyCacheManager gradleDependencyCacheManager) {
     this.exePath = exePath;
     this.wrapperName = wrapperName;
     this.composerHolder = composerHolder;
@@ -61,6 +64,8 @@ public class GradleRunnerService extends BuildServiceAdapter
     this.gradleConfigurationCacheDetector = gradleConfigurationCacheDetector;
     this.commandLineParametersProcessor = commandLineParametersProcessor;
     this.gradleVersionDetector = gradleVersionDetector;
+    this.gradleUserHomeDetector = gradleUserHomeDetector;
+    this.gradleDependencyCacheManager = gradleDependencyCacheManager;
     listeners = new Lazy<List<ProcessListener>>() {
       @Override
       protected List<ProcessListener> createValue() {
@@ -126,9 +131,9 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
 
     GradleConnector projectConnector = getGradleConnector(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
-    File gradleUserHome = Optional.ofNullable(projectConnector).flatMap(this::getGradleUserHome).orElse(null);
-    DefaultGradleVersion gradleVersion = gradleVersionDetector.detect(projectConnector, getLogger()).orElse(null);
     List<String> userDefinedParams = ConfigurationParamsUtil.getGradleParams(getRunnerParameters());
+    File gradleUserHome = gradleUserHomeDetector.detect(gradleTasks, userDefinedParams, env, projectConnector).orElse(null);
+    DefaultGradleVersion gradleVersion = gradleVersionDetector.detect(projectConnector, getLogger()).orElse(null);
     boolean configurationCacheEnabled = gradleConfigurationCacheDetector.isConfigurationCacheEnabled(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
     boolean configurationCacheProblemsIgnored = gradleConfigurationCacheDetector.areConfigurationCacheProblemsIgnored(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
     Set<String> unsupportedByToolingArgs = commandLineParametersProcessor.obtainUnsupportedArguments(Stream.concat(gradleTasks.stream(), userDefinedParams.stream()).collect(Collectors.toList()));
@@ -140,6 +145,8 @@ public class GradleRunnerService extends BuildServiceAdapter
                                                                                                                              .withConfigurationCacheProblemsIgnored(configurationCacheProblemsIgnored)
                                                                                                                              .withUnsupportedByToolingArgs(unsupportedByToolingArgs)
                                                                                                                              .build());
+
+    gradleDependencyCacheManager.prepareAndRestoreCache(projectConnector, getRunnerContext().getId(), gradleUserHome, getBuildTempDirectory());
 
     GradleCommandLineComposerParameters composerParameters =
       getComposerParameters(env, gradleTasks, configurationCacheEnabled, workingDirectory, params, exePath, selectionResult);
@@ -185,30 +192,20 @@ public class GradleRunnerService extends BuildServiceAdapter
     return new File(workingDirectory, relativeGradleWPath + File.separator + GRADLE_WRAPPER_PROPERTIES_DEFAULT_LOCATION);
   }
 
-  @NotNull
-  private Optional<File> getGradleUserHome(@NotNull GradleConnector projectConnector) {
-    try (ProjectConnection connection = projectConnector.connect()) {
-      BuildEnvironment buildEnvironment = connection.getModel(BuildEnvironment.class);
-      return Optional.ofNullable(buildEnvironment.getGradle().getGradleUserHome());
-    } catch (Throwable t) {
-      getLogger().warning("Unable to detect Gradle User Home: " + t.getMessage());
-      return Optional.empty();
-    }
-  }
-
   @Nullable
   private GradleConnector getGradleConnector(@NotNull File workingDirectory,
                                              @NotNull Boolean useWrapper,
                                              @Nullable File gradleHome,
                                              @Nullable File gradleWrapperProperties) {
     try {
-      return GradleToolingConnectorFactory.instantiate(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
+      return GradleToolingConnectorFactory.instantiate(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties, getConfigParameters());
     } catch (Throwable t) {
       getLogger().warning("Unable to obtain project connector: " + t.getMessage());
       return null;
     }
   }
 
+  @NotNull
   private Map<String, String> getEnvironments(@NotNull File workingDirectory,
                                               @NotNull Boolean useWrapper,
                                               @Nullable final File gradleHome,

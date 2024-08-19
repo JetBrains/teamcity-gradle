@@ -6,4 +6,8 @@
   <bean id="gradleRunType" class="jetbrains.buildServer.gradle.server.GradleRunType"/>
   <bean class="jetbrains.buildServer.gradle.server.GradleProblemTypeDetailsProvider"/>
   <bean class="jetbrains.buildServer.gradle.server.GradleRunnerDiscoveryExtension"/>
+  <bean id="gradleDependencyCacheRunnerRegistrator" class="jetbrains.buildServer.gradle.server.depcache.GradleDependencyCacheRunnerRegistrator"
+        init-method="register"
+        destroy-method="unregister"/>
+  <bean id="gradleBuildStartContextProcessor" class="jetbrains.buildServer.gradle.server.depcache.GradleBuildStartContextProcessor"/>
 </beans>

@@ -4,6 +4,7 @@ import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.TempFiles;
 import jetbrains.buildServer.agent.AgentRunningBuild;
@@ -22,10 +23,12 @@ import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCache
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
 import jetbrains.buildServer.util.VersionComparatorUtil;
+import org.gradle.tooling.GradleConnector;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.api.Invocation;
@@ -37,6 +40,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
+import static jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.GRADLE_DEP_CACHE_ENABLED;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.testng.Assert.*;
 
@@ -57,6 +61,7 @@ public class GradleRunnerServiceTest {
   protected BuildRunnerContext myRunnerContext;
   protected AgentRunningBuild myBuild;
   protected GradleRunnerService myService;
+  private GradleDependencyCacheManager dependencyCacheManager;
   protected File myGradleExe;
   protected File myWorkingDirectory;
   protected File myInitScript;
@@ -67,21 +72,22 @@ public class GradleRunnerServiceTest {
   private List<String> toolingApiJvmGradleArgs = Collections.emptyList();
   private List<String> toolingApiGradleTasks = Collections.emptyList();
 
-
   @BeforeMethod
   public void setUp() throws Exception {
     myTempDir = myTempFiles.createTempDir();
-    myContext = new Mockery();
+    myContext = TCJMockUtils.createInstance();
 
     myRunnerContext = myContext.mock(BuildRunnerContext.class);
     myBuild = myContext.mock(AgentRunningBuild.class);
     final BuildParametersMap myBuildPrarams = myContext.mock(BuildParametersMap.class);
+    dependencyCacheManager = myContext.mock(GradleDependencyCacheManager.class);
 
     myContext.checking(new Expectations() {{
       allowing(myBuild).getBuildLogger();
       allowing(myBuild).getBuildTempDirectory();          will(returnValue(myTempDir));
       allowing(myRunnerContext).getRunnerParameters();    will(returnValue(myRunnerParams));
       allowing(myRunnerContext).getBuildParameters();     will(returnValue(myBuildPrarams));
+      allowing(myRunnerContext).getId();     will(returnValue("myBuildPrarams"));
       allowing(myRunnerContext).isVirtualContext();       will(returnValue(false));
       allowing(myBuildPrarams).getAllParameters();        will(returnValue(myBuildParams));
       allowing(myBuildPrarams).getEnvironmentVariables(); will(returnValue(myEnvVars));
@@ -93,19 +99,24 @@ public class GradleRunnerServiceTest {
           return ((Option)invocation.getParameter(0)).getDefaultValue();
         }
       });
+      allowing(dependencyCacheManager).prepareAndRestoreCache(with(Expectations.<GradleConnector>anything()), with(Expectations.<String>anything()),
+                                                              with(Expectations.<File>anything()), with(Expectations.<File>anything()));
     }});
     GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
       new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
+
     myService = (GradleRunnerService) new GradleRunnerServiceFactory(
       composerHolder,
       tasksComposer,
       new GradleLaunchModeSelector(),
       new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
       new CommandLineParametersProcessor(),
-      new GradleVersionDetector()).createService();
+      new GradleVersionDetector(),
+      new GradleUserHomeDetector(),
+      dependencyCacheManager).createService();
 
     myCoDir = myTempFiles.createTempDir();
 
@@ -414,12 +425,15 @@ public class GradleRunnerServiceTest {
       new GradleSimpleCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
+
     GradleRunnerService service = (GradleRunnerService) new GradleRunnerServiceFactory(
       composerHolder, tasksComposer,
       new GradleLaunchModeSelector(),
       new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
       new CommandLineParametersProcessor(),
-      new GradleVersionDetector()).createService();
+      new GradleVersionDetector(),
+      new GradleUserHomeDetector(),
+      dependencyCacheManager).createService();
 
     myContext.checking(new Expectations() {{
       allowing(myRunnerContext).getToolPath("gradle"); will(returnValue(myTempFiles.createTempDir().getAbsolutePath()));
@@ -441,6 +455,7 @@ public class GradleRunnerServiceTest {
 
     myConfigParameters.put(GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM,
                            VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE : GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE);
+    myConfigParameters.put(GRADLE_DEP_CACHE_ENABLED, "false");
 
     myGradleExe = new File(gradleToolDir, GradleRunnerServiceFactory.WIN_GRADLE_EXE);
     if (SystemInfo.isUnix) {

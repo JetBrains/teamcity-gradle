@@ -34,7 +34,7 @@ public class GradleRunType extends RunType {
   @NotNull
   @Override
   public String getDisplayName() {
-    return "Gradle";
+    return GradleRunnerConstants.DISPLAY_NAME;
   }
 
   @NotNull

@@ -48,8 +48,8 @@ public class GradleRunnerFileUtil {
     return result;
   }
 
-  private static File createFileInBuildTempDirectory(@NotNull File buildTempDirectory,
-                                                     @NotNull File destination) throws IOException {
+  public static File createFileInBuildTempDirectory(@NotNull File buildTempDirectory,
+                                                    @NotNull File destination) throws IOException {
     buildTempDirectory.mkdirs();
 
     if (destination.isFile()) {

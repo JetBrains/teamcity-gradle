@@ -2,6 +2,7 @@
 <suite name="Gradle agent-side">
   <test name="Gradle agent-side">
     <classes>
+<!--      Java-->
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerCompileTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerDepBasedTestTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerTestTest"/>
@@ -23,6 +24,14 @@
       <class name="jetbrains.buildServer.gradle.test.unit.GradleJvmArgsMergerTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleConfigurationCacheDetectorTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleDaemonEnhancementClassesProviderTest"/>
+
+<!--      Kotlin-->
+      <class name="jetbrains.buildServer.gradle.test.integration.GradleProjectDependenciesCollectorTest"/>
+
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleDependencyCacheSettingsProviderTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleDependenciesChangedInvalidatorTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleDependencyCacheManagerTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleUserHomeDetectorTest"/>
     </classes>
   </test>
 </suite>

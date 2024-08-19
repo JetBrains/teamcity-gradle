@@ -262,7 +262,7 @@ public class GradleConfigurationCacheDetectorTest {
                     .split(" "));
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeForCLArgDir, projectDir, gradleVersion);
 
     // assert
     assertTrue(isEnabled);
@@ -299,7 +299,7 @@ public class GradleConfigurationCacheDetectorTest {
                      .split(" "));
 
     // act
-    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeDir, projectDir, gradleVersion);
+    boolean isEnabled = configurationCacheDetector.isConfigurationCacheEnabled(logger, gradleTasks, gradleParams, gradleUserHomeForSystemPropertyDir, projectDir, gradleVersion);
 
     // assert
     assertFalse(isEnabled);

@@ -25,9 +25,13 @@ dependencies {
     implementation 'org.gradle:gradle-tooling-api:8.9'
     implementation 'org.slf4j:slf4j-api:1.7.36'
     implementation 'commons-cli:commons-cli:1.4'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
     compileOnly "org.jetbrains.teamcity:agent-api:${teamcityVersion}",
-            "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
-            "org.jetbrains.teamcity:common-api:${teamcityVersion}"
+                "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
+                "org.jetbrains.teamcity:common-api:${teamcityVersion}",
+                "org.jetbrains.teamcity:dependency-cache-agent:${teamcityVersion}"
+    testImplementation "org.jetbrains.teamcity:dependency-cache-agent:${teamcityVersion}"
+    testImplementation "io.mockk:mockk-jvm:1.13.2"
 }
 
 agentPlugin {

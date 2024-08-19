@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import org.jetbrains.annotations.NotNull;
 
+import static jetbrains.buildServer.gradle.agent.util.GradleCommandLineUtil.extractEqualSignSeparatedParamValue;
+
 public class GradleOptionValueFetcher {
 
   private static final String GRADLE_PROPERTIES_FILENAME = "gradle.properties";
@@ -89,63 +91,15 @@ public class GradleOptionValueFetcher {
     return checkGradleProperties(gradleProperties, parameters.getGradlePropertiesOptionNames());
   }
 
-  /**
-   * If a user has overridden Gradle User Home via the system property or the command line argument,
-   * the overridden value will have a higher priority over the default GRADLE_USER_HOME.
-   */
   @NotNull
   private Optional<String> checkGradleUserHomeDirectory(@NotNull GradleOptionValueFetchingParameters parameters) {
-    Optional<File> overriddenGradleUserHome = tryToGetOverriddenGradleUserHome(parameters.getGradleTasks(), parameters.getGradleParams());
-    if (overriddenGradleUserHome.isPresent()) {
-      File gradleProperties = new File(overriddenGradleUserHome.get(), GRADLE_PROPERTIES_FILENAME);
-      return checkGradleProperties(gradleProperties, parameters.getGradlePropertiesOptionNames());
-    }
-
     if (!parameters.getGradleUserHome().isPresent()) {
       return Optional.empty();
     }
+
     File gradleProperties = new File(parameters.getGradleUserHome().get(), GRADLE_PROPERTIES_FILENAME);
 
     return checkGradleProperties(gradleProperties, parameters.getGradlePropertiesOptionNames());
-  }
-
-  /**
-   * It is possible to pass to Gradle both of: system property and command line argument.
-   * E.g.: gradlew build -Dgradle.user.home=/CustomGUH --gradle-user-home=/CustomGUH2.
-   * In this case, the command line arg has higher priority.
-   * If both of: short command line arg (e.g.: -g=/Path) and long command line arg (e.g.: --gradle-user-home=/Path) are passed, Gradle will throw an exception.
-   */
-  @NotNull
-  private Optional<File> tryToGetOverriddenGradleUserHome(@NotNull List<String> gradleTasks,
-                                                          @NotNull List<String> gradleParams) {
-    String gradleUserHomeCLArg = null;
-    String gradleUserHomeSystemProperty = null;
-    List<String> tasksAndParams = Stream.concat(gradleTasks.stream(), gradleParams.stream()).collect(Collectors.toList());
-
-    for (int i = 0; i < tasksAndParams.size(); i++) {
-      String item = tasksAndParams.get(i);
-      if (item.startsWith("--gradle-user-home=") || item.startsWith("-g=")) {
-        gradleUserHomeCLArg = extractEqualSignSeparatedParamValue(item);
-        break;
-      }
-      if (item.equals("--gradle-user-home") || item.equals("-g") && i + 1 < tasksAndParams.size()) {
-        gradleUserHomeCLArg = tasksAndParams.get(i + 1);
-        break;
-      }
-      if (item.startsWith("-Dgradle.user.home=")) {
-        gradleUserHomeSystemProperty = extractEqualSignSeparatedParamValue(item);
-      }
-    }
-
-    if (gradleUserHomeCLArg != null) {
-      return Optional.of(new File(gradleUserHomeCLArg));
-    }
-
-    if (gradleUserHomeSystemProperty != null) {
-      return Optional.of(new File(gradleUserHomeSystemProperty));
-    }
-
-    return Optional.empty();
   }
 
   @NotNull
@@ -170,11 +124,5 @@ public class GradleOptionValueFetcher {
     }
 
     return Optional.empty();
-  }
-
-  @NotNull
-  private String extractEqualSignSeparatedParamValue(@NotNull String param) {
-    String[] divided = param.split("=");
-    return divided.length > 1 ? divided[1] : "";
   }
 }
