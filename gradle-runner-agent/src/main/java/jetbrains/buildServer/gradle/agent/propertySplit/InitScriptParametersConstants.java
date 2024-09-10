@@ -12,7 +12,6 @@ public class InitScriptParametersConstants {
   public static final String TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY = "teamcity.build.stacktraceLogDir";
   public static final String TEAMCITY_BUILD_CHANGED_FILES_KEY = "teamcity.build.changedFiles.file";
   public static final String TEAMCITY_BUILD_TEMP_DIR_KEY = "teamcity.build.tempDir";
-  public static final String TEAMCITY_BASE_DIR_KEY = "base.dir";
 
   // Configuration parameters used in the init script
   public static final String TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY = "teamcity.internal.gradle.testNameFormat";

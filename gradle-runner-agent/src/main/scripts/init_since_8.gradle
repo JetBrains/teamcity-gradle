@@ -158,13 +158,13 @@ public class TeamcityTestListener implements TestListener, TestOutputListener {
   private final boolean skipStdErr
   private final boolean skipStdOut
   private final TestNameDescriptor testNameDescriptor
-  private final Map<String, String> project
+  private final ProjectPropertyStorage project
   private final AtomicLong testCounter
   private final Pattern ignoredSuiteFormat
 
   public TeamcityTestListener(Logger log, TestTaskWrapper task, Project project, AtomicLong testCounter,
                               TestNameDescriptor testNameDescriptor, String ignoredSuiteFormat, Map<String, Boolean> skip) {
-    this.project = new ProjectPropertyStorage(project).toMap()
+    this.project = new ProjectPropertyStorage(project)
     this.logger = log
     this.flow = new FlowWrapper(DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.path.hashCode()))
     this.testCounter = testCounter
@@ -279,34 +279,36 @@ public class TeamcityTestListener implements TestListener, TestOutputListener {
 }
 
 class ProjectPropertyStorage {
-  private final Project project
+  private String buildStacktraceLogDir
+  private final String buildTempDir
+  private final File buildDir
 
   ProjectPropertyStorage(Project project) {
-    this.project = project
+    this.buildStacktraceLogDir = getPropertyFromProject(project, TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY)
+    this.buildTempDir = getPropertyFromProject(project, TEAMCITY_BUILD_TEMP_DIR_KEY)
+    this.buildDir = project.buildDir
   }
 
-  String getAt(String name) {
+  String getBuildStacktraceLogDir() {
+    return buildStacktraceLogDir
+  }
+
+  void setBuildStacktraceLogDir(String buildStacktraceLogDir) {
+    this.buildStacktraceLogDir = buildStacktraceLogDir
+  }
+
+  String getBuildTempDir() {
+    return buildTempDir
+  }
+
+  File getBuildDir() {
+    buildDir
+  }
+
+  private String getPropertyFromProject(Project project, String name) {
     return project.hasProperty("ext")
             ? project.ext.teamcity[name]
             : project.property(name)
-  }
-
-  void putAt(String name, Object value) {
-    if (project.hasProperty("ext")) {
-      project.ext.teamcity[name] = value
-    } else {
-      Map props = project.property("teamcity")
-      props[name] = value
-
-      project.setProperty("teamcity", props)
-    }
-  }
-
-  Map<String, String> toMap() {
-    Map<String, String> result = [:]
-    project.properties.each { key, value -> result[key] = value.toString() }
-    result[TEAMCITY_BASE_DIR_KEY] = project.buildDir.path
-    return result
   }
 }
 
@@ -410,11 +412,11 @@ public class SuiteDescriptorWrapper extends DescriptorWrapper {
 
 public class TestDescriptorWrapper extends DescriptorWrapper {
   private final TestNameDescriptor testNameDescriptor
-  private final Map<String, String> project
+  private final ProjectPropertyStorage project
   private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.message.maxLength", 18 * 1024)
   private static final String OUTPUT_PARSER = System.getProperty("teamcity.gradle.message.parser.type", "ServiceMessage")
 
-  TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, Map<String, String> project, Pattern ignoreSuite) {
+  TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, ProjectPropertyStorage project, Pattern ignoreSuite) {
     super(descriptor, flow, ignoreSuite)
     this.testNameDescriptor = testNameDescriptor
     this.project = project
@@ -551,13 +553,13 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
   }
 
   synchronized private File createBigStacktracesDir() {
-    final String path = project[TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY]
+    final String path = project.getBuildStacktraceLogDir()
     if (path != null && !path.equals("")) return new File(path)
 
-    final String rootTmpDirectory = project[TEAMCITY_BUILD_TEMP_DIR_KEY] ?: project[TEAMCITY_BASE_DIR_KEY]
+    final String rootTmpDirectory = project.getBuildTempDir() ?: project.getBuildDir().path
     final File resultDir = new File("${rootTmpDirectory}${File.separator}.teamcity${File.separator}testFailMessages${File.separator}${System.nanoTime()}")
     if (resultDir.mkdirs()) {
-      project[TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY] = resultDir.path
+      project.setBuildStacktraceLogDir(resultDir.path)
       return resultDir
     }
     return null
