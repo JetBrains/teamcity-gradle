@@ -61,7 +61,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
       if (StringUtil.isEmptyOrSpaces(text)) {
         myLastLineState = LastLine.EMPTY_ERROR;
       }
-      myBuildLogger.warning(text);
+      myBuildLogger.error(text);
     }
   }
 
@@ -89,7 +89,7 @@ class GradleLoggingListener extends ProcessListenerAdapter {
   }
 
   private void flushErrorMessages() {
-    myErrorMessages.forEach(msg -> myBuildLogger.warning(msg));
+    myErrorMessages.forEach(msg -> myBuildLogger.error(msg));
     myErrorMessages.clear();
   }
 
