@@ -47,7 +47,7 @@ import org.testng.annotations.DataProvider;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_NAME;
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME;
-import static jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.GRADLE_DEP_CACHE_ENABLED;
+import static jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -403,7 +403,7 @@ public class BaseGradleRunnerTest {
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
     }
-    myTeamCityConfigParameters.put(GRADLE_DEP_CACHE_ENABLED, "false");
+    myTeamCityConfigParameters.put(FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE, "false");
     findInitScript(ourProjectRoot, gradleVersionNum);
 
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());

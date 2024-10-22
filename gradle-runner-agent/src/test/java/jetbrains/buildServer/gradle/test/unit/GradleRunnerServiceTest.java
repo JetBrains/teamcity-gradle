@@ -1,6 +1,6 @@
 package jetbrains.buildServer.gradle.test.unit;
 
-import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.util.TCSystemInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -40,7 +40,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
-import static jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.GRADLE_DEP_CACHE_ENABLED;
+import static jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.testng.Assert.*;
 
@@ -378,9 +378,9 @@ public class GradleRunnerServiceTest {
     prepareGradleRequiredFiles(gradleVersion);
 
     File gradlew = null;
-    if (SystemInfo.isWindows) {
+    if (TCSystemInfo.isWindows) {
       gradlew = new File(myWorkingDirectory,GradleRunnerServiceFactory.WIN_GRADLEW);
-    } else if (SystemInfo.isUnix) {
+    } else if (TCSystemInfo.isUnix) {
       gradlew = new File(myWorkingDirectory,GradleRunnerServiceFactory.UNIX_GRADLEW);
     }
 
@@ -455,10 +455,10 @@ public class GradleRunnerServiceTest {
 
     myConfigParameters.put(GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM,
                            VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE : GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE);
-    myConfigParameters.put(GRADLE_DEP_CACHE_ENABLED, "false");
+    myConfigParameters.put(FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE, "false");
 
     myGradleExe = new File(gradleToolDir, GradleRunnerServiceFactory.WIN_GRADLE_EXE);
-    if (SystemInfo.isUnix) {
+    if (TCSystemInfo.isUnix) {
       myGradleExe = new File(gradleToolDir, GradleRunnerServiceFactory.UNIX_GRADLE_EXE);
     }
     myGradleExe.mkdirs();
@@ -487,9 +487,9 @@ public class GradleRunnerServiceTest {
     final String initScriptPath = myInitScript.getAbsolutePath();
     final List<String> args = cmdLine.getArguments();
 
-    if (SystemInfo.isWindows) {
+    if (TCSystemInfo.isWindows) {
       assertEquals(cmdLine.getExecutablePath(), exePath, "Wrong Gradle executable path.");
-    } else if (SystemInfo.isUnix) {
+    } else if (TCSystemInfo.isUnix) {
       assertEquals(cmdLine.getExecutablePath(), "bash", "Gradle startup script must be executed by explicit bash call.");
       assertEquals(args.get(0), exePath, "Wrong Gradle startup script path.");
     } else {
@@ -513,7 +513,7 @@ public class GradleRunnerServiceTest {
                   .append("bin").append(File.separator)
                   .append("java");
 
-    if (SystemInfo.isWindows) {
+    if (TCSystemInfo.isWindows) {
       javaHomeBuilder.append(".exe");
     }
 

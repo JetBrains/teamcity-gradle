@@ -10,4 +10,5 @@
         init-method="register"
         destroy-method="unregister"/>
   <bean id="gradleBuildStartContextProcessor" class="jetbrains.buildServer.gradle.server.depcache.GradleBuildStartContextProcessor"/>
+  <bean id="gradleDependencyCacheBuildFeature" class="jetbrains.buildServer.gradle.server.depcache.GradleDependencyCacheBuildFeature"/>
 </beans>

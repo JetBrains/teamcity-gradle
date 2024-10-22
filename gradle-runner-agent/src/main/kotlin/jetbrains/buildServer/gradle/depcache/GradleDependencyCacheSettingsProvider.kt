@@ -3,7 +3,7 @@ package jetbrains.buildServer.gradle.depcache
 import jetbrains.buildServer.agent.AgentLifeCycleListener
 import jetbrains.buildServer.agent.cache.depcache.DependencyCacheProvider
 import jetbrains.buildServer.agent.cache.depcache.DependencyCacheSettingsProviderRegistry
-import jetbrains.buildServer.agent.cache.depcache.buildFeature.BuildRunnerDependencyCacheSettingsProvider
+import jetbrains.buildServer.agent.cache.depcache.buildFeature.RunnerDependencyCacheSettingsProvider
 import jetbrains.buildServer.agent.cache.depcache.cacheroot.CacheRootPublishPaths
 import jetbrains.buildServer.agent.cache.depcache.cacheroot.CacheRootPublisher
 import jetbrains.buildServer.gradle.GradleRunnerConstants
@@ -13,11 +13,14 @@ class GradleDependencyCacheSettingsProvider(
     private val eventDispatcher: EventDispatcher<AgentLifeCycleListener>,
     private val cacheSettingsProviderRegistry: DependencyCacheSettingsProviderRegistry,
     private val cacheProvider: DependencyCacheProvider
-) : BuildRunnerDependencyCacheSettingsProvider<GradleDependenciesChangedInvalidator>(
+) : RunnerDependencyCacheSettingsProvider<GradleDependenciesChangedInvalidator>(
     eventDispatcher, cacheSettingsProviderRegistry, cacheProvider,
     GradleRunnerConstants.RUNNER_TYPE,
-    GradleDependencyCacheConstants.GRADLE_DEP_CACHE_ENABLED,
-    GradleDependencyCacheConstants.GRADLE_DEP_CACHE_ENABLED_DEFAULT) {
+    GradleRunnerConstants.DISPLAY_NAME,
+    GradleDependencyCacheConstants.CACHE_DISPLAY_NAME,
+    GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE,
+    GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE_DEFAULT
+) {
 
     protected override fun createPostBuildInvalidator(): GradleDependenciesChangedInvalidator {
         return GradleDependenciesChangedInvalidator()
@@ -28,7 +31,8 @@ class GradleDependencyCacheSettingsProvider(
         return CacheRootPublisher({
             CacheRootPublishPaths.includeAndExclude(
                 listOf("modules-*/**"),
-                listOf("**/*.lock", "**/gc.properties"))
+                listOf("**/*.lock", "**/gc.properties")
+            )
         })
     }
 }
