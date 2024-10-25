@@ -6,11 +6,10 @@ import jetbrains.buildServer.agent.*
 import jetbrains.buildServer.agent.cache.depcache.DependencyCacheProvider
 import jetbrains.buildServer.agent.cache.depcache.DependencyCacheSettings
 import jetbrains.buildServer.agent.cache.depcache.DependencyCacheSettingsProviderRegistry
-import jetbrains.buildServer.cache.depcache.DependencyCacheConstants.DEPENDENCY_CACHE_BUILD_FEATURE_TYPE_PREFIX
-import jetbrains.buildServer.cache.depcache.DependencyCacheConstants.DEPENDENCY_CACHE_ENABLE_ALL_RUNNERS_PARAM
+import jetbrains.buildServer.cache.depcache.DependencyCacheConstants.*
 import jetbrains.buildServer.gradle.GradleRunnerConstants.RUNNER_TYPE
 import jetbrains.buildServer.gradle.depcache.GradleDependenciesChangedInvalidator
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE
 import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheSettingsProvider
 import jetbrains.buildServer.util.EventDispatcher
 import org.testng.Assert
@@ -31,7 +30,10 @@ class GradleDependencyCacheSettingsProviderTest {
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
         clearAllMocks()
-        sharedBuildConfig = mutableMapOf(GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE to "true")
+        sharedBuildConfig = mutableMapOf(
+            FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE to "true",
+            EPHEMERAL_AGENT_PARAMETER to "true"
+        )
         every { buildMock.getSharedConfigParameters() } returns sharedBuildConfig
 
         instance = GradleDependencyCacheSettingsProvider(
@@ -87,11 +89,33 @@ class GradleDependencyCacheSettingsProviderTest {
         every { buildFeatureMock.type } returns BUILD_FEATURE_TYPE
         every { buildMock.getBuildFeaturesOfType(any()) } returns listOf(buildFeatureMock)
         sharedBuildConfig[DEPENDENCY_CACHE_ENABLE_ALL_RUNNERS_PARAM] = "true"
+        sharedBuildConfig[FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE] = "false"
         val buildRunnerMock = mockk<BuildRunnerSettings>()
         every { buildRunnerMock.isEnabled } returns true
         every { buildRunnerMock.runType } returns RUNNER_TYPE
         every { buildMock.buildRunners } returns listOf(buildRunnerMock)
-        every { buildMock.getSharedConfigParameters() } returns mapOf(GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE to "false")
+
+        // act
+        val cacheSettings: List<DependencyCacheSettings?> = instance.getSettings(buildMock)
+        val invalidator: GradleDependenciesChangedInvalidator? = instance.postBuildInvalidator
+
+        // assert
+        Assert.assertTrue(cacheSettings.isEmpty())
+        Assert.assertNull(invalidator)
+    }
+
+    @Test
+    fun `should not return settings and create invalidator when agent is not ephemeral`() {
+        // arrange
+        val buildFeatureMock = mockk<AgentBuildFeature>()
+        every { buildFeatureMock.type } returns BUILD_FEATURE_TYPE
+        every { buildMock.getBuildFeaturesOfType(any()) } returns listOf(buildFeatureMock)
+        sharedBuildConfig[DEPENDENCY_CACHE_ENABLE_ALL_RUNNERS_PARAM] = "true"
+        sharedBuildConfig[EPHEMERAL_AGENT_PARAMETER] = "false"
+        val buildRunnerMock = mockk<BuildRunnerSettings>()
+        every { buildRunnerMock.isEnabled } returns true
+        every { buildRunnerMock.runType } returns RUNNER_TYPE
+        every { buildMock.buildRunners } returns listOf(buildRunnerMock)
 
         // act
         val cacheSettings: List<DependencyCacheSettings?> = instance.getSettings(buildMock)
