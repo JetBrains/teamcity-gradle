@@ -19,6 +19,7 @@ import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
+import org.jmock.api.Action;
 import org.jmock.api.Invocation;
 import org.jmock.lib.action.CustomAction;
 
@@ -112,10 +113,18 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     final ServiceMessageReceiver gatherMessage = new ServiceMessageReceiver("Gather service messages");
     gatherMessage.setPattern(gradleRunConfiguration.getPatternStr());
 
+    final Action gatherAndReportError = new CustomAction("Gather message and report error") {
+      public Object invoke(final Invocation invocation) throws Throwable {
+        gatherMessage.invoke(invocation);
+        reportError.invoke(invocation);
+        return null;
+      }
+    };
+
     final Expectations gatherServiceMessage = new Expectations() {{
       allowing(myMockLogger).message(with(any(String.class))); will(gatherMessage);
       allowing(myMockLogger).warning(with(any(String.class))); will(gatherMessage);
-      allowing(myMockLogger).error(with(any(String.class))); will(reportError);
+      allowing(myMockLogger).error(with(any(String.class))); will(gatherAndReportError);
     }};
 
     runTest(gatherServiceMessage, ctx);
@@ -226,7 +235,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       myPatternStr = pattern;
     }
   }
-
 
   protected static class ServiceMessageReceiver extends CustomAction {
     protected final List<String> messages = new ArrayList<String>();
