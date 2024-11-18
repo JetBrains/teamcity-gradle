@@ -14,16 +14,25 @@
       (<code>&lt;gradle_user_home&gt;/caches/modules-2</code>)
       used by Gradle steps and caches dependencies in the artifact storage. The cache is automatically updated when dependencies of corresponding Gradle projects change.
     </div>
-    <c:set var="showEphemeralAgentsRestrictionWarning"
+    <c:set var="restrictedToEphemeralAgents"
            value='<%= TeamCityProperties.getBoolean(DependencyCacheConstants.DEPENDENCY_CACHE_EPHEMERAL_AGENTS_ONLY, DependencyCacheConstants.DEPENDENCY_CACHE_EPHEMERAL_AGENTS_ONLY_DEFAULT) %>'/>
-    <c:if test="${showEphemeralAgentsRestrictionWarning}">
-      <div class="attentionComment">
-        <bs:buildStatusIcon type="red-sign" className="warningIcon"/>
-        Currently, Gradle caching is only performed on
-        <a href="<bs:helpUrlPrefix/>predefined-build-parameters#Predefined+Agent+Environment+Parameters" target="_blank" rel="noreferrer noopener"
-           showdiscardchangesmessage="false">ephemeral agents</a>
-        (cloud agents terminated after their first build). Builds running on non-ephemeral agents neither cache nor reuse previously cached dependencies.
-      </div>
-    </c:if>
+    <c:choose>
+      <c:when test="${restrictedToEphemeralAgents}">
+        <div class="attentionComment">
+          <bs:buildStatusIcon type="red-sign" className="warningIcon"/>
+          Currently, Gradle caching is only performed on
+          <a href="<bs:helpUrlPrefix/>predefined-build-parameters#Predefined+Agent+Environment+Parameters" target="_blank" rel="noreferrer noopener"
+             showdiscardchangesmessage="false">ephemeral agents</a>
+          (cloud agents terminated after their first build). Builds running on non-ephemeral agents neither cache nor reuse previously cached dependencies.
+        </div>
+      </c:when>
+      <c:otherwise>
+        <div class="attentionComment">
+          <bs:buildStatusIcon type="red-sign" className="warningIcon"/>
+          Dependency caching is most effective on short-lived agents. For long-lived or permanent cloud agents, periodically review hidden
+          <code>.teamcity.build_cache</code> build artifacts to monitor cache size and contents. This helps prevent redundant dependencies and unnecessary cache bloat.
+        </div>
+      </c:otherwise>
+    </c:choose>
   </td>
 </tr>
