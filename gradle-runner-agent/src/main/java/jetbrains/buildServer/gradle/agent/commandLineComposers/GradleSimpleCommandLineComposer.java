@@ -26,7 +26,8 @@ public class GradleSimpleCommandLineComposer implements GradleCommandLineCompose
   @NotNull
   public ProgramCommandLine composeCommandLine(@NotNull GradleCommandLineComposerParameters parameters) {
     final List<String> gradleParameters = new ArrayList<>(parameters.getInitialGradleParams());
-    gradleParameters.addAll(tasksComposer.getGradleParameters(GradleLaunchMode.COMMAND_LINE, parameters.getRunnerParameters(), parameters.getPluginsDirectory()));
+    gradleParameters.addAll(tasksComposer.getGradleParameters(GradleLaunchMode.COMMAND_LINE, parameters.getRunnerParameters(),
+                                                              parameters.getGradleUserDefinedParams(), parameters.getPluginsDirectory()));
     gradleParameters.addAll(parameters.getGradleTasks());
 
     return new SimpleProgramCommandLine(parameters.getEnv(), parameters.getWorkingDirectory().getPath(), parameters.getExePath(), gradleParameters);

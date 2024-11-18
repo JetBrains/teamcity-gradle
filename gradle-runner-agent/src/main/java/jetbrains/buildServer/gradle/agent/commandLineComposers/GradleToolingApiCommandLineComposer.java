@@ -74,7 +74,8 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
       splitter.split(parameters.getEnv(), buildTempDir);
     }
 
-    final List<String> gradleParams = tasksComposer.getGradleParameters(GradleLaunchMode.TOOLING_API, parameters.getRunnerParameters(), parameters.getPluginsDirectory());
+    final List<String> gradleParams = tasksComposer.getGradleParameters(GradleLaunchMode.TOOLING_API, parameters.getRunnerParameters(),
+                                                                        parameters.getGradleUserDefinedParams(), parameters.getPluginsDirectory());
     final File gradleParamsFile = new File(buildTempDir, GRADLE_PARAMS_FILE);
     storeParams(buildTempDir, gradleParams, gradleParamsFile);
 
@@ -253,12 +254,12 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
     final File originalLib = new File(originalLibPath);
     final File relocatedLib = new File(newLocation, originalLib.getName());
 
-    if (!relocatedLib.exists()) {
-      if (originalLib.isFile()) {
+    if (originalLib.isFile()) {
+      if (!relocatedLib.exists()) {
         FileUtil.copy(originalLib, relocatedLib);
-      } else {
-        FileUtil.copyDir(originalLib, relocatedLib);
       }
+    } else {
+      FileUtil.copyDir(originalLib, relocatedLib);
     }
 
     return relocatedLib.getAbsolutePath();

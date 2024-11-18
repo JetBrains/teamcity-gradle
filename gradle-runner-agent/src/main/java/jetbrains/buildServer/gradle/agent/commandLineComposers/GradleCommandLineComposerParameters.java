@@ -23,6 +23,8 @@ public class GradleCommandLineComposerParameters {
   private final String gradleOpts;
   @NotNull
   private final List<String> gradleTasks;
+  @NotNull
+  private final List<String> gradleUserDefinedParams;
   private final boolean configurationCacheEnabled;
   @NotNull
   private final Map<String, String> configParameters;
@@ -49,6 +51,7 @@ public class GradleCommandLineComposerParameters {
                                               @NotNull File pluginsDirectory,
                                               @NotNull String gradleOpts,
                                               @NotNull List<String> gradleTasks,
+                                              @NotNull List<String> gradleUserDefinedParams,
                                               boolean configurationCacheEnabled,
                                               @NotNull Map<String, String> configParameters,
                                               @NotNull BuildProgressLogger logger,
@@ -65,6 +68,7 @@ public class GradleCommandLineComposerParameters {
     this.pluginsDirectory = pluginsDirectory;
     this.gradleOpts = gradleOpts;
     this.gradleTasks = gradleTasks;
+    this.gradleUserDefinedParams = gradleUserDefinedParams;
     this.configurationCacheEnabled = configurationCacheEnabled;
     this.configParameters = configParameters;
     this.logger = logger;
@@ -105,6 +109,11 @@ public class GradleCommandLineComposerParameters {
   @NotNull
   public List<String> getGradleTasks() {
     return gradleTasks;
+  }
+
+  @NotNull
+  public List<String> getGradleUserDefinedParams() {
+    return gradleUserDefinedParams;
   }
 
   public boolean isConfigurationCacheEnabled() {
@@ -169,6 +178,7 @@ public class GradleCommandLineComposerParameters {
     private File pluginsDirectory;
     private String gradleOpts;
     private List<String> gradleTasks;
+    private List<String> gradleUserDefinedParams;
     private boolean configurationCacheEnabled;
     private Map<String, String> configParameters;
     private BuildProgressLogger logger;
@@ -210,6 +220,11 @@ public class GradleCommandLineComposerParameters {
 
     public Builder withGradleTasks(@NotNull List<String> gradleTasks) {
       this.gradleTasks = gradleTasks;
+      return this;
+    }
+
+    public Builder withGradleUserDefinedParams(@NotNull List<String> gradleUserDefinedParams) {
+      this.gradleUserDefinedParams = gradleUserDefinedParams;
       return this;
     }
 
@@ -266,7 +281,7 @@ public class GradleCommandLineComposerParameters {
     @NotNull
     public GradleCommandLineComposerParameters build() {
       return new GradleCommandLineComposerParameters(env, buildTempDir, runnerParameters, pluginsDirectory, gradleOpts,
-                                                     gradleTasks, configurationCacheEnabled, configParameters, logger, runnerContext,
+                                                     gradleTasks, gradleUserDefinedParams, configurationCacheEnabled, configParameters, logger, runnerContext,
                                                      javaHome, checkoutDirectory, workingDirectory, initialGradleParams, exePath,
                                                      launchModeSelectionResult);
     }

@@ -47,6 +47,10 @@ public class GradleRunnerConstants
    * Defaults to false
    */
   public static final String GRADLE_RUNNER_TEST_TASK_JVM_ARG_PROVIDER_DISABLED = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled";
+  /**
+   * Defaults to true
+   */
+  public static final String GRADLE_RUNNER_GRADLE_USER_HOME_OVERRIDE_ENABLED = "teamcity.internal.gradle.runner.gradleUserHomeOverrideByTcEnabled";
 
   // Tooling API configuration parameters
   public static final String TOOLING_PREPARATION_PHASE_DAEMON_MAX_IDLE_TIME_ENABLED = "teamcity.internal.gradle.runner.toolingApi.buildPreparationPhase.daemonMaxIdleTimeEnabled";

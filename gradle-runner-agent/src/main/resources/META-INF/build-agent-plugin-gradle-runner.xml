@@ -17,9 +17,10 @@
   <bean id="gradleCommandLineComposerHolder" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder" autowire="constructor"/>
   <bean id="gradleTasksComposer" class="jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer" autowire="constructor"/>
   <bean id="gradleTestFilterPostProcessor" class="jetbrains.buildServer.gradle.agent.tasks.GradleTestFilterPostProcessor" autowire="constructor"/>
-  <bean id="gradleUserHomeDetector" class="jetbrains.buildServer.gradle.agent.GradleUserHomeDetector"/>
+  <bean id="gradleUserHomeManager" class="jetbrains.buildServer.gradle.agent.GradleUserHomeManager"/>
   <bean id="gradleDependencyCacheSettingsProvider" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheSettingsProvider"/>
   <bean id="gradleDependencyCacheManager" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManagerImpl"/>
   <bean id="gradleProjectDependenciesCollector" class="jetbrains.buildServer.gradle.depcache.GradleProjectDependenciesCollector"/>
+  <bean id="gradleCacheDirectoryAllowedListAdder" class="jetbrains.buildServer.gradle.depcache.GradleCacheDirectoryAllowedListAdder" init-method="register" destroy-method="unregister"/>
 
 </beans>

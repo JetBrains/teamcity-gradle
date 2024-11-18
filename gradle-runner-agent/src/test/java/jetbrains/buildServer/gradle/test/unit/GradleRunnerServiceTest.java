@@ -101,6 +101,8 @@ public class GradleRunnerServiceTest {
       });
       allowing(dependencyCacheManager).prepareAndRestoreCache(with(Expectations.<GradleConnector>anything()), with(Expectations.<String>anything()),
                                                               with(Expectations.<File>anything()), with(Expectations.<File>anything()));
+      allowing(dependencyCacheManager).getCacheEnabled(); will(returnValue(true));
+      allowing(dependencyCacheManager).getCache(); will(returnValue(null));
     }});
     GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
@@ -115,7 +117,7 @@ public class GradleRunnerServiceTest {
       new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
       new CommandLineParametersProcessor(),
       new GradleVersionDetector(),
-      new GradleUserHomeDetector(),
+      new GradleUserHomeManager(),
       dependencyCacheManager).createService();
 
     myCoDir = myTempFiles.createTempDir();
@@ -432,7 +434,7 @@ public class GradleRunnerServiceTest {
       new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
       new CommandLineParametersProcessor(),
       new GradleVersionDetector(),
-      new GradleUserHomeDetector(),
+      new GradleUserHomeManager(),
       dependencyCacheManager).createService();
 
     myContext.checking(new Expectations() {{

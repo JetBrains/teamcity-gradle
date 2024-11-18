@@ -12,6 +12,12 @@ class GradleDependencyCacheManagerImpl(
     private val gradleProjectDependenciesCollector: GradleProjectDependenciesCollector,
 ) : GradleDependencyCacheManager {
 
+    override val cache: DependencyCache?
+        get() = gradleDependencyCacheSettingsProvider.cache
+
+    override val cacheEnabled: Boolean
+        get() = gradleDependencyCacheSettingsProvider.cache != null
+
     override fun prepareAndRestoreCache(
         projectConnector: GradleConnector?,
         stepId: String,
@@ -23,7 +29,7 @@ class GradleDependencyCacheManagerImpl(
             return
         }
 
-        if (!isCacheEnabled) return
+        if (!cacheEnabled) return
 
         val cache = gradleDependencyCacheSettingsProvider.cache
         val invalidator = gradleDependencyCacheSettingsProvider.postBuildInvalidator
@@ -59,9 +65,6 @@ class GradleDependencyCacheManagerImpl(
         val cacheRootUsage = newCacheRootUsage(gradleCachesPath, stepId)
         cache.registerAndRestore(cacheRootUsage)
     }
-
-    private val isCacheEnabled: Boolean
-        get() = gradleDependencyCacheSettingsProvider.cache != null
 
     private fun logWarning(message: String,
                            cache: DependencyCache? = null,

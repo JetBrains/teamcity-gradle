@@ -29,7 +29,7 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
   private final GradleConfigurationCacheDetector gradleConfigurationCacheDetector;
   private final CommandLineParametersProcessor commandLineParametersProcessor;
   private final GradleVersionDetector gradleVersionDetector;
-  private final GradleUserHomeDetector gradleUserHomeDetector;
+  private final GradleUserHomeManager gradleUserHomeManager;
   private final GradleDependencyCacheManager gradleDependencyCacheManager;
 
   public GradleRunnerServiceFactory(GradleCommandLineComposerHolder composerHolder,
@@ -38,7 +38,7 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
                                     GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
                                     CommandLineParametersProcessor commandLineParametersProcessor,
                                     GradleVersionDetector gradleVersionDetector,
-                                    GradleUserHomeDetector gradleUserHomeDetector,
+                                    GradleUserHomeManager gradleUserHomeManager,
                                     GradleDependencyCacheManager gradleDependencyCacheManager) {
     this.composerHolder = composerHolder;
     this.tasksComposer = tasksComposer;
@@ -46,7 +46,7 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
     this.gradleConfigurationCacheDetector = gradleConfigurationCacheDetector;
     this.commandLineParametersProcessor = commandLineParametersProcessor;
     this.gradleVersionDetector = gradleVersionDetector;
-    this.gradleUserHomeDetector = gradleUserHomeDetector;
+    this.gradleUserHomeManager = gradleUserHomeManager;
     this.gradleDependencyCacheManager = gradleDependencyCacheManager;
   }
 
@@ -73,7 +73,7 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
                                    gradleConfigurationCacheDetector,
                                    commandLineParametersProcessor,
                                    gradleVersionDetector,
-                                   gradleUserHomeDetector,
+                                   gradleUserHomeManager,
                                    gradleDependencyCacheManager);
    }
 

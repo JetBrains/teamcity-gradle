@@ -42,13 +42,14 @@ public class GradleTasksComposer {
   @NotNull
   public List<String> getGradleParameters(@NotNull GradleLaunchMode gradleLaunchMode,
                                           @NotNull Map<String, String> runnerParameters,
+                                          @NotNull List<String> gradleUserDefinedParams,
                                           @NotNull File pluginsDirectory) {
     final List<String> params = new ArrayList<>();
 
     params.addAll(getInitScriptParams(gradleLaunchMode, runnerParameters, pluginsDirectory));
-    params.addAll(ConfigurationParamsUtil.getGradleParams(runnerParameters));
+    params.addAll(gradleUserDefinedParams);
 
-    if (!hasDaemonParam(runnerParameters))
+    if (!hasDaemonParam(gradleUserDefinedParams))
       params.add("-Dorg.gradle.daemon=false");
 
     if (ConfigurationParamsUtil.isParameterEnabled(runnerParameters, GradleRunnerConstants.DEBUG))
@@ -66,8 +67,8 @@ public class GradleTasksComposer {
     return params;
   }
 
-  private boolean hasDaemonParam(@NotNull Map<String, String> runnerParameters) {
-    for (String param: ConfigurationParamsUtil.getGradleParams(runnerParameters)) {
+  private boolean hasDaemonParam(@NotNull List<String> gradleUserDefinedParams) {
+    for (String param: gradleUserDefinedParams) {
       if (param.startsWith("-Dorg.gradle.daemon=")) {
         return true;
       }

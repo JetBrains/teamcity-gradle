@@ -356,7 +356,7 @@ public class BaseGradleRunnerTest {
                                      new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
                                      new CommandLineParametersProcessor(),
                                      new GradleVersionDetector(),
-                                     new GradleUserHomeDetector(),
+                                     new GradleUserHomeManager(),
                                      myMockDependencyCacheManager));
 
     final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
@@ -497,6 +497,8 @@ public class BaseGradleRunnerTest {
 
       allowing(myMockDependencyCacheManager).prepareAndRestoreCache(with(Expectations.<GradleConnector>anything()), with(Expectations.<String>anything()),
                                                                     with(Expectations.<File>anything()), with(Expectations.<File>anything()));
+      allowing(myMockDependencyCacheManager).getCacheEnabled(); will(returnValue(false));
+      allowing(myMockDependencyCacheManager).getCache(); will(returnValue(null));
     }};
 
     context.checking(initMockingCtx);
