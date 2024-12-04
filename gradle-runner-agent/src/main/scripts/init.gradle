@@ -941,10 +941,10 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
       for (Task task : graph.allTasks) {
         if (!TestTaskWrapper.type.isAssignableFrom(task.class)) continue
         def wrapper = new TestTaskWrapper(task)
-        def plugin = wrapper.getExtensions()?.findByName("retry")
-        if (plugin == null) continue
-        if (!plugin.metaClass.respondsTo(plugin, "getMaxRetries")) continue
-        def retries = plugin.getMaxRetries()
+        def retryPlugin = wrapper.getExtensions()?.findByName("retry")
+        def develocityPlugin = wrapper.getExtensions()?.findByName("develocity")
+        def retries = getMaxRetries(retryPlugin, develocityPlugin)
+        if (retries == null) continue
         if (!retries.metaClass.respondsTo(retries, "getOrNull")) continue
         if (retries.getOrNull() ?: 0 > 0) {
           newOption = true
@@ -953,6 +953,23 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
         }
       }
     }
+  }
+
+  def getMaxRetries(def retryPlugin, def develocityPlugin) {
+    def maxRetries = null
+
+    if (develocityPlugin != null && develocityPlugin.metaClass.respondsTo(develocityPlugin, "testRetry")) {
+      def develocityTestRetry = develocityPlugin.getTestRetry()
+      if (develocityTestRetry != null && develocityTestRetry.metaClass.respondsTo(develocityTestRetry, "getMaxRetries")) {
+        maxRetries = develocityTestRetry.getMaxRetries()
+      }
+    }
+
+    if (maxRetries == null && retryPlugin != null && retryPlugin.metaClass.respondsTo(retryPlugin, "getMaxRetries")) {
+      maxRetries = retryPlugin.getMaxRetries()
+    }
+
+    return maxRetries
   }
 
   @Override
