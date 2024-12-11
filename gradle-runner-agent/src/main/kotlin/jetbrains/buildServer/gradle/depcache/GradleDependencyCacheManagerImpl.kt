@@ -2,14 +2,13 @@ package jetbrains.buildServer.gradle.depcache
 
 import com.intellij.openapi.diagnostic.Logger
 import jetbrains.buildServer.agent.cache.depcache.DependencyCache
-import jetbrains.buildServer.agent.cache.depcache.cacheroot.CacheRootUsage
-import org.gradle.tooling.GradleConnector
+import kotlinx.coroutines.*
 import java.io.File
-import java.nio.file.Path
 
 class GradleDependencyCacheManagerImpl(
     private val gradleDependencyCacheSettingsProvider: GradleDependencyCacheSettingsProvider,
-    private val gradleProjectDependenciesCollector: GradleProjectDependenciesCollector,
+    private val invalidationDataCollector: GradleDependencyCacheInvalidationDataCollector,
+    private val coroutineScope: CoroutineScope
 ) : GradleDependencyCacheManager {
 
     override val cache: DependencyCache?
@@ -18,22 +17,35 @@ class GradleDependencyCacheManagerImpl(
     override val cacheEnabled: Boolean
         get() = gradleDependencyCacheSettingsProvider.cache != null
 
-    override fun prepareAndRestoreCache(
-        projectConnector: GradleConnector?,
-        stepId: String,
-        gradleUserHome: File?,
-        buildTempDirectory: File
-    ) {
-        projectConnector ?: run {
-            logWarning("Gradle Connector is not set. The cache will not be created")
+    override fun prepareInvalidationDataAsync(workingDirectory: File, depCacheContext: GradleDependencyCacheStepContext) {
+        if (!cacheEnabled) return
+        val cache = gradleDependencyCacheSettingsProvider.cache
+        if (cache == null) {
+            // this is not an expected case, something is wrong
+            logWarning("Gradle dependency cache is enabled but failed to initialize, couldn't prepare invalidation data")
             return
         }
 
+        val deferred: Deferred<Map<String, String>> = coroutineScope.async {
+            withContext(Dispatchers.IO) {
+                invalidationDataCollector.collect(workingDirectory, cache, depCacheContext.depthLimit).fold(
+                    onSuccess = { it },
+                    onFailure = { exception ->
+                        logWarning("Error while preparing invalidation data, this execution will not be cached", cache, exception)
+                        return@fold emptyMap()
+                    }
+                )
+            }
+        }
+
+        depCacheContext.invalidationData = deferred
+    }
+
+    override fun registerAndRestoreCache(stepId: String, gradleUserHome: File?, depCacheContext: GradleDependencyCacheStepContext?) {
         if (!cacheEnabled) return
 
         val cache = gradleDependencyCacheSettingsProvider.cache
-        val invalidator = gradleDependencyCacheSettingsProvider.postBuildInvalidator
-        if (cache == null || invalidator == null) {
+        if (cache == null) {
             // this is not an expected case, something is wrong
             logWarning("Gradle dependency cache is enabled but failed to initialize, it will not be used at the current execution")
             return
@@ -44,6 +56,11 @@ class GradleDependencyCacheManagerImpl(
             return
         }
 
+        if (depCacheContext == null) {
+            logWarning("Gradle caches context wasn't initialized, current execution will not be cached", cache)
+            return
+        }
+
         val gradleCachesLocation = File(gradleUserHome, "caches")
         if (!gradleCachesLocation.exists()) {
             LOG.debug("Gradle caches location doesn't exist, creating it: ${gradleCachesLocation.absolutePath}")
@@ -51,19 +68,49 @@ class GradleDependencyCacheManagerImpl(
         }
 
         val gradleCachesPath = gradleCachesLocation.toPath()
-        val deps: Set<String> = gradleProjectDependenciesCollector.collectProjectDependencies(buildTempDirectory, projectConnector).fold(
-            onSuccess = { it },
-            onFailure = { exception ->
-                logWarning("Failed to collect Gradle project's dependencies, this execution will not be cached", cache, exception)
-                return
-            }
-        )
 
         LOG.info("Creating a new cache root usage for Gradle caches location: $gradleCachesPath")
 
-        invalidator.addDependenciesToGradleCachesLocation(gradleCachesPath, deps)
-        val cacheRootUsage = newCacheRootUsage(gradleCachesPath, stepId)
+        val cacheRootUsage = depCacheContext.newCacheRootUsage(gradleCachesPath, stepId)
         cache.registerAndRestore(cacheRootUsage)
+        depCacheContext.gradleCachesLocation = gradleCachesPath
+    }
+
+    override fun updateInvalidationData(depCacheContext: GradleDependencyCacheStepContext?) {
+        if (!cacheEnabled) return
+        val cache = gradleDependencyCacheSettingsProvider.cache
+        val invalidator = gradleDependencyCacheSettingsProvider.postBuildInvalidator
+        if (cache == null || invalidator == null) {
+            // this is not an expected case, something is wrong
+            logWarning("Gradle dependency cache is enabled but failed to initialize, couldn't update invalidation data")
+            return
+        }
+        if (depCacheContext == null || depCacheContext.gradleCachesLocation == null) {
+            logWarning("Gradle caches location hasn't been initialized, this execution will not be cached", cache)
+            return
+        }
+        if (depCacheContext.invalidationData == null) {
+            logWarning("Gradle caches invalidation data hasn't been prepared, this execution will not be cached", cache)
+            return
+        }
+
+        val invalidationData: Map<String, String> = runCatching {
+            runBlocking {
+                withTimeout(depCacheContext.invalidationDataAwaitTimeout) {
+                    depCacheContext.invalidationData!!.await()
+                }
+            }
+        }.getOrElse { e ->
+            logWarning("An error occurred during getting the invalidation data", cache, e)
+            emptyMap()
+        }
+
+        if (invalidationData.isEmpty()) {
+            logWarning("Invalidation data wasn't collected, something went wrong", cache)
+            return
+        }
+
+        invalidator.addDependenciesToGradleCachesLocation(depCacheContext.gradleCachesLocation!!, invalidationData)
     }
 
     private fun logWarning(message: String,
@@ -76,15 +123,6 @@ class GradleDependencyCacheManagerImpl(
             LOG.warn(message)
         }
         cache?.logWarning(message)
-    }
-
-    private fun newCacheRootUsage(gradleCachesPath: Path,
-                                  stepId: String): CacheRootUsage {
-        return CacheRootUsage(
-            GradleDependencyCacheConstants.CACHE_ROOT_TYPE,
-            gradleCachesPath.toAbsolutePath(),
-            stepId
-        )
     }
 
     companion object {

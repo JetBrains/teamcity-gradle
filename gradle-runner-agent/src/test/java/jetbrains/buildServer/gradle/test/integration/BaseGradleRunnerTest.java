@@ -27,13 +27,13 @@ import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSpl
 import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheStepContext;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.PasswordReplacer;
 import jetbrains.buildServer.util.VersionComparatorUtil;
-import org.gradle.tooling.GradleConnector;
 import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
@@ -95,7 +95,6 @@ public class BaseGradleRunnerTest {
   protected static final String DEMAND_MULTI_PROJECT_B_NAME = "demandMultiProjectB";
   protected static final String WRAPPED_PROJECT_A_NAME = "wrappedProjectA";
   protected static final String OPENTEST4J_PROJECT = "opentest4jProject";
-  protected static final String MULTIMODULE_PROJECT_1 = "multimoduleProject1";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
   private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
 
@@ -495,8 +494,10 @@ public class BaseGradleRunnerTest {
       allowing(myMockBuild).getAgentConfiguration(); will(returnValue(agentConfiguration));
       allowing(agentConfiguration).getAgentPluginsDirectory(); will(returnValue(agentPluginDir));
 
-      allowing(myMockDependencyCacheManager).prepareAndRestoreCache(with(Expectations.<GradleConnector>anything()), with(Expectations.<String>anything()),
-                                                                    with(Expectations.<File>anything()), with(Expectations.<File>anything()));
+      allowing(myMockDependencyCacheManager).registerAndRestoreCache(with(Expectations.<String>anything()), with(Expectations.<File>anything()),
+                                                                     with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(myMockDependencyCacheManager).updateInvalidationData(with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(myMockDependencyCacheManager).prepareInvalidationDataAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
       allowing(myMockDependencyCacheManager).getCacheEnabled(); will(returnValue(false));
       allowing(myMockDependencyCacheManager).getCache(); will(returnValue(null));
     }};

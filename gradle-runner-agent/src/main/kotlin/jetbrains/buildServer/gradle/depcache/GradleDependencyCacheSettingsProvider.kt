@@ -32,7 +32,7 @@ class GradleDependencyCacheSettingsProvider(
     }
 
     protected override fun createCacheRootPublisher(): CacheRootPublisher {
-        // https://docs.gradle.org/current/userguide/dependency_resolution.html#sub:cache_copy
+        // https://docs.gradle.org/current/userguide/dependency_caching.html#sec:cache-copy
         return CacheRootPublisher({
             CacheRootPublishPaths.includeAndExclude(
                 listOf("modules-*/**"),

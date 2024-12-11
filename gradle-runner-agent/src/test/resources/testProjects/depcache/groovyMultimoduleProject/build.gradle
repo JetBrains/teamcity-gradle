@@ -1,3 +1,5 @@
+package testProjects.depcache.multimoduleProject1
+
 plugins {
     id 'java'
 }

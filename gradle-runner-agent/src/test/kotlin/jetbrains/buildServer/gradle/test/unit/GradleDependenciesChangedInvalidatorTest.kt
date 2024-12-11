@@ -8,9 +8,9 @@ import jetbrains.buildServer.agent.cache.depcache.invalidation.Deserializer
 import jetbrains.buildServer.agent.cache.depcache.invalidation.InvalidationMetadata
 import jetbrains.buildServer.agent.cache.depcache.invalidation.InvalidationResult
 import jetbrains.buildServer.agent.cache.depcache.invalidation.Serializable
-import jetbrains.buildServer.gradle.depcache.GradleDependencies
 import jetbrains.buildServer.gradle.depcache.GradleDependenciesChangedInvalidator
 import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheInvalidationData
 import org.testng.Assert
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.DataProvider
@@ -34,21 +34,19 @@ class GradleDependenciesChangedInvalidatorTest {
     }
 
     @DataProvider
-    fun getDependenciesNotChangedTestData(): Array<Array<Any>> {
+    fun getInvalidationDataNotChangedTestData(): Array<Array<Any>> {
         return arrayOf<Array<Any>>(
             arrayOf<Any>(
                 """
                     {
-                      "cacheRootDependencies": {
-                        "cache-root-1": [
-                          "com.google.code.gson:gson:2.9.0",
-                          "commons-cli:commons-cli:1.5.0",
-                          "commons-io:commons-io:2.11.0"
-                        ],
-                        "cache-root-2": [
-                          "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                          "org.slf4j:slf4j-api:1.7.36"
-                        ]
+                      "absoluteCachesPathToFilePathToChecksum": {
+                        "cache-root-1": {
+                          "/build.gradle": "932710cf8b4e31b5dd242a72540fe51c2fb9510fedbeaf7866780843d39af699",
+                          "/settings.gradle": "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                        },
+                        "cache-root-2": {
+                          "/gradle/libs.versions.toml": "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a"
+                        }
                       }
                     }
                 """.trimIndent(),
@@ -67,27 +65,27 @@ class GradleDependenciesChangedInvalidatorTest {
                     )
                 ),
                 mapOf(
-                    Paths.get("/gradle-user-home-location-1/caches") to setOf(
-                        "com.google.code.gson:gson:2.9.0",
-                        "commons-cli:commons-cli:1.5.0",
-                        "commons-io:commons-io:2.11.0"),
-                    Paths.get("/gradle-user-home-location-2/caches") to setOf(
-                        "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                        "org.slf4j:slf4j-api:1.7.36")
+                    Paths.get("/gradle-user-home-location-1/caches") to mapOf(
+                        "/build.gradle" to "932710cf8b4e31b5dd242a72540fe51c2fb9510fedbeaf7866780843d39af699",
+                        "/settings.gradle" to "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                    ),
+                    Paths.get("/gradle-user-home-location-2/caches") to mapOf(
+                        "/gradle/libs.versions.toml" to "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a"
+                    )
                 )
             )
         )
     }
 
-    @Test(dataProvider = "getDependenciesNotChangedTestData")
-    fun `should not invalidate cache when dependency sets not changed`(
+    @Test(dataProvider = "getInvalidationDataNotChangedTestData")
+    fun `should not invalidate cache when invalidation data not changed`(
         cachedDependenciesJson: String,
         newCacheRoots: List<CacheRoot>,
-        repoPathToDependencies: Map<Path, Set<String>>
+        repoPathToDependencies: Map<Path, Map<String, String>>
     ) {
         // arrange
-        val parameterName = "gradleDependencies"
-        val cachedGradleDependencies: GradleDependencies = prepareGradleDependenciesMetadata(cachedDependenciesJson)
+        val parameterName = "gradleInvalidationData"
+        val cachedGradleDependencies: GradleDependencyCacheInvalidationData = prepareGradleDependenciesMetadata(cachedDependenciesJson)
         every { invalidationMetadataMock.getObjectParameter(any(), any<Deserializer<Serializable>>()) } returns cachedGradleDependencies
         val serializableArgumentSlot = slot<Serializable>()
 
@@ -102,27 +100,25 @@ class GradleDependenciesChangedInvalidatorTest {
         Assert.assertNull(invalidationResult.invalidationReason)
         verify { invalidationMetadataMock.getObjectParameter(parameterName, any<Deserializer<Serializable>>()) }
         verify { invalidationMetadataMock.publishObjectParameter(parameterName, capture(serializableArgumentSlot)) }
-        val capturedGradleDependenciesToPublish: GradleDependencies = serializableArgumentSlot.captured as GradleDependencies
+        val capturedGradleDependenciesToPublish: GradleDependencyCacheInvalidationData = serializableArgumentSlot.captured as GradleDependencyCacheInvalidationData
         Assert.assertEquals(capturedGradleDependenciesToPublish, cachedGradleDependencies) // we publish the same dependency sets
     }
 
     @DataProvider
-    fun getDependenciesChangedTestData(): Array<Array<Any>> {
+    fun getInvalidationDataChangedTestData(): Array<Array<Any>> {
         return arrayOf<Array<Any>>(
-            // set 1: dependency version changed
+            // set 1: checksum changed
             arrayOf<Any>(
                 """
                     {
-                      "cacheRootDependencies": {
-                        "cache-root-1": [
-                          "com.google.code.gson:gson:2.9.0",
-                          "commons-cli:commons-cli:1.5.0",
-                          "commons-io:commons-io:2.11.0"
-                        ],
-                        "cache-root-2": [
-                          "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                          "org.slf4j:slf4j-api:1.1.111" // <-- old version
-                        ]
+                      "absoluteCachesPathToFilePathToChecksum": {
+                        "cache-root-1": {
+                          "/build.gradle": "932710cf8b4e31b5dd242a72540fe51c2fb9510fedbeaf7866780843d39af699",
+                          "/settings.gradle": "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                        },
+                        "cache-root-2": {
+                          "/gradle/libs.versions.toml": "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a"
+                        }
                       }
                     }
                 """.trimIndent(),
@@ -141,31 +137,28 @@ class GradleDependenciesChangedInvalidatorTest {
                     )
                 ),
                 mapOf(
-                    Paths.get("/gradle-user-home-location-1/caches") to setOf(
-                        "com.google.code.gson:gson:2.9.0",
-                        "commons-cli:commons-cli:1.5.0",
-                        "commons-io:commons-io:2.11.0"),
-                    Paths.get("/gradle-user-home-location-2/caches") to setOf(
-                        "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                        "org.slf4j:slf4j-api:1.7.36"// <-- new version
+                    Paths.get("/gradle-user-home-location-1/caches") to mapOf(
+                        "/build.gradle" to "a2c9f2dafa9e40885d7109e3e5547fa602306d71f870e0d3e6245b99cccb432f", // <-- new checksum
+                        "/settings.gradle" to "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                    ),
+                    Paths.get("/gradle-user-home-location-2/caches") to mapOf(
+                        "/gradle/libs.versions.toml" to "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a"
                     )
                 )
             ),
 
-            // set 2: a new dependency added
+            // set 2: a new file added
             arrayOf<Any>(
                 """
                     {
-                      "cacheRootDependencies": {
-                        "cache-root-1": [
-                          "com.google.code.gson:gson:2.9.0",
-                          "commons-cli:commons-cli:1.5.0",
-                          "commons-io:commons-io:2.11.0"
-                        ],
-                        "cache-root-2": [
-                          "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                          "org.slf4j:slf4j-api:1.7.36"
-                        ]
+                      "absoluteCachesPathToFilePathToChecksum": {
+                        "cache-root-1": {
+                          "/build.gradle": "932710cf8b4e31b5dd242a72540fe51c2fb9510fedbeaf7866780843d39af699",
+                          "/settings.gradle": "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                        },
+                        "cache-root-2": {
+                          "/gradle/libs.versions.toml": "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a"
+                        }
                       }
                     }
                 """.trimIndent(),
@@ -184,33 +177,30 @@ class GradleDependenciesChangedInvalidatorTest {
                     )
                 ),
                 mapOf(
-                    Paths.get("/gradle-user-home-location-1/caches") to setOf(
-                        "com.google.code.gson:gson:2.9.0",
-                        "commons-cli:commons-cli:1.5.0",
-                        "commons-io:commons-io:2.11.0"),
-                    Paths.get("/gradle-user-home-location-2/caches") to setOf(
-                        "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                        "org.slf4j:slf4j-api:1.7.36",
-                        "org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.2.0"// <-- the new dependency
+                    Paths.get("/gradle-user-home-location-1/caches") to mapOf(
+                        "/build.gradle" to "a2c9f2dafa9e40885d7109e3e5547fa602306d71f870e0d3e6245b99cccb432f",
+                        "/settings.gradle" to "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                    ),
+                    Paths.get("/gradle-user-home-location-2/caches") to mapOf(
+                        "/gradle/libs.versions.toml" to "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a",
+                        "/subproject1/build.gradle" to "898c9a78530f745e304de1ae51809d5a5cf1771a976bbc4d5c217eb48dea1ba7" // <-- the new file
                     )
                 )
             ),
 
-            // set 3: a dependency deleted
+            // set 3: a file deleted
             arrayOf<Any>(
                 """
                     {
-                      "cacheRootDependencies": {
-                        "cache-root-1": [
-                          "com.google.code.gson:gson:2.9.0",
-                          "commons-cli:commons-cli:1.5.0",
-                          "commons-io:commons-io:2.11.0"
-                        ],
-                        "cache-root-2": [
-                          "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                          "org.slf4j:slf4j-api:1.7.36",
-                          "org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.2.0"// <-- the deleted dependency
-                        ]
+                      "absoluteCachesPathToFilePathToChecksum": {
+                        "cache-root-1": {
+                          "/build.gradle": "932710cf8b4e31b5dd242a72540fe51c2fb9510fedbeaf7866780843d39af699",
+                          "/settings.gradle": "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                        },
+                        "cache-root-2": {
+                          "/gradle/libs.versions.toml": "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a",
+                          "/subproject1/build.gradle": "898c9a78530f745e304de1ae51809d5a5cf1771a976bbc4d5c217eb48dea1ba7"// <-- the deleted file
+                        }
                       }
                     }
                 """.trimIndent(),
@@ -229,72 +219,27 @@ class GradleDependenciesChangedInvalidatorTest {
                     )
                 ),
                 mapOf(
-                    Paths.get("/gradle-user-home-location-1/caches") to setOf(
-                        "com.google.code.gson:gson:2.9.0",
-                        "commons-cli:commons-cli:1.5.0",
-                        "commons-io:commons-io:2.11.0"),
-                    Paths.get("/gradle-user-home-location-2/caches") to setOf(
-                        "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                        "org.slf4j:slf4j-api:1.7.36"
+                    Paths.get("/gradle-user-home-location-1/caches") to mapOf(
+                        "/build.gradle" to "a2c9f2dafa9e40885d7109e3e5547fa602306d71f870e0d3e6245b99cccb432f",
+                        "/settings.gradle" to "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
+                    ),
+                    Paths.get("/gradle-user-home-location-2/caches") to mapOf(
+                        "/gradle/libs.versions.toml" to "994e24667e8b8412cb2b4ca645bd69c54ee2490dde5d727f2c835d809a7c386a"
                     )
                 )
-            ),
-
-            // set 4: a dependency moved from one cache root to another
-            arrayOf<Any>(
-                """
-                    {
-                      "cacheRootDependencies": {
-                        "cache-root-1": [
-                          "com.google.code.gson:gson:2.9.0",
-                          "commons-cli:commons-cli:1.5.0",
-                          "commons-io:commons-io:2.11.0"
-                        ],
-                        "cache-root-2": [
-                          "org.junit.jupiter:junit-jupiter-api:5.9.1",
-                          "org.slf4j:slf4j-api:1.7.36"// <-- it was here, in the second cache root
-                        ]
-                      }
-                    }
-                """.trimIndent(),
-                Arrays.asList<CacheRoot>(
-                    CacheRoot(
-                        "cache-root-1",
-                        GradleDependencyCacheConstants.CACHE_ROOT_TYPE,
-                        Paths.get("/gradle-user-home-location-1/caches"),
-                        emptySet<String>()
-                    ),
-                    CacheRoot(
-                        "cache-root-2",
-                        GradleDependencyCacheConstants.CACHE_ROOT_TYPE,
-                        Paths.get("/gradle-user-home-location-2/caches"),
-                        emptySet<String>()
-                    )
-                ),
-                mapOf(
-                    Paths.get("/gradle-user-home-location-1/caches") to setOf(
-                        "com.google.code.gson:gson:2.9.0",
-                        "commons-cli:commons-cli:1.5.0",
-                        "commons-io:commons-io:2.11.0",
-                        "org.slf4j:slf4j-api:1.7.36"// <-- now it's here, in the first cache root
-                    ),
-                    Paths.get("/gradle-user-home-location-2/caches") to setOf(
-                        "org.junit.jupiter:junit-jupiter-api:5.9.1"
-                    )
-                )
-            ),
+            )
         )
     }
 
-    @Test(dataProvider = "getDependenciesChangedTestData")
+    @Test(dataProvider = "getInvalidationDataChangedTestData")
     fun `should invalidate cache when local repositories dependency sets changed`(
         cachedDependenciesJson: String,
         newCacheRoots: List<CacheRoot>,
-        repoPathToDependencies: Map<Path, Set<String>>
+        repoPathToDependencies: Map<Path, Map<String, String>>
     ) {
         // arrange
-        val parameterName = "gradleDependencies"
-        var cachedGradleDependencies: GradleDependencies = prepareGradleDependenciesMetadata(cachedDependenciesJson)
+        val parameterName = "gradleInvalidationData"
+        var cachedGradleDependencies: GradleDependencyCacheInvalidationData = prepareGradleDependenciesMetadata(cachedDependenciesJson)
         every { invalidationMetadataMock.getObjectParameter(any(), any<Deserializer<Serializable>>()) } returns cachedGradleDependencies
         val serializableArgumentSlot = slot<Serializable>()
 
@@ -309,11 +254,11 @@ class GradleDependenciesChangedInvalidatorTest {
         Assert.assertNotNull(invalidationResult.invalidationReason)
         verify { invalidationMetadataMock.getObjectParameter(parameterName, any<Deserializer<Serializable>>()) }
         verify { invalidationMetadataMock.publishObjectParameter(parameterName, capture(serializableArgumentSlot)) }
-        var capturedGradleDependenciesToPublish: GradleDependencies? = serializableArgumentSlot.captured as GradleDependencies?
+        var capturedGradleDependenciesToPublish: GradleDependencyCacheInvalidationData? = serializableArgumentSlot.captured as GradleDependencyCacheInvalidationData?
         Assert.assertNotEquals(capturedGradleDependenciesToPublish, cachedGradleDependencies) // we publish changed dependency sets
     }
 
-    private fun prepareGradleDependenciesMetadata(json: String): GradleDependencies {
-        return GradleDependencies.deserialize(json.toByteArray(StandardCharsets.UTF_8))
+    private fun prepareGradleDependenciesMetadata(json: String): GradleDependencyCacheInvalidationData {
+        return GradleDependencyCacheInvalidationData.deserialize(json.toByteArray(StandardCharsets.UTF_8))
     }
 }

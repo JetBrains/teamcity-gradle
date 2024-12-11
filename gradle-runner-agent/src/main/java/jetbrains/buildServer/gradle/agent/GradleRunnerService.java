@@ -10,7 +10,10 @@ import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.AgentRuntimeProperties;
 import jetbrains.buildServer.agent.IncrementalBuild;
 import jetbrains.buildServer.agent.ToolCannotBeFoundException;
-import jetbrains.buildServer.agent.runner.*;
+import jetbrains.buildServer.agent.runner.BuildServiceAdapter;
+import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
+import jetbrains.buildServer.agent.runner.ProcessListener;
+import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
@@ -18,6 +21,7 @@ import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLine
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheStepContext;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.ErrorData;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -45,6 +49,7 @@ public class GradleRunnerService extends BuildServiceAdapter
   private final GradleVersionDetector gradleVersionDetector;
   private final GradleUserHomeManager gradleUserHomeManager;
   private final GradleDependencyCacheManager gradleDependencyCacheManager;
+  private GradleDependencyCacheStepContext depCacheStepContext;
 
   public GradleRunnerService(final String exePath,
                              final String wrapperName,
@@ -72,6 +77,26 @@ public class GradleRunnerService extends BuildServiceAdapter
         return Collections.singletonList(new GradleLoggingListener(getLogger()));
       }
     };
+  }
+
+  @Override
+  public void beforeProcessStarted() throws RunBuildException {
+    super.beforeProcessStarted();
+
+    if (gradleDependencyCacheManager.getCacheEnabled()) {
+      depCacheStepContext = new GradleDependencyCacheStepContext(getConfigParameters());
+      gradleDependencyCacheManager.prepareInvalidationDataAsync(getWorkingDirectory(), depCacheStepContext);
+    }
+  }
+
+  @Override
+  public void afterProcessFinished() throws RunBuildException {
+    super.afterProcessFinished();
+
+    if (gradleDependencyCacheManager.getCacheEnabled()) {
+      gradleDependencyCacheManager.updateInvalidationData(depCacheStepContext);
+      depCacheStepContext = null;
+    }
   }
 
   @Override
@@ -161,8 +186,9 @@ public class GradleRunnerService extends BuildServiceAdapter
                                                                                                                              .withConfigurationCacheProblemsIgnored(configurationCacheProblemsIgnored)
                                                                                                                              .withUnsupportedByToolingArgs(unsupportedByToolingArgs)
                                                                                                                              .build());
-
-    gradleDependencyCacheManager.prepareAndRestoreCache(projectConnector, getRunnerContext().getId(), gradleUserHome, getBuildTempDirectory());
+    if (gradleDependencyCacheManager.getCacheEnabled()) {
+      gradleDependencyCacheManager.registerAndRestoreCache(getRunnerContext().getId(), gradleUserHome, depCacheStepContext);
+    }
 
     GradleCommandLineComposerParameters composerParameters =
       getComposerParameters(env, gradleTasks, userDefinedParams, configurationCacheEnabled, workingDirectory, params, exePath, selectionResult);

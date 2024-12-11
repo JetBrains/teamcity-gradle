@@ -26,11 +26,13 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36'
     implementation 'commons-cli:commons-cli:1.4'
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
     compileOnly "org.jetbrains.teamcity:agent-api:${teamcityVersion}",
                 "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
                 "org.jetbrains.teamcity:common-api:${teamcityVersion}"
     provided "org.jetbrains.teamcity.internal:dependency-cache-agent:${teamcityVersion}"
     testImplementation "io.mockk:mockk-jvm:1.13.2"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1"
 }
 
 agentPlugin {

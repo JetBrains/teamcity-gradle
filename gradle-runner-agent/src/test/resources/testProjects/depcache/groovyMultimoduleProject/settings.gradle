@@ -1,3 +1,5 @@
+package testProjects.depcache.multimoduleProject1
+
 rootProject.name = 'multimoduleProject1'
 
 include 'subproject1'

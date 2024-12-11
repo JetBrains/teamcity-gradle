@@ -24,11 +24,11 @@ import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheStepContext;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
 import jetbrains.buildServer.util.VersionComparatorUtil;
-import org.gradle.tooling.GradleConnector;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.api.Invocation;
@@ -99,8 +99,10 @@ public class GradleRunnerServiceTest {
           return ((Option)invocation.getParameter(0)).getDefaultValue();
         }
       });
-      allowing(dependencyCacheManager).prepareAndRestoreCache(with(Expectations.<GradleConnector>anything()), with(Expectations.<String>anything()),
-                                                              with(Expectations.<File>anything()), with(Expectations.<File>anything()));
+      allowing(dependencyCacheManager).registerAndRestoreCache(with(Expectations.<String>anything()), with(Expectations.<File>anything()),
+                                                               with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(dependencyCacheManager).updateInvalidationData(with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(dependencyCacheManager).prepareInvalidationDataAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
       allowing(dependencyCacheManager).getCacheEnabled(); will(returnValue(true));
       allowing(dependencyCacheManager).getCache(); will(returnValue(null));
     }});
