@@ -9,7 +9,7 @@
     <em>
       Caches dependencies downloaded by Gradle steps to speed up the consequent builds.<bs:help file="Dependency+Caches"/>
     </em>
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 1em;">
       The feature tracks <a href="https://docs.gradle.org/current/userguide/directory_layout.html">shared cache</a> directories
       (<code>&lt;gradle_user_home&gt;/caches/modules-2</code>)
       used by Gradle steps and caches dependencies in the artifact storage. The cache is automatically updated when dependencies of corresponding Gradle projects change.
@@ -27,12 +27,15 @@
         </div>
       </c:when>
       <c:otherwise>
-        <div class="attentionComment">
-          <bs:buildStatusIcon type="red-sign" className="warningIcon"/>
-          Dependency caching is most effective on short-lived agents. For long-lived or permanent cloud agents, periodically review hidden
+        <div style="margin-top: 0.5em;">
+          Dependency caching is most effective on short-lived agents. For permanent or long-lived cloud agents, periodically review hidden
           <code>.teamcity.build_cache</code> build artifacts to monitor cache size and contents. This helps prevent redundant dependencies and unnecessary cache bloat.
         </div>
       </c:otherwise>
     </c:choose>
+    <div class="attentionComment">
+      <bs:buildStatusIcon type="red-sign" className="warningIcon"/>
+      This feature is not recommended for builds that require a clean environment, such as release builds.
+    </div>
   </td>
 </tr>

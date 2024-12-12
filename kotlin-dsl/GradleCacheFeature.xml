@@ -6,8 +6,10 @@
       (`&lt;gradle_user_home&gt;/caches/modules-2`)
       used by Gradle steps and caches dependencies in the artifact storage. The cache is automatically updated when dependencies of corresponding Gradle projects change.
       <p/>
-      Dependency caching is most effective on **short-lived agents**. For long-lived or permanent cloud agents, periodically review hidden
+      Dependency caching is most effective on **short-lived agents**. For permanent or long-lived cloud agents, periodically review hidden
       `.teamcity.build_cache` build artifacts to monitor cache size and contents. This helps prevent redundant dependencies and unnecessary cache bloat.
+      <p/>
+      This feature is not recommended for builds that require a clean environment, such as release builds.
     </description>
   </class>
   <function name="gradleCache">
@@ -16,8 +18,10 @@
       (`&lt;gradle_user_home&gt;/caches/modules-2`)
       used by Gradle steps and caches dependencies in the artifact storage. The cache is automatically updated when dependencies of corresponding Gradle projects change.
       <p/>
-      Dependency caching is most effective on **short-lived agents**. For long-lived or permanent cloud agents, periodically review hidden
+      Dependency caching is most effective on **short-lived agents**. For permanent or long-lived cloud agents, periodically review hidden
       `.teamcity.build_cache` build artifacts to monitor cache size and contents. This helps prevent redundant dependencies and unnecessary cache bloat.
+      <p/>
+      This feature is not recommended for builds that require a clean environment, such as release builds.
     </description>
   </function>
   <params>
