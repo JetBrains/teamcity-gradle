@@ -13,40 +13,40 @@
   </function>
   <params>
     <param name="ui.gradleRunner.gradle.tasks.names" dslName="tasks">
-      <description>Space separated task names, when not set the 'default' task is used</description>
+      <description>Space-separated task names. TeamCity runs the 'default' task if this field is empty.</description>
     </param>
     <param name="ui.gradleRUnner.gradle.build.file" dslName="buildFile">
       <description>
-        Path to build file, relative to the working directory.
+        The path to a custom Gradle build file. Leave this field empty if your build file is build.gradle located in the root directory.
         This property is deprecated for Gradle versions 9.0 and higher, use the additional `-p &lt;path-relative-to-checkout-directory&gt;` command line parameter instead.
       </description>
     </param>
     <param name="ui.gradleRunner.gradle.incremental" dslName="incremental" type="boolean" trueValue="true" falseValue="">
-      <description>When set to true the :buildDependents task will be run on projects affected by changes</description>
+      <description>Enable this option to allow TeamCity to detect Gradle modules affected by a modified build, and run the :buildDependents only for these affected modules.</description>
     </param>
-    <param name="teamcity.build.workingDir" dslName="workingDir" description="Custom working directory for gradle script"/>
+    <param name="teamcity.build.workingDir" dslName="workingDir" description="Custom working directory for the Gradle script" yaml-name="working-directory"/>
     <param name="ui.gradleRunner.gradle.home" dslName="gradleHome">
-      <description>Path to the Gradle home directory (parent of 'bin' directory). Overrides agent GRADLE_HOME environment variable</description>
+      <description>The path to a custom Gradle version. This version will be used instead of the default Gradle version referenced by the GRADLE_HOME environment variable.</description>
     </param>
     <param name="ui.gradleRunner.additional.gradle.cmd.params" dslName="gradleParams">
-      <description>Additional parameters will be added to the 'Gradle' command line</description>
+      <description>Optional space-separated command-line parameters</description>
     </param>
     <param name="ui.gradleRunner.gradle.wrapper.useWrapper" dslName="useGradleWrapper" type="boolean" trueValue="true" falseValue="">
       <description>
-        Whether TeamCity should look for Gradle Wrapper scripts in the checkout directory and run script using it
+        Enable this setting if TeamCity should look for a [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) script in the project directory.
       </description>
     </param>
     <param name="ui.gradleRunner.gradle.wrapper.path" dslName="gradleWrapperPath">
-      <description>Optional path to the Gradle wrapper script, relative to the working directory</description>
+      <description>The path (relative to the working directory) to a Gradle Wrapper script</description>
     </param>
     <param name="ui.gradleRunner.gradle.debug.enabled" dslName="enableDebug" type="boolean" trueValue="true" falseValue="">
       <description>
-        Whether Gradle should be executed with the -d option
+        Runs Gradle with the 'debug' (-d) log level. See also: [Logging Sensitive Information](https://docs.gradle.org/current/userguide/logging.html#sec:debug_security).
       </description>
     </param>
     <param name="ui.gradleRunner.gradle.stacktrace.enabled" dslName="enableStacktrace" type="boolean" trueValue="true" falseValue="">
       <description>
-        Whether Gradle should be executed with the -s option
+        Allows Gradle to print [truncated stacktraces](https://docs.gradle.org/current/userguide/logging.html#stacktraces).
       </description>
     </param>
     <param name="target.jdk.home" dslName="jdkHome">
@@ -65,8 +65,8 @@
   <examples>
     <example>
       <description>
-        Adds a simple Gradle step with custom tasks and build file determined by Gradle.
-        Gralde Wrapper located in the checkout directory is used.
+        Adds a simple Gradle step with custom tasks and a build file determined by Gradle.
+        The Gradle Wrapper located in the checkout directory is used.
       </description>
       <code>
         gradle {
@@ -77,10 +77,10 @@
     </example>
     <example>
       <description>
-        Add a Gradles build step with custom Gradle task and build file localted in also custom
+        Add a Gradle build step with a custom Gradle task and a build file in a custom
         [working directory](https://www.jetbrains.com/help/teamcity/?Build+Working+Directory).
         Gradle incremental building feature is enabled.
-        Additional Gradle command line parameters is specified with a reference to a
+        Additional Gradle command line parameters are specified with a reference to a
         [configuration parameter](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters).
         Gralde build step is set up not to use Gradle Wrapper, so Gradle will be taken from the agent's GRADLE_HOME environment variable.
         Additional [run parameter](https://www.jetbrains.com/help/teamcity/?Gradle#Run+Parameters) for printing stacktrace is enabled.
@@ -117,11 +117,11 @@
     <example>
       <description>
         Adds a Gradle build step with 'default' Gradle task and custom Gradle build file.
-        Gradle Wrapper using is disabled, so Gradle will be taken with a reference to an
+        Gradle Wrapper using is disabled, so Gradle will be taken with reference to an
         [environment variable](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters).
         JDK is set to the [environment variable](https://www.jetbrains.com/help/teamcity/?Using+Build+Parameters) value
         with custom command line [parameters](https://www.jetbrains.com/help/teamcity/?Gradle#Java+Parameters).
-        This build step will run even if some previous build steps are failed.
+        This build step will run even if some previous build steps failed.
       </description>
       <code>
         gradle {
