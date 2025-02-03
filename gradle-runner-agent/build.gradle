@@ -8,6 +8,7 @@ teamcity {
     agent {
         descriptor {
             pluginDeployment {
+                useSeparateClassloader = true
             }
         }
         files {
