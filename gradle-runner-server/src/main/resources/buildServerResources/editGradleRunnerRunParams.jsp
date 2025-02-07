@@ -20,7 +20,10 @@
             <props:textProperty name="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"  className="longField">
                 <jsp:attribute name="afterTextField"><bs:vcsTree fieldId="<%=GradleRunnerConstants.PATH_TO_BUILD_FILE%>"/></jsp:attribute>
             </props:textProperty>
-            <span class="smallNote">Path to build file, relative to the working directory</span>
+            <span class="smallNote">
+                Path to build file, relative to the working directory.<br>
+                This property is deprecated for Gradle versions 9.0 and higher, use the additional <strong>-p &lt;path-relative-to-checkout-directory&gt;</strong> command line parameter instead.
+            </span>
         </td>
     </tr>
     <tr class="advancedSetting">

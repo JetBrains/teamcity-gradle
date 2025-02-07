@@ -15,7 +15,12 @@
     <param name="ui.gradleRunner.gradle.tasks.names" dslName="tasks">
       <description>Space separated task names, when not set the 'default' task is used</description>
     </param>
-    <param name="ui.gradleRUnner.gradle.build.file" dslName="buildFile" description="Path to build file"/>
+    <param name="ui.gradleRUnner.gradle.build.file" dslName="buildFile">
+      <description>
+        Path to build file, relative to the working directory.
+        This property is deprecated for Gradle versions 9.0 and higher, use the additional `-p &lt;path-relative-to-checkout-directory&gt;` command line parameter instead.
+      </description>
+    </param>
     <param name="ui.gradleRunner.gradle.incremental" dslName="incremental" type="boolean" trueValue="true" falseValue="">
       <description>When set to true the :buildDependents task will be run on projects affected by changes</description>
     </param>
