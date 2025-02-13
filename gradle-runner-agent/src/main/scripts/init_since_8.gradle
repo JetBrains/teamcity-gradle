@@ -313,17 +313,17 @@ class ProjectPropertyStorage {
 }
 
 public enum TestNameDescriptor {
-  DEFAULT{
+  DEFAULT {
     String getTestName(TestDescriptorWrapper descriptor) {
       return DISPLAY_NAME.getTestName(descriptor)
     }
   },
-  NAME{
+  NAME {
     String getTestName(TestDescriptorWrapper descriptor) {
       return super.getTestName(descriptor)
     }
   },
-  DISPLAY_NAME{
+  DISPLAY_NAME {
     String getTestName(TestDescriptorWrapper descriptor) {
       String methodName = getMethodName(descriptor.name)
       if (descriptor.displayName.startsWith(methodName)) {
@@ -341,7 +341,7 @@ public enum TestNameDescriptor {
 
     private String getMethodName(String name) {
       for (int i = 0; i < name.length(); i++) {
-        if (name[i] in BRACKETS) return name[0..<i]
+        if (name.charAt(i) in BRACKETS) return name.substring(0, i)
       }
       return name
     }
@@ -352,7 +352,7 @@ public enum TestNameDescriptor {
   }
 
   static TestNameDescriptor of(String param) {
-    if (param == null || param.equals("")) return DEFAULT
+    if (param == null) return DEFAULT
     switch (param) {
       case "name": return NAME
       case "displayName": return DISPLAY_NAME
