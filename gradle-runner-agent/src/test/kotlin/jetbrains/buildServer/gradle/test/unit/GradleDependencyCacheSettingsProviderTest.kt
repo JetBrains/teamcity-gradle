@@ -9,6 +9,7 @@ import jetbrains.buildServer.agent.cache.depcache.DependencyCacheSettingsProvide
 import jetbrains.buildServer.cache.depcache.DependencyCacheConstants.*
 import jetbrains.buildServer.gradle.GradleRunnerConstants.RUNNER_TYPE
 import jetbrains.buildServer.gradle.depcache.GradleDependenciesChangedInvalidator
+import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheChecksumBuilder
 import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE
 import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheSettingsProvider
 import jetbrains.buildServer.util.EventDispatcher
@@ -23,6 +24,7 @@ class GradleDependencyCacheSettingsProviderTest {
     @MockK private lateinit var eventDispatcherMock: EventDispatcher<AgentLifeCycleListener>
     @MockK private lateinit var cacheSettingsProviderRegistryMock: DependencyCacheSettingsProviderRegistry
     @MockK private lateinit var buildMock: AgentRunningBuild
+    @MockK private lateinit var checksumBuilder: GradleDependencyCacheChecksumBuilder
     private lateinit var sharedBuildConfig: MutableMap<String, String?>
     private lateinit var instance: GradleDependencyCacheSettingsProvider
 
@@ -37,7 +39,7 @@ class GradleDependencyCacheSettingsProviderTest {
         every { buildMock.getSharedConfigParameters() } returns sharedBuildConfig
 
         instance = GradleDependencyCacheSettingsProvider(
-            eventDispatcherMock, cacheSettingsProviderRegistryMock, mockk<DependencyCacheProvider>()
+            eventDispatcherMock, cacheSettingsProviderRegistryMock, mockk<DependencyCacheProvider>(), checksumBuilder
         )
     }
 

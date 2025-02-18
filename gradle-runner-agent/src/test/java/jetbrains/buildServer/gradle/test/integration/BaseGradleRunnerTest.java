@@ -496,8 +496,8 @@ public class BaseGradleRunnerTest {
 
       allowing(myMockDependencyCacheManager).registerAndRestoreCache(with(Expectations.<String>anything()), with(Expectations.<File>anything()),
                                                                      with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(myMockDependencyCacheManager).updateInvalidationData(with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(myMockDependencyCacheManager).prepareInvalidationDataAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(myMockDependencyCacheManager).updateInvalidatorWithChecksum(with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(myMockDependencyCacheManager).prepareChecksumAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
       allowing(myMockDependencyCacheManager).getCacheEnabled(); will(returnValue(false));
       allowing(myMockDependencyCacheManager).getCache(); will(returnValue(null));
     }};

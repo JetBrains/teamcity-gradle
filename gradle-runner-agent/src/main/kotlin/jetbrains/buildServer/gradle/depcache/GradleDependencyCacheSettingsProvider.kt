@@ -14,7 +14,8 @@ import jetbrains.buildServer.util.EventDispatcher
 class GradleDependencyCacheSettingsProvider(
     private val eventDispatcher: EventDispatcher<AgentLifeCycleListener>,
     private val cacheSettingsProviderRegistry: DependencyCacheSettingsProviderRegistry,
-    private val cacheProvider: DependencyCacheProvider
+    private val cacheProvider: DependencyCacheProvider,
+    private val checksumBuilder: GradleDependencyCacheChecksumBuilder
 ) : BuildRunnerDependencyCacheSettingsProvider(
     eventDispatcher, cacheSettingsProviderRegistry, cacheProvider,
     GradleRunnerConstants.RUNNER_TYPE,
@@ -27,7 +28,7 @@ class GradleDependencyCacheSettingsProvider(
         private set
 
     protected override fun createPostBuildInvalidators(): List<GradleDependenciesChangedInvalidator> {
-        postBuildInvalidator = GradleDependenciesChangedInvalidator()
+        postBuildInvalidator = GradleDependenciesChangedInvalidator(checksumBuilder)
         return listOf(postBuildInvalidator!!)
     }
 

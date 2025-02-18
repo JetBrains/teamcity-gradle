@@ -8,9 +8,9 @@ interface GradleDependencyCacheManager {
     val cache: DependencyCache?
     val cacheEnabled: Boolean
 
-    fun prepareInvalidationDataAsync(workingDirectory: File, depCacheContext: GradleDependencyCacheStepContext)
+    fun prepareChecksumAsync(workingDirectory: File, depCacheContext: GradleDependencyCacheStepContext)
 
     fun registerAndRestoreCache(stepId: String, gradleUserHome: File?, depCacheContext: GradleDependencyCacheStepContext?)
 
-    fun updateInvalidationData(depCacheContext: GradleDependencyCacheStepContext?)
+    fun updateInvalidatorWithChecksum(depCacheContext: GradleDependencyCacheStepContext?)
 }

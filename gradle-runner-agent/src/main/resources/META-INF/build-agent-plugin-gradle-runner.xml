@@ -21,7 +21,7 @@
   <bean id="gradleDependencyCacheSettingsProvider" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheSettingsProvider"/>
   <bean id="gradleDependencyCacheManager" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManagerImpl"/>
   <bean id="gradleDependencyCacheCoroutineScope" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheCoroutineScope"/>
-  <bean id="gradleDependencyCacheInvalidationDataCollector" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheInvalidationDataCollector"/>
+  <bean id="gradleDependencyCacheChecksumBuilder" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheChecksumBuilder"/>
   <bean id="gradleCacheDirectoryAllowedListAdder" class="jetbrains.buildServer.gradle.depcache.GradleCacheDirectoryAllowedListAdder" init-method="register" destroy-method="unregister"/>
 
 </beans>

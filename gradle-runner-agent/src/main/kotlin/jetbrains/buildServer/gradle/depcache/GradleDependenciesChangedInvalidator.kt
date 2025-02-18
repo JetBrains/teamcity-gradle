@@ -7,9 +7,11 @@ import jetbrains.buildServer.agent.cache.depcache.invalidation.InvalidationMetad
 import jetbrains.buildServer.agent.cache.depcache.invalidation.InvalidationResult
 import java.nio.file.Path
 
-class GradleDependenciesChangedInvalidator : DependencyCacheInvalidator {
+class GradleDependenciesChangedInvalidator(
+    private val checksumBuilder: GradleDependencyCacheChecksumBuilder
+) : DependencyCacheInvalidator {
 
-    private val absoluteCachesPathToFilePathToChecksum: MutableMap<String, Map<String, String>> = HashMap()
+    private val absoluteCachesPathToChecksum: MutableMap<String, String> = HashMap()
 
     override fun run(
         invalidationMetadata: InvalidationMetadata,
@@ -20,26 +22,34 @@ class GradleDependenciesChangedInvalidator : DependencyCacheInvalidator {
             it.location.toAbsolutePath().toString() to it.id
         }
 
-        val newCacheRootIdToFilesChecksum: Map<String, Map<String, String>> = absoluteCachesPathToFilePathToChecksum.entries.mapNotNull { entry ->
+        val newCacheRootIdToFilesChecksum: Map<String, String> = absoluteCachesPathToChecksum.entries.mapNotNull { entry ->
             absoluteCachesPathToNewCacheRootId[entry.key]?.let { cacheRootId ->
                 cacheRootId to entry.value
             }
         }.toMap()
 
-        var newData = GradleDependencyCacheInvalidationData(newCacheRootIdToFilesChecksum)
-        var cachedData = invalidationMetadata.getObjectParameter("gradleInvalidationData") {
-            GradleDependencyCacheInvalidationData.deserialize(it)
+        var newChecksum = GradleDependencyCacheProjectFilesChecksum(newCacheRootIdToFilesChecksum)
+        var cachedChecksum = invalidationMetadata.getObjectParameter("gradleProjectFilesChecksum") {
+            GradleDependencyCacheProjectFilesChecksum.deserialize(it)
         }
 
-        invalidationMetadata.publishObjectParameter<GradleDependencyCacheInvalidationData>("gradleInvalidationData", newData)
+        invalidationMetadata.publishObjectParameter<GradleDependencyCacheProjectFilesChecksum>("gradleProjectFilesChecksum", newChecksum)
 
-        return if (newData == cachedData) InvalidationResult.validated()
+        return if (newChecksum == cachedChecksum) InvalidationResult.validated()
         else InvalidationResult.invalidated("Gradle projects' dependencies have changed")
     }
 
     override fun shouldRunIfCacheInvalidated(): Boolean = true
 
-    fun addDependenciesToGradleCachesLocation(gradleCachesPath: Path, filePathToChecksum: Map<String, String>) {
-        absoluteCachesPathToFilePathToChecksum.put(gradleCachesPath.toAbsolutePath().toString(), filePathToChecksum)
+    fun addChecksumToGradleCachesLocation(gradleCachesPath: Path, checksum: String) {
+        val key = gradleCachesPath.toAbsolutePath().toString()
+        val existingChecksum = absoluteCachesPathToChecksum[key]
+
+        if (existingChecksum == null) {
+            absoluteCachesPathToChecksum[key] = checksum
+            return
+        }
+
+        absoluteCachesPathToChecksum[key] = checksumBuilder.merge(existingChecksum, checksum)
     }
 }

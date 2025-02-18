@@ -85,7 +85,7 @@ public class GradleRunnerService extends BuildServiceAdapter
 
     if (gradleDependencyCacheManager.getCacheEnabled()) {
       depCacheStepContext = new GradleDependencyCacheStepContext(getConfigParameters());
-      gradleDependencyCacheManager.prepareInvalidationDataAsync(getWorkingDirectory(), depCacheStepContext);
+      gradleDependencyCacheManager.prepareChecksumAsync(getWorkingDirectory(), depCacheStepContext);
     }
   }
 
@@ -94,7 +94,7 @@ public class GradleRunnerService extends BuildServiceAdapter
     super.afterProcessFinished();
 
     if (gradleDependencyCacheManager.getCacheEnabled()) {
-      gradleDependencyCacheManager.updateInvalidationData(depCacheStepContext);
+      gradleDependencyCacheManager.updateInvalidatorWithChecksum(depCacheStepContext);
       depCacheStepContext = null;
     }
   }

@@ -25,7 +25,7 @@ class GradleDependencyCacheManagerTest {
     @MockK
     private lateinit var settingsProvider: GradleDependencyCacheSettingsProvider
     @MockK
-    private lateinit var invalidationDataCollector: GradleDependencyCacheInvalidationDataCollector
+    private lateinit var checksumBuilder: GradleDependencyCacheChecksumBuilder
     @MockK
     private lateinit var invalidator: GradleDependenciesChangedInvalidator
     @MockK
@@ -40,10 +40,7 @@ class GradleDependencyCacheManagerTest {
     private lateinit var coroutineScope: CoroutineScope
     private val testDispatcher = StandardTestDispatcher()
     private val stepId = "gradle_step"
-    private val invalidationData: Map<String, String> = mapOf(
-        "/build.gradle" to "932710cf8b4e31b5dd242a72540fe51c2fb9510fedbeaf7866780843d39af699",
-        "/settings.gradle" to "ae990de7ec4fa1af7ce5fc014f55623c34e15857baddf63b2dabc43fc9c5dec3"
-    )
+    private val checksum = "932710cf8b4e31b5dd242a72540fe51c2fb9510fedbeaf7866780843d39af699"
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeMethod
@@ -62,7 +59,7 @@ class GradleDependencyCacheManagerTest {
         Dispatchers.setMain(testDispatcher)
         coroutineScope = CoroutineScope(testDispatcher)
 
-        every { invalidationDataCollector.collect(workDir, cache, any()) } returns Result.success(invalidationData)
+        every { checksumBuilder.build(workDir, cache, any()) } returns Result.success(checksum)
         every { settingsProvider.cache } returns cache
         every { settingsProvider.postBuildInvalidator } returns invalidator
         every { cacheContext.newCacheRootUsage(any(), any()) } returns cacheRootUsage
@@ -78,7 +75,7 @@ class GradleDependencyCacheManagerTest {
     @Test
     fun `should not register dependency cache when Gradle User Home is not passed`() {
         // arrange
-        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, invalidationDataCollector, coroutineScope)
+        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, checksumBuilder, coroutineScope)
 
         // act
         dependencyCacheManager.registerAndRestoreCache(stepId, null, cacheContext)
@@ -86,14 +83,14 @@ class GradleDependencyCacheManagerTest {
         // assert
         verify { cache.logWarning("Failed to detect Gradle User Home location for the current Gradle execution, it will not be cached") }
         assertFalse(gradleCachesDir.exists())
-        verify(exactly = 0) { invalidator.addDependenciesToGradleCachesLocation(any(), any()) }
+        verify(exactly = 0) { invalidator.addChecksumToGradleCachesLocation(any(), any()) }
         verify(exactly = 0) { cache.registerAndRestore(any()) }
     }
 
     @Test
     fun `should register and restore dependency cache`() {
         // arrange
-        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, invalidationDataCollector, coroutineScope)
+        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, checksumBuilder, coroutineScope)
 
         // act
         dependencyCacheManager.registerAndRestoreCache(stepId, gradleUserHomeDir, cacheContext)
@@ -107,32 +104,32 @@ class GradleDependencyCacheManagerTest {
     @Test
     fun `should prepare invalidation data`() {
         // arrange
-        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, invalidationDataCollector, coroutineScope)
-        coEvery { invalidationDataCollector.collect(workDir, cache, any()) } returns Result.success(invalidationData)
+        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, checksumBuilder, coroutineScope)
+        coEvery { checksumBuilder.build(workDir, cache, any()) } returns Result.success(checksum)
 
         // act
-        dependencyCacheManager.prepareInvalidationDataAsync(workDir, cacheContext)
+        dependencyCacheManager.prepareChecksumAsync(workDir, cacheContext)
 
         // assert
-        verify(exactly = 1) { cacheContext.invalidationData = any() }
+        verify(exactly = 1) { cacheContext.projectFilesChecksum = any() }
     }
 
     @Test
     fun `should update invalidation data`() {
         // arrange
-        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, invalidationDataCollector, coroutineScope)
-        val deferredData = mockk<Deferred<Map<String, String>>>()
-        coEvery { deferredData.await() } returns invalidationData
+        val dependencyCacheManager = GradleDependencyCacheManagerImpl(settingsProvider, checksumBuilder, coroutineScope)
+        val deferredData = mockk<Deferred<String>>()
+        coEvery { deferredData.await() } returns checksum
         every { cacheContext.gradleCachesLocation } returns gradleCachesDir.toPath()
-        every { cacheContext.invalidationData } returns deferredData
-        every { cacheContext.invalidationDataAwaitTimeout } returns 10000
-        val invalidationDataSlot = slot<Map<String, String>>()
+        every { cacheContext.projectFilesChecksum } returns deferredData
+        every { cacheContext.projectFilesChecksumAwaitTimeout } returns 10000
+        val invalidationDataSlot = slot<String>()
 
         // act
-        dependencyCacheManager.updateInvalidationData(cacheContext)
+        dependencyCacheManager.updateInvalidatorWithChecksum(cacheContext)
 
         // assert
-        verify { invalidator.addDependenciesToGradleCachesLocation(gradleCachesDir.toPath(), capture(invalidationDataSlot)) }
-        assertEquals(invalidationDataSlot.captured, invalidationData)
+        verify { invalidator.addChecksumToGradleCachesLocation(gradleCachesDir.toPath(), capture(invalidationDataSlot)) }
+        assertEquals(invalidationDataSlot.captured, checksum)
     }
 }

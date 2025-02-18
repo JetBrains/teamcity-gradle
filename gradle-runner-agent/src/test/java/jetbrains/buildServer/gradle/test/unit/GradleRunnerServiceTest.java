@@ -101,8 +101,8 @@ public class GradleRunnerServiceTest {
       });
       allowing(dependencyCacheManager).registerAndRestoreCache(with(Expectations.<String>anything()), with(Expectations.<File>anything()),
                                                                with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(dependencyCacheManager).updateInvalidationData(with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(dependencyCacheManager).prepareInvalidationDataAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(dependencyCacheManager).updateInvalidatorWithChecksum(with(Expectations.<GradleDependencyCacheStepContext>anything()));
+      allowing(dependencyCacheManager).prepareChecksumAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
       allowing(dependencyCacheManager).getCacheEnabled(); will(returnValue(true));
       allowing(dependencyCacheManager).getCache(); will(returnValue(null));
     }});

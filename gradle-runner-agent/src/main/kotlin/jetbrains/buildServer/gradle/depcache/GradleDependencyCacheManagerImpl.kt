@@ -7,7 +7,7 @@ import java.io.File
 
 class GradleDependencyCacheManagerImpl(
     private val gradleDependencyCacheSettingsProvider: GradleDependencyCacheSettingsProvider,
-    private val invalidationDataCollector: GradleDependencyCacheInvalidationDataCollector,
+    private val checksumBuilder: GradleDependencyCacheChecksumBuilder,
     private val coroutineScope: CoroutineScope
 ) : GradleDependencyCacheManager {
 
@@ -17,28 +17,28 @@ class GradleDependencyCacheManagerImpl(
     override val cacheEnabled: Boolean
         get() = gradleDependencyCacheSettingsProvider.cache != null
 
-    override fun prepareInvalidationDataAsync(workingDirectory: File, depCacheContext: GradleDependencyCacheStepContext) {
+    override fun prepareChecksumAsync(workingDirectory: File, depCacheContext: GradleDependencyCacheStepContext) {
         if (!cacheEnabled) return
         val cache = gradleDependencyCacheSettingsProvider.cache
         if (cache == null) {
             // this is not an expected case, something is wrong
-            logWarning("Gradle dependency cache is enabled but failed to initialize, couldn't prepare invalidation data")
+            logWarning("Gradle dependency cache is enabled but failed to initialize, couldn't prepare a checksum")
             return
         }
 
-        val deferred: Deferred<Map<String, String>> = coroutineScope.async {
+        val deferred: Deferred<String> = coroutineScope.async {
             withContext(Dispatchers.IO) {
-                invalidationDataCollector.collect(workingDirectory, cache, depCacheContext.depthLimit).fold(
+                checksumBuilder.build(workingDirectory, cache, depCacheContext.depthLimit).fold(
                     onSuccess = { it },
                     onFailure = { exception ->
-                        logWarning("Error while preparing invalidation data, this execution will not be cached", cache, exception)
-                        return@fold emptyMap()
+                        logWarning("Error while preparing a checksum, this execution will not be cached", cache, exception)
+                        return@fold ""
                     }
                 )
             }
         }
 
-        depCacheContext.invalidationData = deferred
+        depCacheContext.projectFilesChecksum = deferred
     }
 
     override fun registerAndRestoreCache(stepId: String, gradleUserHome: File?, depCacheContext: GradleDependencyCacheStepContext?) {
@@ -76,7 +76,7 @@ class GradleDependencyCacheManagerImpl(
         depCacheContext.gradleCachesLocation = gradleCachesPath
     }
 
-    override fun updateInvalidationData(depCacheContext: GradleDependencyCacheStepContext?) {
+    override fun updateInvalidatorWithChecksum(depCacheContext: GradleDependencyCacheStepContext?) {
         if (!cacheEnabled) return
         val cache = gradleDependencyCacheSettingsProvider.cache
         val invalidator = gradleDependencyCacheSettingsProvider.postBuildInvalidator
@@ -89,28 +89,28 @@ class GradleDependencyCacheManagerImpl(
             logWarning("Gradle caches location hasn't been initialized, this execution will not be cached", cache)
             return
         }
-        if (depCacheContext.invalidationData == null) {
-            logWarning("Gradle caches invalidation data hasn't been prepared, this execution will not be cached", cache)
+        if (depCacheContext.projectFilesChecksum == null) {
+            logWarning("Checksum hasn't been built, this execution will not be cached", cache)
             return
         }
 
-        val invalidationData: Map<String, String> = runCatching {
+        val projectFilesChecksum: String = runCatching {
             runBlocking {
-                withTimeout(depCacheContext.invalidationDataAwaitTimeout) {
-                    depCacheContext.invalidationData!!.await()
+                withTimeout(depCacheContext.projectFilesChecksumAwaitTimeout) {
+                    depCacheContext.projectFilesChecksum!!.await()
                 }
             }
         }.getOrElse { e ->
-            logWarning("An error occurred during getting the invalidation data", cache, e)
-            emptyMap()
+            logWarning("An error occurred during getting the project files checksum", cache, e)
+            ""
         }
 
-        if (invalidationData.isEmpty()) {
-            logWarning("Invalidation data wasn't collected, something went wrong", cache)
+        if (projectFilesChecksum.isEmpty()) {
+            logWarning("Checksum wasn't built, something went wrong", cache)
             return
         }
 
-        invalidator.addDependenciesToGradleCachesLocation(depCacheContext.gradleCachesLocation!!, invalidationData)
+        invalidator.addChecksumToGradleCachesLocation(depCacheContext.gradleCachesLocation!!, projectFilesChecksum)
     }
 
     private fun logWarning(message: String,
