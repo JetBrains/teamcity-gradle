@@ -242,7 +242,7 @@ public class GradleRunnerService extends BuildServiceAdapter
                                              @Nullable File gradleHome,
                                              @Nullable File gradleWrapperProperties) {
     try {
-      return GradleToolingConnectorFactory.instantiate(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties, getConfigParameters());
+      return GradleToolingConnectorFactory.instantiate(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
     } catch (Throwable t) {
       getLogger().warning("Unable to obtain project connector: " + t.getMessage());
       return null;

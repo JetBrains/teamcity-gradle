@@ -1,7 +1,6 @@
 package jetbrains.buildServer.gradle.agent;
 
 import java.io.File;
-import java.util.Map;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.gradle.runtime.service.DistributionFactoryExtension;
 import org.gradle.tooling.GradleConnector;
@@ -14,8 +13,7 @@ public class GradleToolingConnectorFactory {
   public static GradleConnector instantiate(@NotNull File workingDirectory,
                                             @NotNull Boolean useWrapper,
                                             @Nullable File gradleHome,
-                                            @Nullable File gradleWrapperProperties,
-                                            @NotNull Map<String, String> configParams) throws RunBuildException {
+                                            @Nullable File gradleWrapperProperties) throws RunBuildException {
     GradleConnector connector = GradleConnector.newConnector();
     connector.forProjectDirectory(workingDirectory);
 

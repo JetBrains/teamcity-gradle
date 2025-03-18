@@ -44,6 +44,7 @@ import org.slf4j.impl.StaticLoggerBinder;
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY;
 import static jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil.getBooleanOrDefault;
+import static jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil.getIntegerOrDefault;
 
 public class GradleToolingApiCommandLineComposer implements GradleCommandLineComposer {
 
@@ -105,6 +106,10 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
                                                                                          parameters.getConfigParameters(), parameters.getLogger()).toString());
     systemProperties.put(GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM,
                          getBooleanOrDefault(parameters.getConfigParameters(), GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM, true).toString());
+    systemProperties.put(TOOLING_API_DAEMON_MAX_IDLE_TIME_ENABLED,
+                         getBooleanOrDefault(parameters.getConfigParameters(), TOOLING_API_DAEMON_MAX_IDLE_TIME_ENABLED, TOOLING_API_DAEMON_MAX_IDLE_TIME_ENABLED_DEFAULT).toString());
+    systemProperties.put(TOOLING_API_DAEMON_MAX_IDLE_TIME_MS,
+                         getIntegerOrDefault(parameters.getConfigParameters(), TOOLING_API_DAEMON_MAX_IDLE_TIME_MS, TOOLING_API_DAEMON_MAX_IDLE_TIME_DEFAULT_MS).toString());
     Optional.ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
             .ifPresent(tcBuildParametersFilePath -> systemProperties.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, tcBuildParametersFilePath));
 

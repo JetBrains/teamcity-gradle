@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.agent.ClasspathUtil;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
@@ -20,8 +21,12 @@ import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.events.OperationType;
+import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.TOOLING_API_DAEMON_MAX_IDLE_TIME_ENABLED;
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.TOOLING_API_DAEMON_MAX_IDLE_TIME_MS;
 
 /**
  * Helps to configure Gradle Tooling API build
@@ -68,7 +73,20 @@ public class GradleBuildConfigurator {
       connector.useInstallation(gradleHome);
     }
 
+    boolean daemonMaxIdleTimeEnabled = Boolean.parseBoolean(System.getProperty(TOOLING_API_DAEMON_MAX_IDLE_TIME_ENABLED));
+    if (daemonMaxIdleTimeEnabled) {
+      setDaemonMaxIdleTime(connector, Integer.parseInt(System.getProperty(TOOLING_API_DAEMON_MAX_IDLE_TIME_MS)));
+    }
+
     return connector;
+  }
+
+  private static void setDaemonMaxIdleTime(@NotNull GradleConnector connector,
+                                           int daemonMaxIdleTime) {
+    if (connector instanceof DefaultGradleConnector) {
+      // casting is needed because GradleConnector doesn't have a method to set the daemonMaxIdleTime
+      ((DefaultGradleConnector)connector).daemonMaxIdleTime(daemonMaxIdleTime, TimeUnit.MILLISECONDS);
+    }
   }
 
   @NotNull

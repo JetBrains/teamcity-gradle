@@ -52,6 +52,12 @@ public class GradleRunnerConstants
    */
   public static final String GRADLE_RUNNER_GRADLE_USER_HOME_OVERRIDE_ENABLED = "teamcity.internal.gradle.runner.gradleUserHomeOverrideByTcEnabled";
 
+  // Tooling API configuration parameters
+  public static final String TOOLING_API_DAEMON_MAX_IDLE_TIME_ENABLED = "teamcity.internal.gradle.runner.toolingApi.daemonMaxIdleTimeEnabled";
+  public static final boolean TOOLING_API_DAEMON_MAX_IDLE_TIME_ENABLED_DEFAULT = true;
+  public static final String TOOLING_API_DAEMON_MAX_IDLE_TIME_MS = "teamcity.internal.gradle.runner.toolingApi.daemonMaxIdleTimeMs";
+  public static final int TOOLING_API_DAEMON_MAX_IDLE_TIME_DEFAULT_MS = 1000;
+
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";
   public static final String ENV_GRADLE_OPTS = "GRADLE_OPTS";

@@ -75,4 +75,13 @@ public class ConfigurationParamsUtil
       .map(Boolean::valueOf)
       .orElse(defaultValue);
   }
+
+  @NotNull
+  public static Integer getIntegerOrDefault(@NotNull final Map<String, String> configurationParameters,
+                                            @NotNull final String key,
+                                            final int defaultValue) {
+    return Optional.ofNullable(configurationParameters.get(key))
+      .map(Integer::valueOf)
+      .orElse(defaultValue);
+  }
 }
