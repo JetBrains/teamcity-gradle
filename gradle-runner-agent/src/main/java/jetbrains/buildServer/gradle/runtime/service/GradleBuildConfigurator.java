@@ -94,7 +94,7 @@ public class GradleBuildConfigurator {
   }
 
   @NotNull
-  public String getInitScriptClasspath() throws IOException {
+  public static String getInitScriptClasspath() throws IOException {
     return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class)).getAbsolutePath()
