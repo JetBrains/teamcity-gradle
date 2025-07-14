@@ -25,8 +25,7 @@ import org.gradle.tooling.model.build.BuildEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM;
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver.getTcBuildParametersFile;
 
 public class TeamCityGradleLauncher {
@@ -95,10 +94,13 @@ public class TeamCityGradleLauncher {
     GradleBuildConfigurator buildConfigurator = new GradleBuildConfigurator(logger);
 
     try {
-      gradleEnv.put("TEAMCITY_BUILD_INIT_PATH", buildConfigurator.getInitScriptClasspath());
+      gradleEnv.put(TEAMCITY_BUILD_INIT_PATH, GradleBuildConfigurator.getInitScriptClasspath());
     } catch (IOException e) {
-      System.err.println("Couldn't launch Gradle via Tooling API: error while trying to build init script classpath");
-      return;
+      // use existing TEAMCITY_BUILD_INIT_PATH from GradleToolingApiCommandLineComposer.composeCommandLine
+      if (gradleEnv.get(TEAMCITY_BUILD_INIT_PATH) == null) {
+        System.err.println("Couldn't launch Gradle via Tooling API: error while trying to build init script classpath");
+        return;
+      }
     }
 
     final GradleConnector connector;
@@ -209,7 +211,7 @@ public class TeamCityGradleLauncher {
 
 
     messageBuilder.append("Gradle environment variables size: ").append(gradleEnv.size()).append(System.lineSeparator());
-    messageBuilder.append("Gradle init script classpath: ").append(gradleEnv.get("TEAMCITY_BUILD_INIT_PATH"));
+    messageBuilder.append("Gradle init script classpath: ").append(gradleEnv.get(TEAMCITY_BUILD_INIT_PATH));
 
     return messageBuilder.toString();
   }

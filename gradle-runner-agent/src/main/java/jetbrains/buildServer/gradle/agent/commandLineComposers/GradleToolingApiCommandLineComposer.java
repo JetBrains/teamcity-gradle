@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.agent.BuildProgressLogger;
@@ -26,6 +27,7 @@ import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.gradle.agent.propertySplit.SplitablePropertyFile;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
+import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator;
 import jetbrains.buildServer.gradle.runtime.TeamCityGradleLauncher;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
@@ -111,6 +113,13 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
     final String actualJavaHome = parameters.getRunnerContext().isVirtualContext()
                             ? parameters.getRunnerParameters().get(JavaRunnerConstants.TARGET_JDK_HOME)
                             : parameters.getJavaHome();
+
+    try {
+      // workaround for https://github.com/gradle/gradle/issues/32939
+      envs.put(TEAMCITY_BUILD_INIT_PATH, GradleBuildConfigurator.getInitScriptClasspath());
+    } catch (IOException e) {
+      parameters.getLogger().message("Couldn't launch Gradle via Tooling API: error while trying to build init script classpath ");
+    }
 
     return new JavaCommandLineBuilder()
       .withJavaHome(actualJavaHome, parameters.getRunnerContext().isVirtualContext())
