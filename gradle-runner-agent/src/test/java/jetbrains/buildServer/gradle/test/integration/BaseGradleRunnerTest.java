@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
@@ -530,6 +531,15 @@ public class BaseGradleRunnerTest {
 
     @Override
     public boolean addPassword(@NotNull final String password) {
+      return false;
+    }
+
+    @Override
+    public void addPasswordsFilter(@NotNull String filterName, @NotNull Function<String, String> filter) {
+    }
+
+    @Override
+    public boolean removePasswordsFilter(@NotNull String filterName) {
       return false;
     }
   }
