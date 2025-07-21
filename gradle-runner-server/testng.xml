@@ -4,8 +4,6 @@
     <classes>
       <class name="jetbrains.buildServer.gradle.test.GradleRunTypeTest"/>
       <class name="jetbrains.buildServer.gradle.server.GradleRunnerDiscoveryExtensionTest"/>
-      <class name="jetbrains.buildServer.gradle.server.depcache.GradleDependencyCacheRunnerRegistratorTest"/>
-      <class name="jetbrains.buildServer.gradle.server.depcache.GradleBuildStartContextProcessorTest"/>
     </classes>
   </test>
 </suite>

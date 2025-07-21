@@ -1,5 +1,0 @@
-package testProjects.depcache.multimoduleProject1.subproject1
-
-dependencies {
-    testImplementation 'org.testng:testng:7.8.0'
-}

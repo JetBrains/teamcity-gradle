@@ -30,7 +30,6 @@ dependencies {
     compileOnly "org.jetbrains.teamcity:agent-api:${teamcityVersion}",
                 "org.jetbrains.teamcity.internal:agent:${teamcityVersion}",
                 "org.jetbrains.teamcity:common-api:${teamcityVersion}"
-    provided "org.jetbrains.teamcity.internal:dependency-cache-agent:${teamcityVersion}"
     testImplementation "io.mockk:mockk-jvm:1.13.2"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1"
 }

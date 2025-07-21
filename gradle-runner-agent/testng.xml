@@ -25,14 +25,8 @@
       <class name="jetbrains.buildServer.gradle.test.unit.GradleConfigurationCacheDetectorTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleDaemonEnhancementClassesProviderTest"/>
 
-<!--      Kotlin-->
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleDependencyCacheInvalidationDataCollectorTest"/>
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleDependencyCacheSettingsProviderTest"/>
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleDependenciesChangedInvalidatorTest"/>
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleDependencyCacheManagerTest"/>
+      <!-- Kotlin -->
       <class name="jetbrains.buildServer.gradle.test.unit.GradleUserHomeManagerTest"/>
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerCacheDirectoryProviderTest"/>
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleCacheDirectoryAllowedListAdderTest"/>
     </classes>
   </test>
 </suite>

@@ -23,8 +23,6 @@ import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCache
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheStepContext;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
@@ -40,7 +38,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
-import static jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.testng.Assert.*;
 
@@ -61,7 +58,6 @@ public class GradleRunnerServiceTest {
   protected BuildRunnerContext myRunnerContext;
   protected AgentRunningBuild myBuild;
   protected GradleRunnerService myService;
-  private GradleDependencyCacheManager dependencyCacheManager;
   protected File myGradleExe;
   protected File myWorkingDirectory;
   protected File myInitScript;
@@ -80,7 +76,6 @@ public class GradleRunnerServiceTest {
     myRunnerContext = myContext.mock(BuildRunnerContext.class);
     myBuild = myContext.mock(AgentRunningBuild.class);
     final BuildParametersMap myBuildPrarams = myContext.mock(BuildParametersMap.class);
-    dependencyCacheManager = myContext.mock(GradleDependencyCacheManager.class);
 
     myContext.checking(new Expectations() {{
       allowing(myBuild).getBuildLogger();
@@ -99,12 +94,6 @@ public class GradleRunnerServiceTest {
           return ((Option)invocation.getParameter(0)).getDefaultValue();
         }
       });
-      allowing(dependencyCacheManager).registerAndRestoreCache(with(Expectations.<String>anything()), with(Expectations.<File>anything()),
-                                                               with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(dependencyCacheManager).updateInvalidatorWithChecksum(with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(dependencyCacheManager).prepareChecksumAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(dependencyCacheManager).getCacheEnabled(); will(returnValue(true));
-      allowing(dependencyCacheManager).getCache(); will(returnValue(null));
     }});
     GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
@@ -119,8 +108,7 @@ public class GradleRunnerServiceTest {
       new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
       new CommandLineParametersProcessor(),
       new GradleVersionDetector(),
-      new GradleUserHomeManager(),
-      dependencyCacheManager).createService();
+      new GradleUserHomeManager()).createService();
 
     myCoDir = myTempFiles.createTempDir();
 
@@ -436,8 +424,8 @@ public class GradleRunnerServiceTest {
       new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
       new CommandLineParametersProcessor(),
       new GradleVersionDetector(),
-      new GradleUserHomeManager(),
-      dependencyCacheManager).createService();
+      new GradleUserHomeManager()
+    ).createService();
 
     myContext.checking(new Expectations() {{
       allowing(myRunnerContext).getToolPath("gradle"); will(returnValue(myTempFiles.createTempDir().getAbsolutePath()));
@@ -459,7 +447,6 @@ public class GradleRunnerServiceTest {
 
     myConfigParameters.put(GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM,
                            VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE : GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE);
-    myConfigParameters.put(FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE, "false");
 
     myGradleExe = new File(gradleToolDir, GradleRunnerServiceFactory.WIN_GRADLE_EXE);
     if (TCSystemInfo.isUnix) {

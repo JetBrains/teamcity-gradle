@@ -20,8 +20,6 @@ import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLine
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerParameters;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheStepContext;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.ErrorData;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -48,8 +46,6 @@ public class GradleRunnerService extends BuildServiceAdapter
   private final CommandLineParametersProcessor commandLineParametersProcessor;
   private final GradleVersionDetector gradleVersionDetector;
   private final GradleUserHomeManager gradleUserHomeManager;
-  private final GradleDependencyCacheManager gradleDependencyCacheManager;
-  private GradleDependencyCacheStepContext depCacheStepContext;
 
   public GradleRunnerService(final String exePath,
                              final String wrapperName,
@@ -59,8 +55,7 @@ public class GradleRunnerService extends BuildServiceAdapter
                              final GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
                              final CommandLineParametersProcessor commandLineParametersProcessor,
                              final GradleVersionDetector gradleVersionDetector,
-                             final GradleUserHomeManager gradleUserHomeManager,
-                             final GradleDependencyCacheManager gradleDependencyCacheManager) {
+                             final GradleUserHomeManager gradleUserHomeManager) {
     this.exePath = exePath;
     this.wrapperName = wrapperName;
     this.composerHolder = composerHolder;
@@ -70,33 +65,12 @@ public class GradleRunnerService extends BuildServiceAdapter
     this.commandLineParametersProcessor = commandLineParametersProcessor;
     this.gradleVersionDetector = gradleVersionDetector;
     this.gradleUserHomeManager = gradleUserHomeManager;
-    this.gradleDependencyCacheManager = gradleDependencyCacheManager;
     listeners = new Lazy<List<ProcessListener>>() {
       @Override
       protected List<ProcessListener> createValue() {
         return Collections.singletonList(new GradleLoggingListener(getLogger()));
       }
     };
-  }
-
-  @Override
-  public void beforeProcessStarted() throws RunBuildException {
-    super.beforeProcessStarted();
-
-    if (gradleDependencyCacheManager.getCacheEnabled()) {
-      depCacheStepContext = new GradleDependencyCacheStepContext(getConfigParameters());
-      gradleDependencyCacheManager.prepareChecksumAsync(getWorkingDirectory(), depCacheStepContext);
-    }
-  }
-
-  @Override
-  public void afterProcessFinished() throws RunBuildException {
-    super.afterProcessFinished();
-
-    if (gradleDependencyCacheManager.getCacheEnabled()) {
-      gradleDependencyCacheManager.updateInvalidatorWithChecksum(depCacheStepContext);
-      depCacheStepContext = null;
-    }
   }
 
   @Override
@@ -156,23 +130,6 @@ public class GradleRunnerService extends BuildServiceAdapter
     }
 
     GradleConnector projectConnector = getGradleConnector(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
-    if (gradleUserHomeManager.isGradleUserHomeOverrideNeeded(getRunnerContext(), gradleDependencyCacheManager.getCacheEnabled())) {
-      // overriding the GRADLE_USER_HOME for a Gradle build via a command line argument.
-      // the appropriate argument could already be configured by the user, so it should be removed first.
-      gradleTasks = gradleUserHomeManager.removeGradleUserHomeArgument(gradleTasks);
-      userDefinedParams = gradleUserHomeManager.removeGradleUserHomeArgument(userDefinedParams);
-
-      File gradleUserHomeAgentLocal = gradleUserHomeManager.getGradleUserHomeAgentLocal(getRunnerContext().getBuild().getAgentConfiguration());;
-      userDefinedParams.add(String.format("-g=%s", gradleUserHomeAgentLocal.getAbsolutePath()));
-
-      Optional.ofNullable(gradleDependencyCacheManager.getCache()).ifPresent(cache -> {
-        gradleDependencyCacheManager.getCache().logMessage(String.format(
-          "running the build inside a Docker container with enabled dependency caching: setting the Gradle User Home to %s. " +
-          "It will be reset to its initial value once the build finishes",
-          gradleUserHomeAgentLocal
-        ));
-      });
-    }
     File gradleUserHome = gradleUserHomeManager.detectGradleUserHome(gradleTasks, userDefinedParams, env, projectConnector).orElse(null);
     DefaultGradleVersion gradleVersion = gradleVersionDetector.detect(projectConnector, getLogger()).orElse(null);
     boolean configurationCacheEnabled = gradleConfigurationCacheDetector.isConfigurationCacheEnabled(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
@@ -186,9 +143,6 @@ public class GradleRunnerService extends BuildServiceAdapter
                                                                                                                              .withConfigurationCacheProblemsIgnored(configurationCacheProblemsIgnored)
                                                                                                                              .withUnsupportedByToolingArgs(unsupportedByToolingArgs)
                                                                                                                              .build());
-    if (gradleDependencyCacheManager.getCacheEnabled()) {
-      gradleDependencyCacheManager.registerAndRestoreCache(getRunnerContext().getId(), gradleUserHome, depCacheStepContext);
-    }
 
     GradleCommandLineComposerParameters composerParameters =
       getComposerParameters(env, gradleTasks, userDefinedParams, configurationCacheEnabled, workingDirectory, params, exePath, selectionResult);

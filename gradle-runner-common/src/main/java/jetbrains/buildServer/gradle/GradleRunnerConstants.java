@@ -47,10 +47,6 @@ public class GradleRunnerConstants
    * Defaults to false
    */
   public static final String GRADLE_RUNNER_TEST_TASK_JVM_ARG_PROVIDER_DISABLED = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled";
-  /**
-   * Defaults to true
-   */
-  public static final String GRADLE_RUNNER_GRADLE_USER_HOME_OVERRIDE_ENABLED = "teamcity.internal.gradle.runner.gradleUserHomeOverrideByTcEnabled";
 
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";

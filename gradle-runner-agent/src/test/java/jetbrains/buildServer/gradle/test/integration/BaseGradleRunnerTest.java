@@ -27,8 +27,6 @@ import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProce
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheStepContext;
 import jetbrains.buildServer.gradle.test.GradleTestUtil;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
@@ -48,7 +46,6 @@ import org.testng.annotations.DataProvider;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_NAME;
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME;
-import static jetbrains.buildServer.gradle.depcache.GradleDependencyCacheConstants.FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -156,7 +153,6 @@ public class BaseGradleRunnerTest {
   protected Map<Option<?>, Object> myBuildTypeOptionValue = new HashMap<Option<?>, Object>();
   protected boolean myVirtualContext = false;
   private final TestLogger myTestLogger = new TestLogger();
-  protected GradleDependencyCacheManager myMockDependencyCacheManager;
 
   private static final boolean IS_JRE_8 = System.getProperty("java.specification.version").contains("1.8");
 
@@ -349,15 +345,15 @@ public class BaseGradleRunnerTest {
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
 
-    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(
-      new GradleRunnerServiceFactory(composerHolder,
-                                     tasksComposer,
-                                     new GradleLaunchModeSelector(),
-                                     new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
-                                     new CommandLineParametersProcessor(),
-                                     new GradleVersionDetector(),
-                                     new GradleUserHomeManager(),
-                                     myMockDependencyCacheManager));
+    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory(
+        composerHolder,
+        tasksComposer,
+        new GradleLaunchModeSelector(),
+        new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
+        new CommandLineParametersProcessor(),
+        new GradleVersionDetector(),
+        new GradleUserHomeManager()
+    ));
 
     final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
     final GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, session, myMockExtensionHolder);
@@ -403,7 +399,6 @@ public class BaseGradleRunnerTest {
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
     }
-    myTeamCityConfigParameters.put(FEATURE_TOGGLE_GRADLE_DEPENDENCY_CACHE, "false");
     findInitScript(ourProjectRoot, gradleVersionNum);
 
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());
@@ -437,8 +432,6 @@ public class BaseGradleRunnerTest {
     System.setProperty(AgentRuntimeProperties.AGENT_BUILD_PARAMS_FILE_PROP, propertiesFile.getAbsolutePath());
 
     final File workingDir = getWorkingDir(gradleVersionNum, projectName);
-
-    myMockDependencyCacheManager = context.mock(GradleDependencyCacheManager.class);
 
     final Expectations initMockingCtx = new Expectations() {{
       //myBuildTypeOptionValue.entrySet().forEach(entry -> {
@@ -494,13 +487,6 @@ public class BaseGradleRunnerTest {
       final File agentPluginDir = myTempFiles.createTempDir();
       allowing(myMockBuild).getAgentConfiguration(); will(returnValue(agentConfiguration));
       allowing(agentConfiguration).getAgentPluginsDirectory(); will(returnValue(agentPluginDir));
-
-      allowing(myMockDependencyCacheManager).registerAndRestoreCache(with(Expectations.<String>anything()), with(Expectations.<File>anything()),
-                                                                     with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(myMockDependencyCacheManager).updateInvalidatorWithChecksum(with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(myMockDependencyCacheManager).prepareChecksumAsync(with(Expectations.<File>anything()), with(Expectations.<GradleDependencyCacheStepContext>anything()));
-      allowing(myMockDependencyCacheManager).getCacheEnabled(); will(returnValue(false));
-      allowing(myMockDependencyCacheManager).getCache(); will(returnValue(null));
     }};
 
     context.checking(initMockingCtx);

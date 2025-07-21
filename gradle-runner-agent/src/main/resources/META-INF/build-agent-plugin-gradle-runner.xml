@@ -18,10 +18,4 @@
   <bean id="gradleTasksComposer" class="jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer" autowire="constructor"/>
   <bean id="gradleTestFilterPostProcessor" class="jetbrains.buildServer.gradle.agent.tasks.GradleTestFilterPostProcessor" autowire="constructor"/>
   <bean id="gradleUserHomeManager" class="jetbrains.buildServer.gradle.agent.GradleUserHomeManager"/>
-  <bean id="gradleDependencyCacheSettingsProvider" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheSettingsProvider"/>
-  <bean id="gradleDependencyCacheManager" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManagerImpl"/>
-  <bean id="gradleDependencyCacheCoroutineScope" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheCoroutineScope"/>
-  <bean id="gradleDependencyCacheChecksumBuilder" class="jetbrains.buildServer.gradle.depcache.GradleDependencyCacheChecksumBuilder"/>
-  <bean id="gradleCacheDirectoryAllowedListAdder" class="jetbrains.buildServer.gradle.depcache.GradleCacheDirectoryAllowedListAdder" init-method="register" destroy-method="unregister"/>
-
 </beans>

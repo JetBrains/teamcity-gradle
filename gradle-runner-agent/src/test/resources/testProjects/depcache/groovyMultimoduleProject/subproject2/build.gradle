@@ -1,5 +1,0 @@
-package testProjects.depcache.multimoduleProject1.subproject2
-
-dependencies {
-    implementation 'com.google.code.gson:gson:2.8.9'
-}

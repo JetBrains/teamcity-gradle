@@ -10,7 +10,6 @@ import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLine
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
-import jetbrains.buildServer.gradle.depcache.GradleDependencyCacheManager;
 import jetbrains.buildServer.log.Loggers;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,7 +29,6 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
   private final CommandLineParametersProcessor commandLineParametersProcessor;
   private final GradleVersionDetector gradleVersionDetector;
   private final GradleUserHomeManager gradleUserHomeManager;
-  private final GradleDependencyCacheManager gradleDependencyCacheManager;
 
   public GradleRunnerServiceFactory(GradleCommandLineComposerHolder composerHolder,
                                     GradleTasksComposer tasksComposer,
@@ -38,8 +36,7 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
                                     GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
                                     CommandLineParametersProcessor commandLineParametersProcessor,
                                     GradleVersionDetector gradleVersionDetector,
-                                    GradleUserHomeManager gradleUserHomeManager,
-                                    GradleDependencyCacheManager gradleDependencyCacheManager) {
+                                    GradleUserHomeManager gradleUserHomeManager) {
     this.composerHolder = composerHolder;
     this.tasksComposer = tasksComposer;
     this.gradleLaunchModeSelector = gradleLaunchModeSelector;
@@ -47,7 +44,6 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
     this.commandLineParametersProcessor = commandLineParametersProcessor;
     this.gradleVersionDetector = gradleVersionDetector;
     this.gradleUserHomeManager = gradleUserHomeManager;
-    this.gradleDependencyCacheManager = gradleDependencyCacheManager;
   }
 
   @NotNull public CommandLineBuildService createService()
@@ -73,8 +69,7 @@ public class GradleRunnerServiceFactory implements CommandLineBuildServiceFactor
                                    gradleConfigurationCacheDetector,
                                    commandLineParametersProcessor,
                                    gradleVersionDetector,
-                                   gradleUserHomeManager,
-                                   gradleDependencyCacheManager);
+                                   gradleUserHomeManager);
    }
 
    @NotNull public AgentBuildRunnerInfo getBuildRunnerInfo()

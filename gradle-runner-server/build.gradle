@@ -21,10 +21,7 @@ dependencies {
   implementation project(':gradle-runner-common')
   compileOnly "org.jetbrains.teamcity.internal:server:${teamcityVersion}"
 
-  provided "org.jetbrains.teamcity.internal:dependency-cache-server:${teamcityVersion}"
   agent project(path: ':gradle-runner-agent', configuration: 'plugin')
-
-  testImplementation "io.mockk:mockk-jvm:1.13.2"
 }
 
 serverPlugin {

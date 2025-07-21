@@ -1,9 +1,0 @@
-[versions]
-apiguardian = "1.1.2"
-unusedVersion = "1.1.2"
-
-[libraries]
-apiguardian = { module = "org.apiguardian:apiguardian-api", version.ref = "apiguardian" }
-
-[plugins]
-versions = { id = "com.github.ben-manes.versions", version = "0.51.0" }
