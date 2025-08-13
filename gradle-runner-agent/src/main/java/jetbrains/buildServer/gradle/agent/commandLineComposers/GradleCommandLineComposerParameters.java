@@ -1,6 +1,6 @@
 package jetbrains.buildServer.gradle.agent.commandLineComposers;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,11 +14,11 @@ public class GradleCommandLineComposerParameters {
   @NotNull
   private final Map<String, String> env;
   @NotNull
-  private final File buildTempDir;
+  private final Path buildTempDir;
   @NotNull
   private final Map<String, String> runnerParameters;
   @NotNull
-  private final File pluginsDirectory;
+  private final Path pluginsDir;
   @NotNull
   private final String gradleOpts;
   @NotNull
@@ -35,9 +35,9 @@ public class GradleCommandLineComposerParameters {
   @NotNull
   private final String javaHome;
   @NotNull
-  private final File checkoutDirectory;
+  private final Path checkoutDir;
   @NotNull
-  private final File workingDirectory;
+  private final Path workingDir;
   @NotNull
   private final List<String> initialGradleParams;
   @NotNull
@@ -46,9 +46,9 @@ public class GradleCommandLineComposerParameters {
   private final GradleLaunchModeSelectionResult launchModeSelectionResult;
 
   private GradleCommandLineComposerParameters(@NotNull Map<String, String> env,
-                                              @NotNull File buildTempDir,
+                                              @NotNull Path buildTempDir,
                                               @NotNull Map<String, String> runnerParameters,
-                                              @NotNull File pluginsDirectory,
+                                              @NotNull Path pluginsDir,
                                               @NotNull String gradleOpts,
                                               @NotNull List<String> gradleTasks,
                                               @NotNull List<String> gradleUserDefinedParams,
@@ -57,15 +57,15 @@ public class GradleCommandLineComposerParameters {
                                               @NotNull BuildProgressLogger logger,
                                               @NotNull BuildRunnerContext runnerContext,
                                               @NotNull String javaHome,
-                                              @NotNull File checkoutDirectory,
-                                              @NotNull File workingDirectory,
+                                              @NotNull Path checkoutDir,
+                                              @NotNull Path workingDir,
                                               @NotNull List<String> initialGradleParams,
                                               @NotNull String exePath,
                                               @Nullable GradleLaunchModeSelectionResult launchModeSelectionResult) {
     this.env = env;
     this.buildTempDir = buildTempDir;
     this.runnerParameters = runnerParameters;
-    this.pluginsDirectory = pluginsDirectory;
+    this.pluginsDir = pluginsDir;
     this.gradleOpts = gradleOpts;
     this.gradleTasks = gradleTasks;
     this.gradleUserDefinedParams = gradleUserDefinedParams;
@@ -74,8 +74,8 @@ public class GradleCommandLineComposerParameters {
     this.logger = logger;
     this.runnerContext = runnerContext;
     this.javaHome = javaHome;
-    this.checkoutDirectory = checkoutDirectory;
-    this.workingDirectory = workingDirectory;
+    this.checkoutDir = checkoutDir;
+    this.workingDir = workingDir;
     this.initialGradleParams = initialGradleParams;
     this.exePath = exePath;
     this.launchModeSelectionResult = launchModeSelectionResult;
@@ -87,7 +87,7 @@ public class GradleCommandLineComposerParameters {
   }
 
   @NotNull
-  public File getBuildTempDir() {
+  public Path getBuildTempDir() {
     return buildTempDir;
   }
 
@@ -97,8 +97,8 @@ public class GradleCommandLineComposerParameters {
   }
 
   @NotNull
-  public File getPluginsDirectory() {
-    return pluginsDirectory;
+  public Path getPluginsDir() {
+    return pluginsDir;
   }
 
   @NotNull
@@ -141,13 +141,13 @@ public class GradleCommandLineComposerParameters {
   }
 
   @NotNull
-  public File getCheckoutDirectory() {
-    return checkoutDirectory;
+  public Path getCheckoutDir() {
+    return checkoutDir;
   }
 
   @NotNull
-  public File getWorkingDirectory() {
-    return workingDirectory;
+  public Path getWorkingDir() {
+    return workingDir;
   }
 
   @NotNull
@@ -171,11 +171,10 @@ public class GradleCommandLineComposerParameters {
   }
 
   public static final class Builder {
-
     private Map<String, String> env;
-    private File buildTempDir;
+    private Path buildTempDir;
     private Map<String, String> runnerParameters;
-    private File pluginsDirectory;
+    private Path pluginsDir;
     private String gradleOpts;
     private List<String> gradleTasks;
     private List<String> gradleUserDefinedParams;
@@ -184,8 +183,8 @@ public class GradleCommandLineComposerParameters {
     private BuildProgressLogger logger;
     private BuildRunnerContext runnerContext;
     private String javaHome;
-    private File checkoutDirectory;
-    private File workingDirectory;
+    private Path checkoutDir;
+    private Path workingDir;
     private List<String> initialGradleParams;
     private String exePath;
     private GradleLaunchModeSelectionResult launchModeSelectionResult;
@@ -198,8 +197,8 @@ public class GradleCommandLineComposerParameters {
       return this;
     }
 
-    public Builder withBuildTempDir(@NotNull File buildTempDir) {
-      this.buildTempDir = buildTempDir;
+    public Builder withBuildTempDir(@NotNull Path buildTempDir) {
+      this.buildTempDir = toNormalizedAbsolutePath(buildTempDir);
       return this;
     }
 
@@ -208,8 +207,8 @@ public class GradleCommandLineComposerParameters {
       return this;
     }
 
-    public Builder withPluginsDirectory(@NotNull File pluginsDirectory) {
-      this.pluginsDirectory = pluginsDirectory;
+    public Builder withPluginsDir(@NotNull Path pluginsDir) {
+      this.pluginsDir = toNormalizedAbsolutePath(pluginsDir);
       return this;
     }
 
@@ -253,13 +252,13 @@ public class GradleCommandLineComposerParameters {
       return this;
     }
 
-    public Builder withCheckoutDirectory(@NotNull File checkoutDirectory) {
-      this.checkoutDirectory = checkoutDirectory;
+    public Builder withCheckoutDir(@NotNull Path checkoutDir) {
+      this.checkoutDir = toNormalizedAbsolutePath(checkoutDir);
       return this;
     }
 
-    public Builder withWorkingDirectory(@NotNull File workingDirectory) {
-      this.workingDirectory = workingDirectory;
+    public Builder withWorkingDir(@NotNull Path workingDir) {
+      this.workingDir = toNormalizedAbsolutePath(workingDir);
       return this;
     }
 
@@ -280,10 +279,15 @@ public class GradleCommandLineComposerParameters {
 
     @NotNull
     public GradleCommandLineComposerParameters build() {
-      return new GradleCommandLineComposerParameters(env, buildTempDir, runnerParameters, pluginsDirectory, gradleOpts,
+      return new GradleCommandLineComposerParameters(env, buildTempDir, runnerParameters, pluginsDir, gradleOpts,
                                                      gradleTasks, gradleUserDefinedParams, configurationCacheEnabled, configParameters, logger, runnerContext,
-                                                     javaHome, checkoutDirectory, workingDirectory, initialGradleParams, exePath,
+                                                     javaHome, checkoutDir, workingDir, initialGradleParams, exePath,
                                                      launchModeSelectionResult);
+    }
+
+    @NotNull
+    private Path toNormalizedAbsolutePath(@NotNull Path path) {
+      return path.toAbsolutePath().normalize();
     }
   }
 }

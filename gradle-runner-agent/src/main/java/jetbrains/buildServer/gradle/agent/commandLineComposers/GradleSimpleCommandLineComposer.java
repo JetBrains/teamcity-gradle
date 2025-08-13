@@ -9,27 +9,31 @@ import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import org.jetbrains.annotations.NotNull;
 
 public class GradleSimpleCommandLineComposer implements GradleCommandLineComposer {
-
+  @NotNull
   private final GradleTasksComposer tasksComposer;
 
-  public GradleSimpleCommandLineComposer(GradleTasksComposer tasksComposer) {
+  public GradleSimpleCommandLineComposer(@NotNull GradleTasksComposer tasksComposer) {
     this.tasksComposer = tasksComposer;
   }
 
   @Override
   @NotNull
-  public GradleLaunchMode getApplicableLaunchMode() {
+  public GradleLaunchMode getLaunchMode() {
     return GradleLaunchMode.COMMAND_LINE;
   }
 
   @Override
   @NotNull
-  public ProgramCommandLine composeCommandLine(@NotNull GradleCommandLineComposerParameters parameters) {
-    final List<String> gradleParameters = new ArrayList<>(parameters.getInitialGradleParams());
-    gradleParameters.addAll(tasksComposer.getGradleParameters(GradleLaunchMode.COMMAND_LINE, parameters.getRunnerParameters(),
-                                                              parameters.getGradleUserDefinedParams(), parameters.getPluginsDirectory()));
+  public ProgramCommandLine compose(@NotNull GradleCommandLineComposerParameters parameters) {
+    List<String> gradleParameters = new ArrayList<>(parameters.getInitialGradleParams());
+    gradleParameters.addAll(tasksComposer.getGradleParameters(
+      getLaunchMode(),
+      parameters.getRunnerParameters(),
+      parameters.getGradleUserDefinedParams(),
+      parameters.getPluginsDir().toFile()
+    ));
     gradleParameters.addAll(parameters.getGradleTasks());
 
-    return new SimpleProgramCommandLine(parameters.getEnv(), parameters.getWorkingDirectory().getPath(), parameters.getExePath(), gradleParameters);
+    return new SimpleProgramCommandLine(parameters.getEnv(), parameters.getWorkingDir().toString(), parameters.getExePath(), gradleParameters);
   }
 }

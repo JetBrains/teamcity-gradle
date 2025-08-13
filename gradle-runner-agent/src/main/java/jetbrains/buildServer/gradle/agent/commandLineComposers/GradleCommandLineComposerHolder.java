@@ -13,8 +13,9 @@ public class GradleCommandLineComposerHolder {
   private final Map<GradleLaunchMode, GradleCommandLineComposer> launchModeToComposer;
 
   public GradleCommandLineComposerHolder(List<GradleCommandLineComposer> commandLineComposerList) {
-    launchModeToComposer = commandLineComposerList.stream()
-                                                  .collect(Collectors.toMap(it -> it.getApplicableLaunchMode(), Function.identity()));
+    launchModeToComposer = commandLineComposerList
+      .stream()
+      .collect(Collectors.toMap(GradleCommandLineComposer::getLaunchMode, Function.identity()));
   }
 
   @NotNull

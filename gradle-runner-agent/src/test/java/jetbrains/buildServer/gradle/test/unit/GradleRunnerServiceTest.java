@@ -3,6 +3,7 @@ package jetbrains.buildServer.gradle.test.unit;
 import com.intellij.openapi.util.TCSystemInfo;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.RunBuildException;
@@ -15,14 +16,15 @@ import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.*;
+import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
-import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
+import jetbrains.buildServer.gradle.runtime.LauncherParameters;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
@@ -79,16 +81,36 @@ public class GradleRunnerServiceTest {
 
     myContext.checking(new Expectations() {{
       allowing(myBuild).getBuildLogger();
-      allowing(myBuild).getBuildTempDirectory();          will(returnValue(myTempDir));
-      allowing(myRunnerContext).getRunnerParameters();    will(returnValue(myRunnerParams));
-      allowing(myRunnerContext).getBuildParameters();     will(returnValue(myBuildPrarams));
-      allowing(myRunnerContext).getId();     will(returnValue("myBuildPrarams"));
-      allowing(myRunnerContext).isVirtualContext();       will(returnValue(false));
-      allowing(myBuildPrarams).getAllParameters();        will(returnValue(myBuildParams));
-      allowing(myBuildPrarams).getEnvironmentVariables(); will(returnValue(myEnvVars));
-      allowing(myBuildPrarams).getSystemProperties();     will(returnValue(mySystemProps));
-      allowing(myRunnerContext).getConfigParameters();    will(returnValue(myConfigParameters));
-      allowing(myBuild).getBuildTypeOptionValue(with(any(Option.class))); will(new CustomAction("proxy Option") {
+
+      allowing(myBuild).getBuildTempDirectory();
+      will(returnValue(myTempDir));
+
+      allowing(myRunnerContext).getRunnerParameters();
+      will(returnValue(myRunnerParams));
+
+      allowing(myRunnerContext).getBuildParameters();
+      will(returnValue(myBuildPrarams));
+
+      allowing(myRunnerContext).getId();
+      will(returnValue("myBuildPrarams"));
+
+      allowing(myRunnerContext).isVirtualContext();
+      will(returnValue(false));
+
+      allowing(myBuildPrarams).getAllParameters();
+      will(returnValue(myBuildParams));
+
+      allowing(myBuildPrarams).getEnvironmentVariables();
+      will(returnValue(myEnvVars));
+
+      allowing(myBuildPrarams).getSystemProperties();
+      will(returnValue(mySystemProps));
+
+      allowing(myRunnerContext).getConfigParameters();
+      will(returnValue(myConfigParameters));
+
+      allowing(myBuild).getBuildTypeOptionValue(with(any(Option.class)));
+      will(new CustomAction("proxy Option") {
         @Override
         public Object invoke(Invocation invocation) {
           return ((Option)invocation.getParameter(0)).getDefaultValue();
@@ -101,7 +123,7 @@ public class GradleRunnerServiceTest {
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
 
-    myService = (GradleRunnerService) new GradleRunnerServiceFactory(
+    myService = (GradleRunnerService)new GradleRunnerServiceFactory(
       composerHolder,
       tasksComposer,
       new GradleLaunchModeSelector(),
@@ -137,7 +159,7 @@ public class GradleRunnerServiceTest {
 
   @DataProvider(name = "gradle-version-provider")
   public static String[][] getGradlePaths() {
-    return new String[][] {
+    return new String[][]{
       {"old"},
       {"8.2"}
     };
@@ -161,7 +183,7 @@ public class GradleRunnerServiceTest {
 
   @DataProvider(name = "enable daemon")
   public static Object[][] enableDaemonParam() {
-    return new Object[][] {
+    return new Object[][]{
       {"old", "--daemon"},
       {"8.2", "--daemon"},
       {"old", "-Dorg.gradle.daemon=true"},
@@ -247,7 +269,7 @@ public class GradleRunnerServiceTest {
     myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, expectedJavaHome);
 
     prepareGradleRequiredFiles(gradleVersion);
-    myService.initialize(myBuild,myRunnerContext);
+    myService.initialize(myBuild, myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
     validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
 
@@ -263,7 +285,7 @@ public class GradleRunnerServiceTest {
     myRunnerParams.put(GradleRunnerConstants.ENV_GRADLE_OPTS, expectedRunnerGradleOpts);
 
     prepareGradleRequiredFiles(gradleVersion);
-    myService.initialize(myBuild,myRunnerContext);
+    myService.initialize(myBuild, myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
     String gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
@@ -276,7 +298,7 @@ public class GradleRunnerServiceTest {
     }
 
     myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, expectedRunnerJavaArgs);
-    myService.initialize(myBuild,myRunnerContext);
+    myService.initialize(myBuild, myRunnerContext);
     cmdLine = myService.makeProgramCommandLine();
 
     if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
@@ -329,7 +351,7 @@ public class GradleRunnerServiceTest {
     myRunnerParams.put(GradleRunnerConstants.DEBUG, Boolean.TRUE.toString());
 
     prepareGradleRequiredFiles(gradleVersion);
-    myService.initialize(myBuild,myRunnerContext);
+    myService.initialize(myBuild, myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
 
     List<String> args;
@@ -371,9 +393,9 @@ public class GradleRunnerServiceTest {
 
     File gradlew = null;
     if (TCSystemInfo.isWindows) {
-      gradlew = new File(myWorkingDirectory,GradleRunnerServiceFactory.WIN_GRADLEW);
+      gradlew = new File(myWorkingDirectory, GradleRunnerServiceFactory.WIN_GRADLEW);
     } else if (TCSystemInfo.isUnix) {
-      gradlew = new File(myWorkingDirectory,GradleRunnerServiceFactory.UNIX_GRADLEW);
+      gradlew = new File(myWorkingDirectory, GradleRunnerServiceFactory.UNIX_GRADLEW);
     }
 
     assert null != gradlew;
@@ -386,7 +408,7 @@ public class GradleRunnerServiceTest {
     gradleWrapperProperties.createNewFile();
     assertTrue(gradleWrapperProperties.exists(), "Could not create gradleWrapperProperties mock file.");
 
-    myService.initialize(myBuild,myRunnerContext);
+    myService.initialize(myBuild, myRunnerContext);
     ProgramCommandLine cmdLine = myService.makeProgramCommandLine();
 
     if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
@@ -401,8 +423,11 @@ public class GradleRunnerServiceTest {
   public void gradleHomeDoesNotExistTest() throws RunBuildException {
 
     myContext.checking(new Expectations() {{
-      allowing(myRunnerContext).getToolPath("gradle"); will(returnValue(""));
-      allowing(myRunnerContext).getWorkingDirectory(); will(returnValue(myTempDir));
+      allowing(myRunnerContext).getToolPath("gradle");
+      will(returnValue(""));
+
+      allowing(myRunnerContext).getWorkingDirectory();
+      will(returnValue(myTempDir));
     }});
 
     myService.initialize(myBuild, myRunnerContext);
@@ -418,7 +443,7 @@ public class GradleRunnerServiceTest {
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
 
-    GradleRunnerService service = (GradleRunnerService) new GradleRunnerServiceFactory(
+    GradleRunnerService service = (GradleRunnerService)new GradleRunnerServiceFactory(
       composerHolder, tasksComposer,
       new GradleLaunchModeSelector(),
       new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
@@ -428,8 +453,11 @@ public class GradleRunnerServiceTest {
     ).createService();
 
     myContext.checking(new Expectations() {{
-      allowing(myRunnerContext).getToolPath("gradle"); will(returnValue(myTempFiles.createTempDir().getAbsolutePath()));
-      allowing(myRunnerContext).getWorkingDirectory(); will(returnValue(myTempDir));
+      allowing(myRunnerContext).getToolPath("gradle");
+      will(returnValue(myTempFiles.createTempDir().getAbsolutePath()));
+
+      allowing(myRunnerContext).getWorkingDirectory();
+      will(returnValue(myTempDir));
     }});
 
     service.initialize(myBuild, myRunnerContext);
@@ -457,11 +485,20 @@ public class GradleRunnerServiceTest {
     final BuildAgentConfiguration agentConfiguration = myContext.mock(BuildAgentConfiguration.class);
 
     myContext.checking(new Expectations() {{
-      allowing(myRunnerContext).getToolPath(GradleToolProvider.GRADLE_TOOL); will(returnValue(gradleToolDir.getAbsolutePath()));
-      allowing(myRunnerContext).getWorkingDirectory(); will(returnValue(myWorkingDirectory));
-      allowing(myBuild).getAgentConfiguration(); will(returnValue(agentConfiguration));
-      allowing(agentConfiguration).getAgentPluginsDirectory(); will(returnValue(agentPluginDir));
-      allowing(myBuild).getCheckoutDirectory(); will(returnValue(myCoDir));
+      allowing(myRunnerContext).getToolPath(GradleToolProvider.GRADLE_TOOL);
+      will(returnValue(gradleToolDir.getAbsolutePath()));
+
+      allowing(myRunnerContext).getWorkingDirectory();
+      will(returnValue(myWorkingDirectory));
+
+      allowing(myBuild).getAgentConfiguration();
+      will(returnValue(agentConfiguration));
+
+      allowing(agentConfiguration).getAgentPluginsDirectory();
+      will(returnValue(agentPluginDir));
+
+      allowing(myBuild).getCheckoutDirectory();
+      will(returnValue(myCoDir));
     }});
   }
 
@@ -501,8 +538,8 @@ public class GradleRunnerServiceTest {
     final String initScriptPath = myInitScript.getAbsolutePath();
     StringBuilder javaHomeBuilder = new StringBuilder();
     javaHomeBuilder.append(javaHome).append(File.separator)
-                  .append("bin").append(File.separator)
-                  .append("java");
+                   .append("bin").append(File.separator)
+                   .append("java");
 
     if (TCSystemInfo.isWindows) {
       javaHomeBuilder.append(".exe");
@@ -518,7 +555,7 @@ public class GradleRunnerServiceTest {
     assertTrue(gradleJvmParamsFile.exists(), "Gradle Tooling API JVM params file must exist");
     assertTrue(gradleTasksFile.exists(), "Gradle Tooling API gradle tasks file must exist");
 
-    toolingApiGradleArgs = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY));
+    toolingApiGradleArgs = LauncherParameters.fromFile(Paths.get(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY))).get();
     int initScriptIndex = toolingApiGradleArgs.indexOf("--init-script");
     assertTrue(initScriptIndex > -1, "--init-script argument not found!");
     assertEquals(toolingApiGradleArgs.get(initScriptIndex + 1), initScriptPath, "Wrong init script path");
@@ -526,7 +563,7 @@ public class GradleRunnerServiceTest {
       assertTrue(toolingApiGradleArgs.contains("-Dorg.gradle.daemon=false"), "Gradle daemon should be disabled");
     }
 
-    toolingApiJvmGradleArgs = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY));
-    toolingApiGradleTasks = GradleRunnerFileUtil.readParams(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY));
+    toolingApiJvmGradleArgs = LauncherParameters.fromFile(Paths.get(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY))).get();
+    toolingApiGradleTasks = LauncherParameters.fromFile(Paths.get(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY))).get();
   }
 }

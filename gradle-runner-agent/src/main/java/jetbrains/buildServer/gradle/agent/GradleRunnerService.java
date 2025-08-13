@@ -34,8 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 
-public class GradleRunnerService extends BuildServiceAdapter
-{
+public class GradleRunnerService extends BuildServiceAdapter {
   private final String exePath;
   private final String wrapperName;
   private final Lazy<List<ProcessListener>> listeners;
@@ -74,7 +73,8 @@ public class GradleRunnerService extends BuildServiceAdapter
   }
 
   @Override
-  @NotNull public ProgramCommandLine makeProgramCommandLine() throws RunBuildException {
+  @NotNull
+  public ProgramCommandLine makeProgramCommandLine() throws RunBuildException {
     boolean useWrapper = ConfigurationParamsUtil.isParameterEnabled(getRunnerParameters(),
                                                                     GradleRunnerConstants.GRADLE_WRAPPER_FLAG);
 
@@ -93,21 +93,22 @@ public class GradleRunnerService extends BuildServiceAdapter
         gradleExe = new File(gradleHome, this.exePath);
         exePath = gradleExe.getAbsolutePath();
 
-        if (!gradleHome.exists())
+        if (!gradleHome.exists()) {
           throw new RunBuildException("Gradle home path (" + gradleHome + ") is invalid.");
-        if (!gradleExe.exists())
-          throw new RunBuildException("Gradle home path (" + gradleHome + ") does not contain a Gradle installation.  Cannot find "+
-                                      this.exePath + ".");
+        }
+        if (!gradleExe.exists()) {
+          throw new RunBuildException("Gradle home path (" + gradleHome + ") does not contain a Gradle installation.  Cannot find " + this.exePath + ".");
+        }
       }
     } else {
       String relativeGradleWPath = ConfigurationParamsUtil.getGradleWPath(getRunnerParameters());
 
       gradleExe = new File(workingDirectory, relativeGradleWPath + File.separator + wrapperName);
       exePath = gradleExe.getAbsolutePath();
-      if (!gradleExe.exists())
-        throw new RunBuildException("Gradle wrapper script " + wrapperName + " can not be found at " +
-                                    gradleExe.getAbsolutePath() + "\n" +
+      if (!gradleExe.exists()) {
+        throw new RunBuildException("Gradle wrapper script " + wrapperName + " can not be found at " + gradleExe.getAbsolutePath() + "\n" +
                                     "Please, provide path to wrapper script in build configuration settings.");
+      }
 
       gradleWrapperProperties = getGradleWrapperProperties(workingDirectory, relativeGradleWPath);
       if (!gradleWrapperProperties.exists()) {
@@ -125,44 +126,51 @@ public class GradleRunnerService extends BuildServiceAdapter
     Map<String, String> env = getEnvironments(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
 
     if (useWrapper && !gradleWrapperProperties.exists()) {
-      return composerHolder.getCommandLineComposer(GradleLaunchMode.COMMAND_LINE).composeCommandLine(
-        getComposerParameters(env, gradleTasks, userDefinedParams, null, workingDirectory, params, exePath, null));
+      return composerHolder.getCommandLineComposer(GradleLaunchMode.COMMAND_LINE).compose(
+        getComposerParameters(env, gradleTasks, userDefinedParams, null, params, exePath, null));
     }
 
     GradleConnector projectConnector = getGradleConnector(workingDirectory, useWrapper, gradleHome, gradleWrapperProperties);
     File gradleUserHome = gradleUserHomeManager.detectGradleUserHome(gradleTasks, userDefinedParams, env, projectConnector).orElse(null);
     DefaultGradleVersion gradleVersion = gradleVersionDetector.detect(projectConnector, getLogger()).orElse(null);
-    boolean configurationCacheEnabled = gradleConfigurationCacheDetector.isConfigurationCacheEnabled(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
-    boolean configurationCacheProblemsIgnored = gradleConfigurationCacheDetector.areConfigurationCacheProblemsIgnored(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
-    Set<String> unsupportedByToolingArgs = commandLineParametersProcessor.obtainUnsupportedArguments(Stream.concat(gradleTasks.stream(), userDefinedParams.stream()).collect(Collectors.toList()));
-    GradleLaunchModeSelectionResult selectionResult = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
-                                                                                                                             .withLogger(getLogger())
-                                                                                                                             .withConfigurationParameters(getConfigParameters())
-                                                                                                                             .withGradleVersion(gradleVersion)
-                                                                                                                             .withConfigurationCacheEnabled(configurationCacheEnabled)
-                                                                                                                             .withConfigurationCacheProblemsIgnored(configurationCacheProblemsIgnored)
-                                                                                                                             .withUnsupportedByToolingArgs(unsupportedByToolingArgs)
-                                                                                                                             .build());
+    boolean configurationCacheEnabled =
+      gradleConfigurationCacheDetector.isConfigurationCacheEnabled(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
+    boolean configurationCacheProblemsIgnored =
+      gradleConfigurationCacheDetector.areConfigurationCacheProblemsIgnored(getLogger(), gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion);
+    Set<String> unsupportedByToolingArgs =
+      commandLineParametersProcessor.obtainUnsupportedArguments(Stream.concat(gradleTasks.stream(), userDefinedParams.stream()).collect(Collectors.toList()));
+
+    GradleLaunchModeSelectionResult selectionResult = gradleLaunchModeSelector.selectMode(
+      GradleLaunchModeSelector
+        .Parameters
+        .builder()
+        .withLogger(getLogger())
+        .withConfigurationParameters(getConfigParameters())
+        .withGradleVersion(gradleVersion)
+        .withConfigurationCacheEnabled(configurationCacheEnabled)
+        .withConfigurationCacheProblemsIgnored(configurationCacheProblemsIgnored)
+        .withUnsupportedByToolingArgs(unsupportedByToolingArgs)
+        .build()
+    );
 
     GradleCommandLineComposerParameters composerParameters =
-      getComposerParameters(env, gradleTasks, userDefinedParams, configurationCacheEnabled, workingDirectory, params, exePath, selectionResult);
+      getComposerParameters(env, gradleTasks, userDefinedParams, configurationCacheEnabled, params, exePath, selectionResult);
 
-    return composerHolder.getCommandLineComposer(selectionResult.getLaunchMode()).composeCommandLine(composerParameters);
+    return composerHolder.getCommandLineComposer(selectionResult.getLaunchMode()).compose(composerParameters);
   }
 
   private GradleCommandLineComposerParameters getComposerParameters(@NotNull Map<String, String> env,
                                                                     @NotNull List<String> gradleTasks,
                                                                     @NotNull List<String> gradleUserDefinedParams,
                                                                     @Nullable Boolean configurationCacheEnabled,
-                                                                    @NotNull File workingDirectory,
                                                                     @NotNull List<String> params,
                                                                     @NotNull String exePath,
                                                                     @Nullable GradleLaunchModeSelectionResult launchModeSelectionResult) throws RunBuildException {
     return GradleCommandLineComposerParameters.builder()
                                               .withEnv(env)
-                                              .withBuildTempDir(getBuildTempDirectory())
+                                              .withBuildTempDir(getBuildTempDirectory().toPath())
                                               .withRunnerParameters(getRunnerParameters())
-                                              .withPluginsDirectory(getBuild().getAgentConfiguration().getAgentPluginsDirectory())
+                                              .withPluginsDir(getBuild().getAgentConfiguration().getAgentPluginsDirectory().toPath())
                                               .withGradleOpts(buildGradleOpts())
                                               .withGradleTasks(gradleTasks)
                                               .withGradleUserDefinedParams(gradleUserDefinedParams)
@@ -171,8 +179,8 @@ public class GradleRunnerService extends BuildServiceAdapter
                                               .withLogger(getLogger())
                                               .withRunnerContext(getRunnerContext())
                                               .withJavaHome(getJavaHome())
-                                              .withCheckoutDirectory(getCheckoutDirectory())
-                                              .withWorkingDirectory(workingDirectory)
+                                              .withCheckoutDir(getCheckoutDirectory().toPath())
+                                              .withWorkingDir(getWorkingDirectory().toPath())
                                               .withInitialGradleParams(params)
                                               .withExePath(exePath)
                                               .withLaunchModeSelectionResult(launchModeSelectionResult)
@@ -208,7 +216,7 @@ public class GradleRunnerService extends BuildServiceAdapter
                                               @NotNull Boolean useWrapper,
                                               @Nullable final File gradleHome,
                                               @Nullable final File gradleWrapperProperties) throws RunBuildException {
-    final Map<String,String> env = new HashMap<>(getEnvironmentVariables());
+    final Map<String, String> env = new HashMap<>(getEnvironmentVariables());
     if (gradleHome != null) env.put(GRADLE_HOME_ENV_KEY, gradleHome.getAbsolutePath());
     env.put("GRADLE_EXIT_CONSOLE", "true");
 

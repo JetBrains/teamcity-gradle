@@ -2,8 +2,7 @@ package jetbrains.buildServer.gradle;
 
 import java.io.File;
 
-public class GradleRunnerConstants
-{
+public class GradleRunnerConstants {
   public static final String RUNNER_TYPE = "gradle-runner";
   public static final String DISPLAY_NAME = "Gradle";
 
@@ -47,6 +46,22 @@ public class GradleRunnerConstants
    * Defaults to false
    */
   public static final String GRADLE_RUNNER_TEST_TASK_JVM_ARG_PROVIDER_DISABLED = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled";
+  /**
+   * Needed mainly for Tooling API launcher process debug.
+   */
+  public static final String GRADLE_RUNNER_TOOLING_API_LAUNCHER_JVM_ARGS = "teamcity.internal.gradle.runner.toolingApiLauncher.jvmArgs";
+  /**
+   * Workaround for <a href="https://github.com/gradle/gradle/issues/34491">https://github.com/gradle/gradle/issues/34491</a>.
+   * Defaults to true.
+   * Delete when issue fixed.
+   */
+  public static final String GRADLE_RUNNER_TOOLING_API_LAUNCHER_SHUTDOWN_TIMEOUT_ENABLED = "teamcity.internal.gradle.runner.toolingApiLauncher.shutdownTimeoutEnabled";
+  /**
+   * Workaround for <a href="https://github.com/gradle/gradle/issues/34491">https://github.com/gradle/gradle/issues/34491</a>.
+   * Defaults to 60 (one minute).
+   * Delete when issue fixed.
+   */
+  public static final String GRADLE_RUNNER_TOOLING_API_LAUNCHER_SHUTDOWN_TIMEOUT_SEC = "teamcity.internal.gradle.runner.toolingApiLauncher.shutdownTimeoutSec";
 
   public static final String ENV_INCREMENTAL_VALUE_SKIP = "skip_incremental";
   public static final String ENV_INCREMENTAL_VALUE_PROCEED = "do_incremental";
@@ -80,6 +95,12 @@ public class GradleRunnerConstants
   public static final String GRADLE_TASKS_FILE_ENV_KEY = "TEAMCITY_GRADLE_TASKS";
   public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = "GRADLE_DAEMON_ENHANCEMENT_CLASSES";
   public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_KEY = "TEST_TASK_JVM_ARG_PROVIDER_DISABLED";
+  /**
+   * Workaround for <a href="https://github.com/gradle/gradle/issues/34491">https://github.com/gradle/gradle/issues/34491</a>.
+   * Delete when issue fixed.
+   */
+  public static final String GRADLE_TOOLING_API_LAUNCHER_SHUTDOWN_TIMEOUT_SEC_ENV_KEY = "TEAMCITY_GRADLE_TOOLING_API_LAUNCHER_SHUTDOWN_TIMEOUT_SEC";
+
 
   public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = "teamcity.build.properties.file";
   public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";

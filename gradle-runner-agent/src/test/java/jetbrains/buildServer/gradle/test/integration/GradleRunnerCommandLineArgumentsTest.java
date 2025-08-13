@@ -34,9 +34,12 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
       if (!isLoggingOption(supportedArg)) {
         assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
       }
-      assertTrue(messages.stream().anyMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "The build should be launched via Tooling API\nFull log:\n" + StringUtil.join("\n", messages));
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible")), "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option")), "Supported arguments should not cause an exception\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("Gradle will be launched via Tooling API")),
+                 "The build should be launched via Tooling API\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible")),
+                 "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option")),
+                 "Supported arguments should not cause an exception\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
 
@@ -62,16 +65,20 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
       if (!isLoggingOption(supportedArg)) {
         assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
       }
-      assertTrue(messages.stream().anyMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "The build should be launched via Tooling API\nFull log:\n" + StringUtil.join("\n", messages));
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible")), "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option")), "Supported arguments should not cause an exception\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().anyMatch(line -> line.startsWith("Gradle will be launched via Tooling API")),
+                 "The build should be launched via Tooling API\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Unable to launch the build via Gradle Tooling API to make it configuration cache compatible")),
+                 "Supported arguments should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option")),
+                 "Supported arguments should not cause an exception\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
   public void should_LaunchBuildInOldWay_When_UnsupportedLongArgumentsArePassed(final String gradleVersion) throws Exception {
     // arrange
-    List<String> unsupported = new ArrayList<>(GradleToolingCommandLineOptionsProvider.getLongOptionsNames(GradleToolingCommandLineOptionsProvider.getUnsupportedOptions().getOptions()));
+    List<String> unsupported =
+      new ArrayList<>(GradleToolingCommandLineOptionsProvider.getLongOptionsNames(GradleToolingCommandLineOptionsProvider.getUnsupportedOptions().getOptions()));
 
     for (String unsupportedArg : unsupported) {
       String buildCmd = "clean build --configuration-cache " + prefillArgWithValue(unsupportedArg, gradleVersion, PROJECT_WITH_GENERATED_TASKS_B_NAME);
@@ -85,9 +92,11 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
       List<String> messages = run(config).getAllMessages();
 
       // assert
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Gradle will be launched via Tooling API")),
+                 "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
       assertTrue(messages.stream().anyMatch(line -> line.startsWith("This build can only be run in legacy mode. " +
-                                                                    "Using configuration-cache requires launching the build via the Gradle Tooling API that is not compatible with the following Gradle argument(s): " + unsupportedArg)),
+                                                                    "Using configuration-cache requires launching the build via the Gradle Tooling API that is not compatible with the following Gradle argument(s): " +
+                                                                    unsupportedArg)),
                  "Expected: unsupported args are logged\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
@@ -95,7 +104,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
   @Test(dataProvider = "gradle-version-provider>=8")
   public void should_LaunchBuildInOldWay_When_UnsupportedShortArgumentsArePassed(final String gradleVersion) throws Exception {
     // arrange
-    List<String> unsupported = new ArrayList<>(GradleToolingCommandLineOptionsProvider.getShortOptionsNames(GradleToolingCommandLineOptionsProvider.getUnsupportedOptions().getOptions()));
+    List<String> unsupported =
+      new ArrayList<>(GradleToolingCommandLineOptionsProvider.getShortOptionsNames(GradleToolingCommandLineOptionsProvider.getUnsupportedOptions().getOptions()));
 
     for (String unsupportedArg : unsupported) {
       String buildCmd = "clean build --configuration-cache " + prefillArgWithValue(unsupportedArg, gradleVersion, PROJECT_WITH_GENERATED_TASKS_B_NAME);
@@ -109,9 +119,11 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
       List<String> messages = run(config).getAllMessages();
 
       // assert
-      assertTrue(messages.stream().noneMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
+      assertTrue(messages.stream().noneMatch(line -> line.startsWith("Gradle will be launched via Tooling API")),
+                 "Expected: build to be launched in old way\nFull log:\n" + StringUtil.join("\n", messages));
       assertTrue(messages.stream().anyMatch(line -> line.startsWith("This build can only be run in legacy mode. " +
-                                                                    "Using configuration-cache requires launching the build via the Gradle Tooling API that is not compatible with the following Gradle argument(s): " + unsupportedArg)),
+                                                                    "Using configuration-cache requires launching the build via the Gradle Tooling API that is not compatible with the following Gradle argument(s): " +
+                                                                    unsupportedArg)),
                  "Expected: unsupported args are logged\nFull log:\n" + StringUtil.join("\n", messages));
     }
   }
@@ -128,7 +140,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
 
     // assert
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\nFull log:\n" + StringUtil.join("\n", messages));
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option '--unknown-arg'")), "Should fail with an exception due to unknown unsupported arg\nFull log:\n" + StringUtil.join("\n", messages));
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option '--unknown-arg'")),
+               "Should fail with an exception due to unknown unsupported arg\nFull log:\n" + StringUtil.join("\n", messages));
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
@@ -143,7 +156,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
 
     // assert
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
-    assertTrue(messages.stream().noneMatch(line -> line.startsWith("The argument is not supported by the Gradle Tooling API")), "Gradle tasks should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
+    assertTrue(messages.stream().noneMatch(line -> line.startsWith("The argument is not supported by the Gradle Tooling API")),
+               "Gradle tasks should not be filtered out\nFull log:\n" + StringUtil.join("\n", messages));
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("> Task :sub-module1:clean")), "Task must be executed\nFull log:\n" + StringUtil.join("\n", messages));
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("> Task :sub-module1:test")), "Task must be executed\nFull log:\n" + StringUtil.join("\n", messages));
   }

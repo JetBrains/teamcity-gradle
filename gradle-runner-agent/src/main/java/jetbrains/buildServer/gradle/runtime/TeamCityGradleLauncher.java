@@ -2,7 +2,9 @@ package jetbrains.buildServer.gradle.runtime;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
@@ -16,11 +18,7 @@ import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLoggerImpl;
 import jetbrains.buildServer.gradle.runtime.output.GradleBuildOutputProcessor;
 import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator;
 import jetbrains.buildServer.gradle.runtime.service.jvmargs.GradleJvmArgsMerger;
-import org.gradle.tooling.BuildLauncher;
-import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.GradleConnectionException;
-import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.ResultHandler;
+import org.gradle.tooling.*;
 import org.gradle.tooling.model.build.BuildEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +27,7 @@ import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver.getTcBuildParametersFile;
 
 public class TeamCityGradleLauncher {
+  public static final CountDownLatch GRADLE_CONNECTOR_DISCONNECTED = new CountDownLatch(1); // workaround for https://github.com/gradle/gradle/issues/34491, delete when issue fixed
 
   public static void main(String[] args) {
     final Map<String, String> gradleEnv = new HashMap<>(System.getenv());
@@ -88,7 +87,7 @@ public class TeamCityGradleLauncher {
     GradleJvmArgsMerger jvmArgsMerger = new GradleJvmArgsMerger(logger);
     String taskOutputDir = buildTempDir + File.separator + BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR;
     BuildContext buildContext = new BuildContext(tcBuildParametersFile.getAbsolutePath(), taskOutputDir, gradleParamsFilePath, jvmArgsFilePath, gradleTasksPath);
-    List<BuildEventListener > eventListeners = new ArrayList<>();
+    List<BuildEventListener> eventListeners = new ArrayList<>();
     eventListeners.add(new GradleBuildOutputProcessor(logger, buildContext));
     BuildLifecycleListener buildLifecycleListener = new GradleBuildLifecycleListener(logger, eventListeners, buildContext);
     GradleBuildConfigurator buildConfigurator = new GradleBuildConfigurator(logger);
@@ -117,8 +116,8 @@ public class TeamCityGradleLauncher {
       boolean allowJvmArgsOverriding = Boolean.parseBoolean(System.getProperty(GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM));
 
       Collection<String> jvmArgsForOverriding = !allowJvmArgsOverriding || tcJvmArgs.isEmpty()
-                                                ? Collections.emptyList()
-                                                : jvmArgsMerger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs);
+        ? Collections.emptyList()
+        : jvmArgsMerger.mergeJvmArguments(gradleProjectJvmArgs, tcJvmArgs);
 
       Collection<String> tasksAndParams = Stream.concat(gradleTasks.stream(), gradleParams.stream()).collect(Collectors.toList());
 
@@ -127,17 +126,51 @@ public class TeamCityGradleLauncher {
       String buildStartedMessage = composeBuildStartedMessage(buildNumber, tasksAndParams, jvmArgsForOverriding, buildEnvironment.orElse(null), gradleEnv);
       buildLifecycleListener.onStart(new BuildStartedEventImpl(System.currentTimeMillis(), buildStartedMessage));
 
+      // workaround for https://github.com/gradle/gradle/issues/34491, delete when issue fixed
+      // shuts down JVM when Gradle build is finished after some timeout
+      Optional
+        .ofNullable(System.getenv().get(GradleRunnerConstants.GRADLE_TOOLING_API_LAUNCHER_SHUTDOWN_TIMEOUT_SEC_ENV_KEY))
+        .map(Integer::parseInt)
+        .ifPresent(timeoutSec -> {
+          Thread watchdog = new Thread(() -> {
+            try {
+              GRADLE_CONNECTOR_DISCONNECTED.await();
+
+              // sleep to let the problematic Tooling API thread finish
+              // if it happens this daemon thread will be terminated before reaching System.exit(0)
+              Thread.sleep(timeoutSec * 1000);
+              System.out.printf(
+                "##teamcity[message text='Tooling API hang detected: JVM still running %s seconds after Gradle build completed; shutting down' status='WARNING']\n",
+                timeoutSec
+              );
+              System.exit(0);
+            } catch (InterruptedException ignored) {
+            }
+          });
+          watchdog.setName("Tooling API shutdown watchdog");
+          watchdog.setDaemon(true);
+          watchdog.start();
+        });
+
       launcher.run(new ResultHandler<Void>() {
         @Override
         public void onComplete(Void unused) {
-          buildLifecycleListener.onSuccess();
-          connector.disconnect();
+          try {
+            buildLifecycleListener.onSuccess();
+          } finally {
+            connector.disconnect();
+            GRADLE_CONNECTOR_DISCONNECTED.countDown();
+          }
         }
 
         @Override
         public void onFailure(GradleConnectionException e) {
-          buildLifecycleListener.onFail();
-          connector.disconnect();
+          try {
+            buildLifecycleListener.onFail();
+          } finally {
+            connector.disconnect();
+            GRADLE_CONNECTOR_DISCONNECTED.countDown();
+          }
           throw e;
         }
       });
@@ -166,9 +199,9 @@ public class TeamCityGradleLauncher {
   }
 
   @Nullable
-  private static List<String> readParams(@NotNull String paramsFilePath) {
+  private static List<String> readParams(@NotNull String filePath) {
     try {
-      return GradleRunnerFileUtil.readParams(paramsFilePath);
+      return LauncherParameters.fromFile(Paths.get(filePath)).get();
     } catch (IOException e) {
       System.err.println(e.getMessage());
       return null;
@@ -191,22 +224,25 @@ public class TeamCityGradleLauncher {
                                                    @NotNull Collection<String> overridedJvmArgs,
                                                    @Nullable BuildEnvironment buildEnvironment,
                                                    @NotNull Map<String, String> gradleEnv) {
-    StringBuilder messageBuilder = new StringBuilder();
-    messageBuilder.append("Starting Gradle in TeamCity build ").append(buildNumber).append(System.lineSeparator());
-    messageBuilder.append("Gradle tasks and arguments: ").append(String.join(" ", tasksAndParams));
+    StringBuilder messageBuilder = new StringBuilder()
+      .append("Starting Gradle in TeamCity build ").append(buildNumber).append(System.lineSeparator())
+      .append("Gradle tasks and arguments: ").append(String.join(" ", tasksAndParams));
 
     if (buildEnvironment != null) {
       try {
         String version = buildEnvironment.getGradle().getGradleVersion();
         String javaHome = buildEnvironment.getJava().getJavaHome().getAbsolutePath();
         String jvmArgsStr = !overridedJvmArgs.isEmpty()
-                            ? String.join(" ", overridedJvmArgs)
-                            : String.join(" ", buildEnvironment.getJava().getJvmArguments());
-        messageBuilder.append(System.lineSeparator())
-                      .append("Gradle version: ").append(version).append(System.lineSeparator())
-                      .append("Gradle java home: ").append(javaHome).append(System.lineSeparator())
-                      .append("Gradle jvm arguments: ").append(jvmArgsStr).append(System.lineSeparator());
-      } catch (Throwable ignore) {}
+          ? String.join(" ", overridedJvmArgs)
+          : String.join(" ", buildEnvironment.getJava().getJvmArguments());
+
+        messageBuilder
+          .append(System.lineSeparator())
+          .append("Gradle version: ").append(version).append(System.lineSeparator())
+          .append("Gradle java home: ").append(javaHome).append(System.lineSeparator())
+          .append("Gradle jvm arguments: ").append(jvmArgsStr).append(System.lineSeparator());
+      } catch (Throwable ignore) {
+      }
     }
 
 

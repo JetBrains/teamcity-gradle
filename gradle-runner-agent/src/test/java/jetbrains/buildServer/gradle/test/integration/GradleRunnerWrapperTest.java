@@ -50,7 +50,8 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
     // assert
     String messagesStr = StringUtil.join("\n", messages);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + messagesStr);
-    assertTrue(messages.stream().noneMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched via Tooling API\nFull log:\n" + messagesStr);
+    assertTrue(messages.stream().noneMatch(line -> line.startsWith("Gradle will be launched via Tooling API")),
+               "Expected: build to be launched via Tooling API\nFull log:\n" + messagesStr);
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
@@ -70,6 +71,7 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
     // assert
     String messagesStr = StringUtil.join("\n", messages);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + messagesStr);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("The build will be launched via Gradle Tooling API")), "Expected: build to be launched via Tooling API\nFull log:\n" + messagesStr);
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("Gradle will be launched via Tooling API")),
+               "Expected: build to be launched via Tooling API\nFull log:\n" + messagesStr);
   }
 }

@@ -1,18 +1,13 @@
 package jetbrains.buildServer.gradle.agent;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import java.io.*;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.Properties;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildProperties;
 import jetbrains.buildServer.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class GradleRunnerFileUtil {
-
-  private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
   public static void storeProperties(@NotNull File buildTempDirectory,
                                      @NotNull GradleBuildProperties data,
@@ -22,30 +17,6 @@ public class GradleRunnerFileUtil {
     try (OutputStream output = new FileOutputStream(destination)) {
       data.store(output, null);
     }
-  }
-
-  public static void storeParams(@NotNull File buildTempDirectory,
-                                 @NotNull Collection<String> data,
-                                 @NotNull File destination) throws IOException {
-    createFileInBuildTempDirectory(buildTempDirectory, destination);
-
-    try (FileWriter writer = new FileWriter(destination)) {
-      GSON.toJson(data, writer);
-    }
-  }
-
-  public static List<String> readParams(@NotNull String sourceFilePath) throws IOException {
-    File source = new File(sourceFilePath);
-    if (!source.exists()) {
-      throw new IOException("Source file doesn't exist in file system: " + sourceFilePath);
-    }
-
-    List<String> result;
-    try (Reader reader = new FileReader(source)) {
-      result = GSON.fromJson(reader, new TypeToken<List<String>>() {}.getType());
-    }
-
-    return result;
   }
 
   public static File createFileInBuildTempDirectory(@NotNull File buildTempDirectory,

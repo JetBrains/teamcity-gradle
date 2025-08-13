@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 public interface GradleCommandLineComposer {
 
   @NotNull
-  GradleLaunchMode getApplicableLaunchMode();
+  GradleLaunchMode getLaunchMode();
 
   @NotNull
-  ProgramCommandLine composeCommandLine(@NotNull GradleCommandLineComposerParameters parameters) throws RunBuildException;
+  ProgramCommandLine compose(@NotNull GradleCommandLineComposerParameters parameters) throws RunBuildException;
 }
