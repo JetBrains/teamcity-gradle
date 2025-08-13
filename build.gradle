@@ -11,7 +11,7 @@ plugins {
 initializeWorkspace()
 
 ext {
-  teamcityVersion = anyParam('teamcityVersion') ?: '2024.11-SNAPSHOT'
+  teamcityVersion = anyParam('teamcityVersion') ?: '2025.03'
   versionNumber = anyParam('PluginVersion') ?: teamcityVersion
 }
 def localRepo = anyParamPath('TC_LOCAL_REPO')
