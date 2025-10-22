@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<dsl-extension kind="buildStep" type="gradle-runner" generateDslJar="true">
+<dsl-extension kind="buildStep" type="gradle-runner" generateDslJar="true" pipelineCompatible="true">
   <class name="GradleBuildStep">
     <description>
       A [build step](https://www.jetbrains.com/help/teamcity/?Gradle) running gradle script
