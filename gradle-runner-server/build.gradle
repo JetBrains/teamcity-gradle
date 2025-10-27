@@ -13,6 +13,9 @@ teamcity {
       into('kotlin-dsl') {
         from(project.file("../kotlin-dsl"))
       }
+      into('ui-schemas') {
+        from(project.file("../ui-schemas"))
+      }
     }
   }
 }

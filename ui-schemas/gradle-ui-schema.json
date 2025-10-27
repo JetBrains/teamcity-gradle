@@ -1,0 +1,76 @@
+{
+  "type": "VerticalLayout",
+  "elements": [
+    {
+      "type": "InputPathControl",
+      "label": "Working directory",
+      "scope": "#/properties/working-directory",
+      "options": {
+        "placeholder": "repository root"
+      }
+    },
+    {
+      "type": "Control",
+      "label": "Tasks",
+      "options": {
+        "placeholder": "clean build"
+      },
+      "scope": "#/properties/tasks"
+    },
+    {
+      "type": "Control",
+      "label": "Use gradle wrapper",
+      "scope": "#/properties/use-gradle-wrapper"
+    },
+    {
+      "type": "DockerImageControl",
+      "label": "Docker image",
+      "scope": "#/properties/docker-image"
+    },
+    {
+      "type": "JavaVersionPickerControl",
+      "label": "JDK",
+      "scope": "#/properties/jdk-home"
+    },
+    {
+      "type": "AdvancedSettingsSection",
+      "elements": [
+        {
+          "type": "Control",
+          "label": "Gradle home",
+          "scope": "#/properties/gradle-home"
+        },
+        {
+          "type": "Control",
+          "label": "Build file",
+          "scope": "#/properties/build-file"
+        },
+        {
+          "type": "Control",
+          "label": "Gradle parameters",
+          "scope": "#/properties/gradle-params"
+        },
+        {
+          "type": "Control",
+          "label": "Gradle wrapper path",
+          "scope": "#/properties/gradle-wrapper-path"
+        },
+        {
+          "type": "Control",
+          "label": "Enable debug",
+          "scope": "#/properties/enable-debug"
+        },
+        {
+          "type": "Control",
+          "label": "Enable stacktrace",
+          "scope": "#/properties/enable-stacktrace"
+        },
+        {
+          "type": "Control",
+          "label": "JVM arguments",
+          "scope": "#/properties/jvm-args"
+        }
+      ]
+    }
+  ]
+}
