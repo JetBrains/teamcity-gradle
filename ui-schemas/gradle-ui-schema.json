@@ -37,11 +37,6 @@
       "elements": [
         {
           "type": "Control",
-          "label": "Gradle home",
-          "scope": "#/properties/gradle-home"
-        },
-        {
-          "type": "Control",
           "label": "Build file",
           "scope": "#/properties/build-file"
         },
@@ -52,8 +47,27 @@
         },
         {
           "type": "Control",
+          "label": "Gradle home",
+          "scope": "#/properties/gradle-home",
+          "rule": {
+            "effect": "HIDE",
+            "condition": {
+              "scope": "#/properties/use-gradle-wrapper",
+              "schema":  { "const": "true" }
+            }
+          }
+        },
+        {
+          "type": "Control",
           "label": "Gradle wrapper path",
-          "scope": "#/properties/gradle-wrapper-path"
+          "scope": "#/properties/gradle-wrapper-path",
+          "rule": {
+            "effect": "HIDE",
+            "condition": {
+              "scope": "#/properties/use-gradle-wrapper",
+              "schema":  { "not": { "const": "true" } }
+            }
+          }
         },
         {
           "type": "Control",
