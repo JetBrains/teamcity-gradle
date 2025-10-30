@@ -24,7 +24,7 @@
     <param name="ui.gradleRunner.gradle.incremental" dslName="incremental" type="boolean" trueValue="true" falseValue="">
       <description>Enable this option to allow TeamCity to detect Gradle modules affected by a modified build, and run the :buildDependents only for these affected modules.</description>
     </param>
-    <param name="teamcity.build.workingDir" dslName="workingDir" description="Custom working directory for the Gradle script" yaml-name="working-directory"/>
+    <param name="teamcity.build.workingDir" dslName="workingDir" description="Custom working directory for the Gradle script" yamlName="working-directory"/>
     <param name="ui.gradleRunner.gradle.home" dslName="gradleHome">
       <description>The path to a custom Gradle version. This version will be used instead of the default Gradle version referenced by the GRADLE_HOME environment variable.</description>
     </param>
