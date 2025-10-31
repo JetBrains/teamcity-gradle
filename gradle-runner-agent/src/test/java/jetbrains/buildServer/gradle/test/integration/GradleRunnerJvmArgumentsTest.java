@@ -62,5 +62,22 @@ public class GradleRunnerJvmArgumentsTest extends GradleRunnerServiceMessageTest
     // assert
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
   }
+
+  @Test(dataProvider = "gradle-version-provider>=8")
+  public void should_UseSystemProperties_When_ThePropertiesAreSpecifiedInGradleProperties(final String gradleVersion) throws Exception {
+    // arrange
+    final GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_JVM_ARGS, "printSystemProperties", null);
+    config.setGradleVersion(gradleVersion);
+    String jvmArgs = "-DfromJvmArgsProperty=true";
+    myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, jvmArgs);
+
+    // act
+    List<String> messages = run(config).getAllMessages();
+
+    // assert
+    String jvmArgsMessage = messages.stream().filter(it -> it.startsWith("Gradle jvm arguments: ")).findFirst().orElse("");
+    assertTrue(jvmArgsMessage.contains("-DfromJvmArgsProperty=true"));
+    assertTrue(jvmArgsMessage.contains("-DfromGradleProperties=true"));
+  }
 }
 
