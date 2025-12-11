@@ -1,5 +1,7 @@
 package jetbrains.buildServer.gradle.test.integration;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -220,7 +222,7 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
       return arg + "=settings.gradle";
     }
     if (arg.equals("-I") || arg.equals("--init-script")) {
-      return arg + " " + getInitScript().getAbsolutePath();
+      return arg + " \"" + createInitScript() + "\"";
     }
     if (arg.equals("--priority")) {
       return arg + "=normal";
@@ -239,6 +241,17 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
            arg.equals("-d") ||
            arg.equals("--quiet") ||
            arg.equals("-q");
+  }
+
+  private String createInitScript() {
+    File scriptFile = new File(myTempDir, "init-script.gradle");
+    try {
+      //noinspection ResultOfMethodCallIgnored
+      scriptFile.createNewFile();
+      return scriptFile.getAbsolutePath();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
 

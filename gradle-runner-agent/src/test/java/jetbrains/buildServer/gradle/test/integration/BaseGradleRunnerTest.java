@@ -138,7 +138,6 @@ public class BaseGradleRunnerTest {
     }
   };
 
-  protected File myInitScript;
   protected File myTempDir;
   protected File myCoDir;
   protected AgentRunningBuild myMockBuild;
@@ -291,10 +290,6 @@ public class BaseGradleRunnerTest {
     return new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL), gradleVersion).getCanonicalPath();
   }
 
-  protected File getInitScript() {
-    return myInitScript;
-  }
-
   protected String getGradleVersion(String gradleVersion) {
     return gradleVersion.startsWith("gradle-") ? getGradleVersionFromPath(gradleVersion) : gradleVersion;
   }
@@ -309,8 +304,6 @@ public class BaseGradleRunnerTest {
     if (ourProjectRoot == null) {
       ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
-    findInitScript(ourProjectRoot, "5");
-    findInitScript(ourProjectRoot, "8");
     createProjectsWorkingCopy(ourProjectRoot);
     myTestLogger.onSuiteStart();
   }
@@ -325,9 +318,20 @@ public class BaseGradleRunnerTest {
     assertTrue(new File(myCoDir, INIT_SCRIPT_SINCE_8_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
   }
 
-  private void findInitScript(File curDir, String gradleVersion) {
-    myInitScript = new File(curDir, GradleTestUtil.REL_SCRIPT_DIR + "/" + ConfigurationParamsUtil.getGradleInitScript(gradleVersion));
-    assertTrue(myInitScript.canRead(), "Path to init script must point to existing and readable file.");
+  private void setupInitScripts(File projectRoot) throws IOException {
+    File sourceScriptsDir = new File(projectRoot, GradleTestUtil.REL_SCRIPT_DIR);
+    File pluginsDir = myMockBuild.getAgentConfiguration().getAgentPluginsDirectory().getAbsoluteFile();
+    File gradleRunnerPluginDir = new File(pluginsDir, GradleRunnerConstants.RUNNER_TYPE);
+    File targetScriptsDir = new File(gradleRunnerPluginDir, GradleRunnerConstants.INIT_SCRIPT_DIR);
+    //noinspection ResultOfMethodCallIgnored
+    targetScriptsDir.mkdirs();
+
+    FileUtil.copyDir(sourceScriptsDir, targetScriptsDir);
+
+    File consoleInitScript = new File(targetScriptsDir, INIT_SCRIPT_NAME);
+    File tapiInitScript = new File(targetScriptsDir, INIT_SCRIPT_SINCE_8_NAME);
+    assertTrue(consoleInitScript.canRead(), "The command-line-gradle init script must be an existing readable file.");
+    assertTrue(tapiInitScript.canRead(), "The tooling-api-gradle init script must be an existing readable file.");
   }
 
   @AfterMethod
@@ -399,9 +403,7 @@ public class BaseGradleRunnerTest {
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
     }
-    findInitScript(ourProjectRoot, gradleVersionNum);
 
-    myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, myInitScript.getAbsolutePath());
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);
     final HashMap<String, String> propsAndVars = new HashMap<String, String>();
     final String jdk = myRunnerParams.getOrDefault(JavaRunnerConstants.TARGET_JDK_HOME, System.getProperty("java.home"));
@@ -490,6 +492,9 @@ public class BaseGradleRunnerTest {
     }};
 
     context.checking(initMockingCtx);
+
+    setupInitScripts(ourProjectRoot);
+
     return context;
   }
 
