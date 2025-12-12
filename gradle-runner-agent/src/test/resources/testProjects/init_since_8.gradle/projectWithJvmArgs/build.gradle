@@ -1,0 +1,9 @@
+//file:noinspection GrPackage
+
+tasks.register('printSystemProperties') {
+    doLast {
+        System.properties.forEach { key, value ->
+            println("$key: $value")
+        }
+    }
+}

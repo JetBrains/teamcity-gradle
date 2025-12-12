@@ -84,6 +84,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_WITH_GENERATED_TASKS_A_NAME = "projectWithGeneratedTasksA";
   public static final String PROJECT_WITH_GENERATED_TASKS_B_NAME = "projectWithGeneratedTasksB";
   public static final String PROJECT_WITH_JDK_INTERNAL_MODULE_NAME = "projectWithJdkInternalModule";
+  public static final String PROJECT_WITH_JVM_ARGS = "projectWithJvmArgs";
   public static final String PROJECT_WITH_WRAPPER_PROPERTIES_NON_STANDARD_LOCATION = "projectWithWrapperPropertiesNonStardardLocation";
   protected static final String MULTI_PROJECT_A_NAME = "MultiProjectA";
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
