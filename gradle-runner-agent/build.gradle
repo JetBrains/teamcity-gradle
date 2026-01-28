@@ -1,5 +1,5 @@
 plugins {
-    id 'com.github.rodm.teamcity-agent' version "1.5.2"
+    id 'com.github.rodm.teamcity-agent' version "1.5.6"
 }
 
 teamcity {
@@ -35,8 +35,7 @@ dependencies {
 }
 
 agentPlugin {
-    archiveVersion.set('')
-    archiveBaseName.set('gradle-runner')
+    archiveFileName.set('gradle-runner.zip')
 }
 
 tasks.withType(JavaCompile) {

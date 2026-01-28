@@ -1,5 +1,5 @@
 plugins {
-  id 'com.github.rodm.teamcity-server' version "1.5.2"
+  id 'com.github.rodm.teamcity-server' version "1.5.6"
 }
 
 teamcity {
@@ -28,6 +28,5 @@ dependencies {
 }
 
 serverPlugin {
-  archiveVersion.set('')
-  archiveBaseName.set('Gradle')
+  archiveFileName.set('Gradle.zip')
 }
