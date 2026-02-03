@@ -53,7 +53,7 @@
             "effect": "HIDE",
             "condition": {
               "scope": "#/properties/use-gradle-wrapper",
-              "schema":  { "const": "true" }
+              "schema": { "anyOf": [{ "const": true }, { "const": "true" }]}
             }
           }
         },
@@ -65,7 +65,7 @@
             "effect": "HIDE",
             "condition": {
               "scope": "#/properties/use-gradle-wrapper",
-              "schema":  { "not": { "const": "true" } }
+              "schema": {"not": {"anyOf": [{ "const": true }, { "const": "true" }]}}
             }
           }
         },
