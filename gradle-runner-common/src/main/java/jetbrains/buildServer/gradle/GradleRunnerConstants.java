@@ -30,6 +30,12 @@ public class GradleRunnerConstants {
    * The content of this file changes from build to build. So if we read all the content of the file, Gradle's configuration-cache will not work properly.
    */
   public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = "teamcity.internal.gradle.runner.read.all.params";
+
+  /**
+   * This param defaults to false. If provided, all data from the 'teamcity.build.properties' will be provided
+   * as System properties to the build. The existing 'project.teamcity' extension will not be populated anymore.
+   */
+  public static final String GRADLE_RUNNER_USE_SYSTEM_PROPERTIES_CONFIG_PARAM = "teamcity.internal.gradle.runner.use.system.properties";
   public static final String GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM = "teamcity.internal.gradle.runner.allow.jvm.args.overriding";
   /**
    * A relative path to the gradle-wrapper.properties without a filename.

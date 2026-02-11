@@ -6,6 +6,7 @@ import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import jetbrains.buildServer.RunBuildException;
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.serverSide.BuildTypeOptions;
 import jetbrains.buildServer.util.TestFor;
@@ -111,9 +112,10 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     testTest(PROJECT_J_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=100 -Dteamcity.gradle.minAttachedTestException=-1", "failedProjectJTest.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=8")
   public void attacheFailMessage(final String gradleVersion) throws Exception {
     myTeamCitySystemProps.put("teamcity.build.tempDir", myTempFiles.createTempDir().getPath());
+    myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_USE_SYSTEM_PROPERTIES_CONFIG_PARAM, "true");
 
     testTest(PROJECT_L_NAME, "clean test -Dteamcity.gradle.stacktrace.maxLength=100", "failedProjectLTest.txt", gradleVersion,
              "##teamcity\\[(test|message|publishArtifacts)(.*?)(?<!\\|)\\]");
@@ -126,7 +128,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     testTest(PROJECT_M_NAME, "clean custom", "failedProjectMTest.txt", gradleVersion);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=8")
   public void tmpDirectoryTest(String gradleVersion) throws Exception {
     File tempDirectory = new File(myTempFiles.getCurrentTempDir(), "my_test_directory");
     tempDirectory.mkdirs();

@@ -306,6 +306,9 @@ class ProjectPropertyStorage {
   }
 
   private String getPropertyFromProject(Project project, String name) {
+    String fromSystemProperties = project.providers.systemProperty(name).orNull
+    if(fromSystemProperties != null) return fromSystemProperties
+
     return project.hasProperty("ext")
             ? project.ext.teamcity[name]
             : project.property(name)
@@ -982,16 +985,19 @@ final AtomicLong testCounter = new AtomicLong(0)
 String propsFilePath = System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY)
 if (null == propsFilePath) propsFilePath = System.getenv(TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY)
 boolean shouldReadAllParameters = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM))
-final Map propertyReader = propsFilePath != null ? new GradleBuildPropertiesContainer(propsFilePath, shouldReadAllParameters) : [:]
+boolean shouldUseSystemProperties = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_USE_SYSTEM_PROPERTIES_CONFIG_PARAM))
+final Map propertyReader = propsFilePath != null ? new GradleBuildPropertiesContainer(propsFilePath, shouldReadAllParameters, shouldUseSystemProperties) : [:]
 
 gradle.addListener(new TeamcityPropertiesListener(logger, propertyReader, { project ->
   // init jvm args
-  final String jvmargs = (String)project.teamcity[TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY]
+
+  final String jvmargs = project.providers.systemProperty(TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY).orNull
   final String[] arguments = jvmargs == null || jvmargs.equals("") ? new String[0] : jvmargs.split("\n")
   project.tasks.withType(AbstractTestTask).configureEach { task ->
-    new TestTaskWrapper(task).setTmpDirectory(project.teamcity[TEAMCITY_BUILD_TEMP_DIR_KEY]).jvmArgs(arguments)
+    new TestTaskWrapper(task).setTmpDirectory(project.providers.systemProperty(TEAMCITY_BUILD_TEMP_DIR_KEY).orNull).jvmArgs(arguments)
   }
 }))
+
 
 if (gradle.parent == null) {
   def registry = services.get(org.gradle.build.event.BuildEventsListenerRegistry)
