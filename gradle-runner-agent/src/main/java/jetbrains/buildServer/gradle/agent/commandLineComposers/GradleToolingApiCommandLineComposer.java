@@ -1,6 +1,7 @@
 package jetbrains.buildServer.gradle.agent.commandLineComposers;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +26,7 @@ import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.runtime.LauncherParameters;
 import jetbrains.buildServer.gradle.runtime.TeamCityGradleLauncher;
 import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator;
+import jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
@@ -90,9 +92,16 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
       GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM,
       getBooleanOrDefault(parameters.getConfigParameters(), GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM, true).toString()
     );
+
     Optional
       .ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
       .ifPresent(it -> props.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, it));
+
+    boolean readNoneParams =  Optional
+            .ofNullable(parameters.getConfigParameters().get(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM))
+            .map(Boolean::parseBoolean).orElse(false);
+
+    props.put(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, Boolean.toString(readNoneParams));
 
     return props;
   }

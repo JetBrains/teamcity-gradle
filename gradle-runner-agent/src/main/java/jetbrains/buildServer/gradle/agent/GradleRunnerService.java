@@ -19,6 +19,7 @@ import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProce
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerParameters;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
+import jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.log.Loggers;
 import jetbrains.buildServer.messages.ErrorData;
@@ -235,6 +236,13 @@ public class GradleRunnerService extends BuildServiceAdapter {
     }
     env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, parallelTestsParam);
     env.put(GradleRunnerConstants.TEAMCITY_RISK_TESTS_ARTIFACT_PATH, riskTestsParam);
+
+    env.put(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, getConfigParameters().getOrDefault(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, "false"));
+
+    for(InitScriptParametersConstants param : InitScriptParametersConstants.values()) {
+      String value = getBuildParameters().getSystemProperties().getOrDefault(param.getKey(), param.getDefaultValue());
+      env.put(param.getEnvKey(), value);
+    }
 
     if (gradleWrapperProperties != null) env.put(GRADLE_WRAPPED_DISTRIBUTION_ENV_KEY, gradleWrapperProperties.getAbsolutePath());
 
