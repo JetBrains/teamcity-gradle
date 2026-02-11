@@ -34,13 +34,17 @@ public class GradleBuildPropertiesContainer implements Map<Object, Object> {
    * see {@link GradleRunnerConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM}
    */
   private final boolean shouldReadAllParameters;
+  private final boolean useSystemProperties;
   private final String propsFilePath;
   private volatile boolean dynamicParametersRead = false;
   private final ConcurrentHashMap<Object, Object> cache = new ConcurrentHashMap<>();
 
   public GradleBuildPropertiesContainer(@NotNull String propsFilePath,
-                                        boolean shouldReadAllParameters) {
+                                        boolean shouldReadAllParameters,
+                                        boolean useSystemProperties
+  ) {
     this.shouldReadAllParameters = shouldReadAllParameters;
+    this.useSystemProperties = useSystemProperties;
     this.propsFilePath = propsFilePath;
 
     init(buildStaticPropertiesFilename(propsFilePath));
@@ -73,6 +77,14 @@ public class GradleBuildPropertiesContainer implements Map<Object, Object> {
     }
 
     synchronized (this) {
+      if(useSystemProperties) {
+        String value = System.getProperty(key.toString());
+        if (value != null) {
+          cache.put(key, value);
+        }
+        return value;
+      }
+
       if (!dynamicParametersRead) {
         readDynamicParameters();
       }
@@ -121,6 +133,8 @@ public class GradleBuildPropertiesContainer implements Map<Object, Object> {
   }
 
   private void init(@NotNull String staticPropsFilePath) {
+    if(useSystemProperties) return;
+
     Map<Object, Object> staticParamsMap = readParams(staticPropsFilePath);
     staticParamsMap.forEach(cache::put);
 
