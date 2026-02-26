@@ -141,11 +141,9 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
 
   private void addCustomProperties(Project p, Map props) {
     if (p.hasProperty("ext")) {
-      p.logger.quiet("Using ext")
       props.each { k, v -> p.ext.set(k, v) }
       p.ext.teamcity = props
     } else {
-      p.logger.quiet("Using setProperty")
       p.setProperty("teamcity", props)
     }
   }
