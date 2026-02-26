@@ -120,17 +120,17 @@ public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropert
     if (!tcConfigPropertiesFile.exists()) return;
 
     Properties tcConfigFileProperties = readProperties(tcConfigPropertiesFile);
-    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY)) {
-      staticProperties.put(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY, tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY));
+    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY.getKey())) {
+      staticProperties.put(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY.getKey(), tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY.getKey()));
     }
-    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY)) {
-      staticProperties.put(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY, tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY));
+    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY.getKey())) {
+      staticProperties.put(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY.getKey(), tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY.getKey()));
     }
-    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY)) {
-      staticProperties.put(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY, tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY));
+    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY.getKey())) {
+      staticProperties.put(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY.getKey(), tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY.getKey()));
     }
-    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY)) {
-      staticProperties.put(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY, tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY));
+    if (tcConfigFileProperties.containsKey(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY.getKey())) {
+      staticProperties.put(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY.getKey(), tcConfigFileProperties.get(TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY.getKey()));
     }
   }
 
@@ -141,12 +141,13 @@ public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropert
    * because this file changes from build to build.
    */
   private void predefineDefaultValues(@NotNull Map<Object, Object> staticProperties) {
-    putIfKeyAbsent(staticProperties, TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY, "");
-    putIfKeyAbsent(staticProperties, TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY, "true");
-    putIfKeyAbsent(staticProperties, TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY, "");
-    putIfKeyAbsent(staticProperties, TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY, "");
-    putIfKeyAbsent(staticProperties, TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY, "");
-    putIfKeyAbsent(staticProperties, TEAMCITY_BUILD_CHANGED_FILES_KEY, "");
+    Arrays.stream(values()).forEach(property -> {
+              String defaultValue = property.getDefaultValue();
+              if(defaultValue != null) {
+                putIfKeyAbsent(staticProperties, property.getKey(), property.getDefaultValue());
+              }
+            }
+    );
   }
 
   private void putIfKeyAbsent(@NotNull Map<Object, Object> target,
