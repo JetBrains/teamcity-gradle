@@ -1,5 +1,7 @@
 package jetbrains.buildServer.gradle.agent.propertySplit;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Build parameters used in init_since_8.gradle.
  * If you need to use some parameter in init_since_8.gradle:
@@ -18,9 +20,9 @@ public enum InitScriptParametersConstants {
 
     private final String key;
     private final String envKey;
-    private final String defaultValue;
+    private final @Nullable String defaultValue;
 
-    InitScriptParametersConstants(String key, String defaultValue) {
+    InitScriptParametersConstants(String key, @Nullable String defaultValue) {
         this.key = key;
         this.defaultValue = defaultValue;
         this.envKey = key.toUpperCase().replace('.', '_');
@@ -34,6 +36,7 @@ public enum InitScriptParametersConstants {
         return envKey;
     }
 
+    @Nullable
     public String getDefaultValue() {
         return defaultValue;
     }

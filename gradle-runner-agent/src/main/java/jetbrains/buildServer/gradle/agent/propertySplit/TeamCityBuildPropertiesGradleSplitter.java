@@ -141,8 +141,12 @@ public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropert
    * because this file changes from build to build.
    */
   private void predefineDefaultValues(@NotNull Map<Object, Object> staticProperties) {
-    Arrays.stream(values()).forEach(property ->
-      putIfKeyAbsent(staticProperties, property.getKey(), property.getDefaultValue())
+    Arrays.stream(values()).forEach(property -> {
+              String defaultValue = property.getDefaultValue();
+              if(defaultValue != null) {
+                putIfKeyAbsent(staticProperties, property.getKey(), property.getDefaultValue())
+              }
+            }
     );
   }
 
