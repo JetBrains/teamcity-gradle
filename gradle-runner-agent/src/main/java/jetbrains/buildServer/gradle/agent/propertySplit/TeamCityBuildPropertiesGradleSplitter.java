@@ -144,7 +144,7 @@ public class TeamCityBuildPropertiesGradleSplitter implements GradleBuildPropert
     Arrays.stream(values()).forEach(property -> {
               String defaultValue = property.getDefaultValue();
               if(defaultValue != null) {
-                putIfKeyAbsent(staticProperties, property.getKey(), property.getDefaultValue())
+                putIfKeyAbsent(staticProperties, property.getKey(), property.getDefaultValue());
               }
             }
     );
