@@ -32,8 +32,8 @@ public class GradleRunnerConstants {
   public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = "teamcity.internal.gradle.runner.read.all.params";
 
   /**
-   * This param defaults to false. If provided, all data from the 'teamcity.build.properties' will no longer be provided
-   * as properties to the build. The existing 'project.teamcity' extension will not be populated anymore.
+   * This param defaults to false. If set to true, properties from the 'teamcity.build.properties' file will no longer be provided as Gradle properties.
+   * The 'project.teamcity' Gradle properties extension will not be provided as well.
    */
   public static final String GRADLE_RUNNER_READ_NONE_CONFIG_PARAM = "teamcity.internal.gradle.runner.read.none.params";
   public static final String GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM = "teamcity.internal.gradle.runner.allow.jvm.args.overriding";
