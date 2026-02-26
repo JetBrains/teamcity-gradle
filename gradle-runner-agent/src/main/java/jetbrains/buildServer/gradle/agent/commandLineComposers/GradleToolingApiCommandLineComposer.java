@@ -97,11 +97,10 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
       .ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
       .ifPresent(it -> props.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, it));
 
-    boolean readNoneParams =  Optional
-            .ofNullable(parameters.getConfigParameters().get(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM))
-            .map(Boolean::parseBoolean).orElse(false);
-
-    props.put(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, Boolean.toString(readNoneParams));
+    props.put(
+            GRADLE_RUNNER_READ_NONE_CONFIG_PARAM,
+            getBooleanOrDefault(parameters.getConfigParameters(), GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, false).toString()
+    );
 
     return props;
   }
