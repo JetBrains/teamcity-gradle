@@ -285,8 +285,8 @@ class ProjectPropertyStorage {
   private final File buildDir
 
   ProjectPropertyStorage(Project project) {
-    this.buildStacktraceLogDir = getPropertyFromProject(project, TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY)
-    this.buildTempDir = getPropertyFromProject(project, TEAMCITY_BUILD_TEMP_DIR_KEY)
+    this.buildStacktraceLogDir = System.getenv(TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY.getEnvKey())
+    this.buildTempDir = System.getenv(TEAMCITY_BUILD_TEMP_DIR_KEY.getEnvKey())
     this.buildDir = project.buildDir
   }
 
@@ -304,18 +304,6 @@ class ProjectPropertyStorage {
 
   File getBuildDir() {
     buildDir
-  }
-
-  private String getPropertyFromProject(Project project, InitScriptParametersConstants param) {
-    String fromProperties = project.hasProperty("ext")
-            ? project.ext.teamcity[param.getKey()]
-            : project.property(param.getKey())
-
-    if(fromProperties != null) {
-      return fromProperties
-    }
-
-    return System.getenv(param.getEnvKey())
   }
 }
 
