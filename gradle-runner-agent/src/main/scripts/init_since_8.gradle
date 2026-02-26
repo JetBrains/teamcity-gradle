@@ -973,7 +973,7 @@ final AtomicLong testCounter = new AtomicLong(0)
 String propsFilePath = System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY)
 if (null == propsFilePath) propsFilePath = System.getenv(TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY)
 boolean shouldReadAllParameters = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM))
-boolean shouldReadNoneParameters = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM))
+boolean shouldReadNoneParameters = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES))
 final Map propertyReader = (propsFilePath != null && !shouldReadNoneParameters) ? new GradleBuildPropertiesContainer(propsFilePath, shouldReadAllParameters) : [:]
 
 gradle.addListener(new TeamcityPropertiesListener(logger, propertyReader, { project ->

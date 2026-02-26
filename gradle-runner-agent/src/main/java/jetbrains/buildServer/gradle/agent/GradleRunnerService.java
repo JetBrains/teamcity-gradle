@@ -237,7 +237,7 @@ public class GradleRunnerService extends BuildServiceAdapter {
     env.put(GradleRunnerConstants.TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH, parallelTestsParam);
     env.put(GradleRunnerConstants.TEAMCITY_RISK_TESTS_ARTIFACT_PATH, riskTestsParam);
 
-    env.put(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, getConfigParameters().getOrDefault(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, "false"));
+    env.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, getConfigParameters().getOrDefault(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, "false"));
 
     for(InitScriptParametersConstants param : InitScriptParametersConstants.values()) {
       String value = getBuildParameters().getSystemProperties().getOrDefault(param.getKey(), param.getDefaultValue());

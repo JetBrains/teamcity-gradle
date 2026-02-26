@@ -96,8 +96,8 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
       .ifPresent(it -> props.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, it));
 
     props.put(
-            GRADLE_RUNNER_READ_NONE_CONFIG_PARAM,
-            getBooleanOrDefault(parameters.getConfigParameters(), GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, false).toString()
+            GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES,
+            getBooleanOrDefault(parameters.getConfigParameters(), GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, false).toString()
     );
 
     return props;

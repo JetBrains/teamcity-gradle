@@ -109,7 +109,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     // given
     myTeamCitySystemProps.put("build.number", String.valueOf(1));
     myTeamCitySystemProps.put("foo", String.valueOf(1));
-    myTeamCityConfigParameters.put(GRADLE_RUNNER_READ_NONE_CONFIG_PARAM, "true");
+    myTeamCityConfigParameters.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, "true");
     final GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_A_NAME, "clean assemble" + " " + CONFIGURATION_CACHE_CMD, null);
     config.setGradleVersion(gradleVersion);
 
