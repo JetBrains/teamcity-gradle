@@ -1,7 +1,6 @@
 package jetbrains.buildServer.gradle.agent.commandLineComposers;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +25,6 @@ import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.runtime.LauncherParameters;
 import jetbrains.buildServer.gradle.runtime.TeamCityGradleLauncher;
 import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator;
-import jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.FileUtil;
