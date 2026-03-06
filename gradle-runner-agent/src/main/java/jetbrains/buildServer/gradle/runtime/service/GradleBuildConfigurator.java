@@ -98,6 +98,7 @@ public class GradleBuildConfigurator {
     return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class)).getAbsolutePath()
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();
   }
 }
