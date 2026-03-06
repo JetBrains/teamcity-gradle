@@ -8,6 +8,7 @@ import java.util.Map;
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.agent.ClasspathUtil;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import jetbrains.buildServer.gradle.runtime.listening.BuildLifecycleListener;
 import jetbrains.buildServer.gradle.runtime.listening.GradleToolingApiProgressListener;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
@@ -98,6 +99,8 @@ public class GradleBuildConfigurator {
     return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()                               // service-messages
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath() // runtime-util
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()      // gradle-runner-runtime
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GradleRunnerFileUtil.class)).getAbsolutePath()  // gradle-runner-runtime
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(SortedProperties.class)).getAbsolutePath()      // runtime-util
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();          // Unsure if it is needed
   }
 }
