@@ -99,8 +99,6 @@ public class GradleBuildConfigurator {
     return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()                               // service-messages
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath() // runtime-util
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()      // gradle-runner-runtime
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GradleRunnerFileUtil.class)).getAbsolutePath()  // gradle-runner-runtime
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(SortedProperties.class)).getAbsolutePath()      // runtime-util
            + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();          // Unsure if it is needed
   }
 }
