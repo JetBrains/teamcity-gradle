@@ -1,6 +1,7 @@
 package jetbrains.buildServer.gradle;
 
 import java.io.File;
+import jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants;
 
 public class GradleRunnerConstants {
   public static final String RUNNER_TYPE = "gradle-runner";
@@ -29,7 +30,7 @@ public class GradleRunnerConstants {
    * That means, we won't read all the data from teamcity.build.parameters file.
    * The content of this file changes from build to build. So if we read all the content of the file, Gradle's configuration-cache will not work properly.
    */
-  public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = "teamcity.internal.gradle.runner.read.all.params";
+  public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = InitScriptParametersConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM;
   public static final String GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM = "teamcity.internal.gradle.runner.allow.jvm.args.overriding";
   /**
    * A relative path to the gradle-wrapper.properties without a filename.
@@ -102,8 +103,8 @@ public class GradleRunnerConstants {
   public static final String GRADLE_TOOLING_API_LAUNCHER_SHUTDOWN_TIMEOUT_SEC_ENV_KEY = "TEAMCITY_GRADLE_TOOLING_API_LAUNCHER_SHUTDOWN_TIMEOUT_SEC";
 
 
-  public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = "teamcity.build.properties.file";
-  public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";
+  public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = InitScriptParametersConstants.TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY;
+  public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = InitScriptParametersConstants.TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY;
 
   public static final String BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR = "task-output";
 }
