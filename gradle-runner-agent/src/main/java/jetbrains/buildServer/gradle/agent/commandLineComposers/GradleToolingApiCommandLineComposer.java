@@ -19,6 +19,7 @@ import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleDaemonEnhancementClassesProvider;
 import jetbrains.buildServer.gradle.agent.GradleLaunchMode;
 import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelectionResult;
+import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.gradle.agent.propertySplit.SplitablePropertyFile;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
@@ -220,6 +221,7 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
     return Stream
       .of(
         TeamCityGradleLauncher.class,
+        GradleRunnerFileUtil.class,
         BuildLauncher.class,
         GradleRunnerConstants.class,
         OptionGroup.class
