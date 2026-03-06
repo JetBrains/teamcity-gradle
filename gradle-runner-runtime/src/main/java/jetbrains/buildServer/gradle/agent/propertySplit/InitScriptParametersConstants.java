@@ -3,7 +3,7 @@ package jetbrains.buildServer.gradle.agent.propertySplit;
 /**
  * Build parameters used in init_since_8.gradle.
  * If you need to use some parameter in init_since_8.gradle:
- * 1. This parameter must be kept in static file with this postfix: {@link jetbrains.buildServer.gradle.GradleRunnerConstants#SPLIT_PROPERTY_STATIC_POSTFIX}
+ * 1. This parameter must be kept in static file with postfix `.static`.
  * 2. This parameter must be predefined by the default value if it could be null.
  */
 public class InitScriptParametersConstants {

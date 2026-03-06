@@ -22,6 +22,7 @@ sourceSets.main.java.srcDirs += 'src/main/scripts'
 
 dependencies {
     implementation project(':gradle-runner-common')
+    implementation project(':gradle-runner-runtime')
     implementation 'org.gradle:gradle-tooling-api:8.9'
     implementation 'org.slf4j:slf4j-api:1.7.36'
     implementation 'commons-cli:commons-cli:1.4'

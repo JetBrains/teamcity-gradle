@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +30,7 @@ import static jetbrains.buildServer.gradle.agent.propertySplit.SplitPropertiesFi
 public class GradleBuildPropertiesContainer implements Map<Object, Object> {
 
   /**
-   * see {@link GradleRunnerConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM}
+   * See `teamcity.internal.gradle.runner.read.all.params`.
    */
   private final boolean shouldReadAllParameters;
   private final String propsFilePath;

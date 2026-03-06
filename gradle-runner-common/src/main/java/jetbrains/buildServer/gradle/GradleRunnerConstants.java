@@ -105,6 +105,5 @@ public class GradleRunnerConstants {
   public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = "teamcity.build.properties.file";
   public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";
 
-  public static final String SPLIT_PROPERTY_STATIC_POSTFIX = ".static";
   public static final String BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR = "task-output";
 }

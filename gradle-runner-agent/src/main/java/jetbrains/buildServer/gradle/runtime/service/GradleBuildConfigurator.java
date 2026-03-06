@@ -95,10 +95,9 @@ public class GradleBuildConfigurator {
 
   @NotNull
   public static String getInitScriptClasspath() throws IOException {
-    return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath()
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class)).getAbsolutePath()
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();
+    return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()                               // service-messages
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath() // runtime-util
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()      // gradle-runner-runtime
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();          // Unsure if it is needed
   }
 }

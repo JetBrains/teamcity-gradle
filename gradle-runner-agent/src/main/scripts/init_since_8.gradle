@@ -12,7 +12,6 @@ import java.util.regex.Pattern
 import jetbrains.buildServer.gradle.runtime.output.TestOutputParser
 
 import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.*;
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.*
 
 if (!JavaVersion.current().isJava8Compatible()) return
 

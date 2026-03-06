@@ -1,0 +1,8 @@
+dependencies {
+  compileOnly "org.jetbrains.teamcity:common-api:${teamcityVersion}"
+}
+
+tasks.withType(JavaCompile) {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}

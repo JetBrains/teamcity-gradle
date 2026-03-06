@@ -1,4 +1,5 @@
 rootProject.name = 'gradle-runner'
 include "gradle-runner-common",
+        "gradle-runner-runtime",
         "gradle-runner-agent",
         "gradle-runner-server"
