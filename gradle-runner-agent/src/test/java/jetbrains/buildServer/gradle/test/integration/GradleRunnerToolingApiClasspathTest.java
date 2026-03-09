@@ -9,6 +9,7 @@ import jetbrains.buildServer.util.StringUtil;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.testng.Assert.*;
 
 public class GradleRunnerToolingApiClasspathTest extends GradleRunnerServiceMessageTest {
@@ -50,7 +51,8 @@ public class GradleRunnerToolingApiClasspathTest extends GradleRunnerServiceMess
                                                          || it.getName().contains("runtime-util")
                                                          || it.getName().contains("common") && !it.getName().contains("gradle"))
                                          .collect(Collectors.toList());
-    assertEquals(classPathElements.size(), 4);
+
+    then(classPathElements).as("Expect only gson, serviceMessages, runtime-util for init: " + classpath).hasSize(3);
     for (File classpathElement : classPathElements) {
       assertEquals(classpathElement.getParent(), expectedParentDir.getAbsolutePath());
     }
