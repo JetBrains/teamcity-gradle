@@ -94,7 +94,7 @@ public class GradleRunnerConstants {
   public static final String GRADLE_PARAMS_FILE_ENV_KEY = "TEAMCITY_GRADLE_CONFIG_PARAMETERS";
   public static final String GRADLE_JVM_PARAMS_FILE_ENV_KEY = "TEAMCITY_GRADLE_JVM_PARAMETERS";
   public static final String GRADLE_TASKS_FILE_ENV_KEY = "TEAMCITY_GRADLE_TASKS";
-  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = "GRADLE_DAEMON_ENHANCEMENT_CLASSES";
+  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = InitScriptParametersConstants.GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY;
   public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_KEY = "TEST_TASK_JVM_ARG_PROVIDER_DISABLED";
   /**
    * Workaround for <a href="https://github.com/gradle/gradle/issues/34491">https://github.com/gradle/gradle/issues/34491</a>.
