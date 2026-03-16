@@ -6,7 +6,6 @@ import jetbrains.buildServer.agent.runner.SimpleProgramCommandLine
 import jetbrains.buildServer.agent.runner.TerminationAction
 import jetbrains.buildServer.gradle.agent.GradleRunnerContext
 import java.io.File
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class VersionDetectionCommandExecution(
     private val gradleRunnerContext: GradleRunnerContext,
@@ -48,9 +47,9 @@ class VersionDetectionCommandExecution(
     }
 
     override fun processFinished(exitCode: Int) {
-        gradleRunnerContext.buildLogger.debug("Output of the Gradle '--version' process:\n${joinOutputToString(stdOutLines)}")
+        gradleRunnerContext.flowLogger.debug("Output of the Gradle '--version' process:\n${joinOutputToString(stdOutLines)}")
         if (stdErrLines.isNotEmpty()) {
-            gradleRunnerContext.buildLogger.debug("Error output of the Gradle '--version' process:\n${joinOutputToString(stdErrLines)}")
+            gradleRunnerContext.flowLogger.debug("Error output of the Gradle '--version' process:\n${joinOutputToString(stdErrLines)}")
         }
         onProcessFinish(exitCode, stdOutLines.toList(), stdErrLines.toList())
     }

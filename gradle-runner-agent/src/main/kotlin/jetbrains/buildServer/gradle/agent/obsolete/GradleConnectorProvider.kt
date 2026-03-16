@@ -25,7 +25,7 @@ class GradleConnectorProvider(private val gradleRunnerContext: GradleRunnerConte
             gradleRunnerContext.buildRunnerContext.configParameters
         )
     } catch (t: Throwable) {
-        gradleRunnerContext.buildLogger.warning("Unable to obtain project connector: " + t.message)
+        gradleRunnerContext.flowLogger.warning("Unable to obtain project connector: " + t.message)
         null
     }
 }

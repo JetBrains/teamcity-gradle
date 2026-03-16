@@ -8,7 +8,7 @@ import jetbrains.buildServer.gradle.agent.obsolete.ObsoleteGradleVersionDetector
 class GradleVersionDetector(private val gradleRunnerContext: GradleRunnerContext) {
     @Deprecated("Remove in a few releases after 2026.1 if the new version detection implementation works without problems")
     fun detectGradleVersion(connectorProvider: GradleConnectorProvider): GradleVersion? {
-        val version = ObsoleteGradleVersionDetector().detect(connectorProvider.getConnector(), gradleRunnerContext.buildLogger)
+        val version = ObsoleteGradleVersionDetector().detect(connectorProvider.getConnector(), gradleRunnerContext.flowLogger)
         return if (version.isPresent) GradleVersion(version.get().version) else null
     }
 
@@ -18,15 +18,15 @@ class GradleVersionDetector(private val gradleRunnerContext: GradleRunnerContext
     ): CommandExecution {
         return VersionDetectionCommandExecution(gradleRunnerContext, isUnix) { exitCode, stdOut, stdErr ->
             if (exitCode != 0) {
-                gradleRunnerContext.buildLogger.warning("Could not detect the Gradle version. The Gradle --version call finished with a non-zero exit code.")
+                gradleRunnerContext.flowLogger.warning("Could not detect the Gradle version. The Gradle --version call finished with a non-zero exit code.")
                 return@VersionDetectionCommandExecution
             }
 
             val detectedGradleVersion = parseGradleVersion(stdOut.joinToString("\n"))
             if (detectedGradleVersion == null) {
-                gradleRunnerContext.buildLogger.warning("Couldn't parse the Gradle version from Gradle's '--version' output")
+                gradleRunnerContext.flowLogger.warning("Couldn't parse the Gradle version from Gradle's '--version' output")
             } else {
-                gradleRunnerContext.buildLogger.debug("Detected Gradle version: '$detectedGradleVersion'")
+                gradleRunnerContext.flowLogger.debug("Detected Gradle version: '$detectedGradleVersion'")
                 setDetectedGradleVersionCallback(detectedGradleVersion)
             }
         }

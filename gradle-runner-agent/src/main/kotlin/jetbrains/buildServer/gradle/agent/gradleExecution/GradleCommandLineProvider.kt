@@ -23,7 +23,7 @@ class GradleCommandLineProvider(
     private val gradleUserHomeManager: GradleUserHomeManager
 ) {
     private val build = gradleRunnerContext.build
-    private val logger = build.buildLogger
+    private val logger = gradleRunnerContext.flowLogger
     private val workingDirectory = gradleRunnerContext.buildRunnerContext.workingDirectory
 
     fun getGradleCommandLine(isUnix: Boolean, detectedGradleVersion: GradleVersion?, connectorProvider: GradleConnectorProvider): ProgramCommandLine {

@@ -3,7 +3,7 @@ package jetbrains.buildServer.gradle.test.unit.versionDetection
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import jetbrains.buildServer.agent.BuildProgressLogger
+import jetbrains.buildServer.agent.FlowLogger
 import jetbrains.buildServer.gradle.agent.GradleRunnerContext
 import jetbrains.buildServer.gradle.agent.versionDetection.VersionDetectionCommandExecution
 import org.testng.Assert
@@ -158,9 +158,9 @@ class VersionDetectionCommandExecutionTest {
     @Test
     fun `should log standard output on process finish`() {
         // arrange
-        val logger = mockk<BuildProgressLogger>(relaxed = true)
+        val logger = mockk<FlowLogger>(relaxed = true)
         val gradleRunnerContext = mockk<GradleRunnerContext>()
-        every { gradleRunnerContext.buildLogger } returns logger
+        every { gradleRunnerContext.flowLogger } returns logger
         val execution = VersionDetectionCommandExecution(gradleRunnerContext, false) { _, _, _ -> }
 
         // act
@@ -175,9 +175,9 @@ class VersionDetectionCommandExecutionTest {
     @Test
     fun `should log error output on process finish when present`() {
         // arrange
-        val logger = mockk<BuildProgressLogger>(relaxed = true)
+        val logger = mockk<FlowLogger>(relaxed = true)
         val gradleRunnerContext = mockk<GradleRunnerContext>()
-        every { gradleRunnerContext.buildLogger } returns logger
+        every { gradleRunnerContext.flowLogger } returns logger
         val execution = VersionDetectionCommandExecution(gradleRunnerContext, false) { _, _, _ -> }
 
         // act
@@ -194,9 +194,9 @@ class VersionDetectionCommandExecutionTest {
     @Test
     fun `should not log error output on process finish when absent`() {
         // arrange
-        val logger = mockk<BuildProgressLogger>(relaxed = true)
+        val logger = mockk<FlowLogger>(relaxed = true)
         val gradleRunnerContext = mockk<GradleRunnerContext>()
-        every { gradleRunnerContext.buildLogger } returns logger
+        every { gradleRunnerContext.flowLogger } returns logger
         val execution = VersionDetectionCommandExecution(gradleRunnerContext, false) { _, _, _ -> }
 
         // act

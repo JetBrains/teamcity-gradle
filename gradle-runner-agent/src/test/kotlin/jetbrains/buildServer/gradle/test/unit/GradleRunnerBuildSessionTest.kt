@@ -4,6 +4,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import jetbrains.buildServer.BuildProblemData
+import jetbrains.buildServer.agent.AgentRuntimeProperties
+import jetbrains.buildServer.agent.FlowLogger
 import jetbrains.buildServer.agent.BuildFinishedStatus
 import jetbrains.buildServer.agent.runner.CommandExecution
 import jetbrains.buildServer.gradle.agent.GradleRunnerBuildSession
@@ -135,9 +138,16 @@ class GradleRunnerBuildSessionTest {
     }
 
     @Test
-    fun `should log build problem when gradle execution exits with non-zero code`() {
+    fun `should log a build problem with the process flow id when gradle execution exits with a non-zero code`() {
         // arrange
-        val gradleRunnerContext = getGradleRunnerContext(isGradleVersionNotNeeded = true, failBuildOnExitCode = true)
+        val flowId = "gradle-flow-id"
+        val flowLogger = mockk<FlowLogger>(relaxed = true)
+        every { flowLogger.flowId } returns flowId
+        val gradleRunnerContext = getGradleRunnerContext(
+            isGradleVersionNotNeeded = true,
+            failBuildOnExitCode = true,
+            flowLoggerMock = flowLogger
+        )
 
         val gradleCommandLineProvider = mockk<GradleCommandLineProvider>()
         every { gradleCommandLineProvider.getGradleCommandLine(any(), any(), any()) } returns mockk(relaxed = true)
@@ -154,7 +164,40 @@ class GradleRunnerBuildSessionTest {
         session.sessionFinished()
 
         // assert
-        verify { gradleRunnerContext.buildLogger.logBuildProblem(any()) }
+        val buildProblemSlot = slot<BuildProblemData>()
+        verify(exactly = 1) { flowLogger.logBuildProblem(capture(buildProblemSlot)) }
+        Assert.assertEquals(buildProblemSlot.captured.additionalData, "${AgentRuntimeProperties.FLOW_ID_PROP}=$flowId")
+    }
+
+    @Test
+    fun `should use the flow logger from GradleRunnerContext in the CommandExecution returned for the main command`() {
+        // arrange
+        val flowLogger = mockk<FlowLogger>(relaxed = true)
+        val versionDetectionCommand = mockk<CommandExecution>()
+
+        val gradleRunnerContext = getGradleRunnerContext(
+            isGradleVersionNotNeeded = false,
+            flowLoggerMock = flowLogger
+        )
+
+        val gradleVersionDetector = mockk<GradleVersionDetector>()
+        every { gradleVersionDetector.detectGradleVersion(any(), any()) } returns versionDetectionCommand
+
+        val gradleCommandLineProvider = mockk<GradleCommandLineProvider>()
+        every { gradleCommandLineProvider.getGradleCommandLine(any(), any(), any()) } returns mockk(relaxed = true)
+
+        val session = GradleRunnerBuildSession(
+            gradleRunnerContext, gradleVersionDetector, gradleCommandLineProvider
+        )
+        session.sessionStarted()
+
+        // act
+        Assert.assertSame(session.nextCommand, versionDetectionCommand)
+        val gradleCommand = session.nextCommand!!
+        gradleCommand.onStandardOutput("gradle output")
+
+        // assert
+        verify(exactly = 1) { flowLogger.message("gradle output") }
     }
 
     private fun createSession(
@@ -179,12 +222,14 @@ class GradleRunnerBuildSessionTest {
 
     private fun getGradleRunnerContext(
         isGradleVersionNotNeeded: Boolean = false,
-        failBuildOnExitCode: Boolean = true
+        failBuildOnExitCode: Boolean = true,
+        flowLoggerMock: FlowLogger = mockk(relaxed = true)
     ): GradleRunnerContext = mockk<GradleRunnerContext>(relaxed = true).apply {
         if (isGradleVersionNotNeeded) {
             every { isWrapperPropertiesFileMissing } returns true
             every { noWrapperInVirtualContext } returns true
         }
         every { build.failBuildOnExitCode } returns failBuildOnExitCode
+        every { flowLogger } returns flowLoggerMock
     }
 }

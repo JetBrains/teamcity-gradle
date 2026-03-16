@@ -4,6 +4,8 @@ import com.intellij.openapi.util.TCSystemInfo
 import jetbrains.buildServer.RunBuildException
 import jetbrains.buildServer.agent.AgentRuntimeProperties
 import jetbrains.buildServer.agent.BuildRunnerContext
+import jetbrains.buildServer.agent.FlowGenerator
+import jetbrains.buildServer.agent.FlowLogger
 import jetbrains.buildServer.agent.IncrementalBuild
 import jetbrains.buildServer.agent.ToolCannotBeFoundException
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil
@@ -30,7 +32,7 @@ class GradleRunnerContext(val buildRunnerContext: BuildRunnerContext) {
 
     val workingDirectory = buildRunnerContext.workingDirectory
     val build = buildRunnerContext.build
-    val buildLogger = build.buildLogger
+    val flowLogger: FlowLogger = build.buildLogger.getFlowLogger(FlowGenerator.generateNewFlow())
 
     init {
         val relativeGradleExecutablePath: String
@@ -61,7 +63,7 @@ class GradleRunnerContext(val buildRunnerContext: BuildRunnerContext) {
         if (useWrapper) return null
 
         if (runnerContext.isVirtualContext) {
-            runnerContext.build.buildLogger.debug("Step is running in a virtual context, skip detecting GRADLE_HOME")
+            flowLogger.debug("Step is running in a virtual context, skip detecting GRADLE_HOME")
             return null
         }
 
@@ -88,7 +90,7 @@ class GradleRunnerContext(val buildRunnerContext: BuildRunnerContext) {
     ): String {
         if (!useWrapper) {
             if (runnerContext.isVirtualContext) {
-                runnerContext.build.buildLogger.debug("Step is running in a virtual context, skip detecting the Gradle executable path")
+                flowLogger.debug("Step is running in a virtual context, skip detecting the Gradle executable path")
                 return "gradle"
             } else {
                 val gradleExecutable = File(gradleHome, relativeGradleExecutablePath)
@@ -125,7 +127,7 @@ class GradleRunnerContext(val buildRunnerContext: BuildRunnerContext) {
         }
 
         if (!gradleWrapperProperties.exists()) {
-            runnerContext.build.buildLogger.warning("gradle-wrapper.properties couldn't be found at ${gradleWrapperProperties.absolutePath}")
+            flowLogger.warning("gradle-wrapper.properties couldn't be found at ${gradleWrapperProperties.absolutePath}")
         }
 
         return gradleWrapperProperties
@@ -175,7 +177,7 @@ class GradleRunnerContext(val buildRunnerContext: BuildRunnerContext) {
         val parallelTestsParam = systemProps.getOrDefault("teamcity.build.parallelTests.excludesFile", "")
         val riskTestsParam = systemProps.getOrDefault("teamcity.build.testPrioritization.riskTests.excludesFile", "")
         if (parallelTestsParam.isNotEmpty() && riskTestsParam.isNotEmpty()) {
-            runnerContext.build.buildLogger.warning("Both filter parameters for parallel tests and risk tests are present")
+            flowLogger.warning("Both filter parameters for parallel tests and risk tests are present")
         }
         envVars[TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH] = parallelTestsParam
         envVars[TEAMCITY_RISK_TESTS_ARTIFACT_PATH] = riskTestsParam

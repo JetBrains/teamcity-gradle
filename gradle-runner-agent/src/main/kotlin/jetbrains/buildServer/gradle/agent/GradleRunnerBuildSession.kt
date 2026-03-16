@@ -64,7 +64,7 @@ class GradleRunnerBuildSession(
     private fun executeGradle(): CommandExecution {
         return GradleCommandExecution(
             gradleCommandLineProvider.getGradleCommandLine(isUnix, detectedGradleVersion, connectorProvider),
-            GradleLoggingListener(gradleRunnerContext.buildLogger)
+            GradleLoggingListener(gradleRunnerContext.flowLogger)
         ) { exitCode ->
             gradleExecutionExitCode = exitCode
         }
@@ -77,9 +77,10 @@ class GradleRunnerBuildSession(
             return BuildFinishedStatus.FINISHED_SUCCESS
         }
 
-        gradleRunnerContext.buildLogger.logBuildProblem(
+        gradleRunnerContext.flowLogger.logBuildProblem(
             ExitCodeProblemBuilder().setExitCode(gradleExecutionExitCode)
                 .setBuildRunnerContext(gradleRunnerContext.buildRunnerContext)
+                .setProcessFlowId(gradleRunnerContext.flowLogger.flowId)
                 .build()
         )
 
