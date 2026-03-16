@@ -4,7 +4,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.Properties;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildProperties;
-import jetbrains.buildServer.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class GradleRunnerFileUtil {
@@ -24,13 +23,13 @@ public class GradleRunnerFileUtil {
     buildTempDirectory.mkdirs();
 
     if (destination.isFile()) {
-      FileUtil.delete(destination);
+      Files.delete(destination.toPath());
     }
     if (!destination.createNewFile()) {
       throw new IOException("Can't create file: " + destination.getAbsolutePath());
     }
 
-    return FileUtil.getCanonicalFile(destination);
+    return destination.getCanonicalFile();
   }
 
   public static Properties readProperties(@NotNull File propsFile) throws IOException {
