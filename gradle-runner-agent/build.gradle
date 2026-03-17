@@ -72,3 +72,9 @@ task downloadDistributive {
 }
 
 tasks.test.dependsOn("downloadDistributive")
+
+tasks.withType(Test).configureEach {
+    if (JavaVersion.current().isJava9Compatible()) {
+        jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+    }
+}

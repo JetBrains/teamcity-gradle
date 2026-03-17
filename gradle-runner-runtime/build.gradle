@@ -1,4 +1,6 @@
 dependencies {
+  implementation project(':gradle-runner-common')
+  implementation 'org.gradle:gradle-tooling-api:8.9'
   compileOnly "org.jetbrains.teamcity:common-api:${teamcityVersion}"
 }
 

@@ -1,5 +1,7 @@
 package jetbrains.buildServer.gradle.agent.propertySplit;
 
+import jetbrains.buildServer.gradle.GradleRunnerConstants;
+
 /**
  * Build parameters used in init_since_8.gradle.
  * If you need to use some parameter in init_since_8.gradle:
@@ -19,9 +21,9 @@ public class InitScriptParametersConstants {
   public static final String TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY = "teamcity.internal.gradle.useTestRetryPlugin";
   public static final String TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY = "teamcity.build.branch";
 
-  public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = "teamcity.build.properties.file";
-  public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";
-  public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = "teamcity.internal.gradle.runner.read.all.params";
+  public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY;
+  public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY;
+  public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = GradleRunnerConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM;
 
-  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = "GRADLE_DAEMON_ENHANCEMENT_CLASSES";
+  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = GradleRunnerConstants.GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY;
 }

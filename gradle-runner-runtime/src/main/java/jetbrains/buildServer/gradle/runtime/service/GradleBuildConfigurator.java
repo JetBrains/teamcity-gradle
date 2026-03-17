@@ -8,7 +8,6 @@ import java.util.Map;
 import jetbrains.buildServer.ComparisonFailureUtil;
 import jetbrains.buildServer.agent.ClasspathUtil;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import jetbrains.buildServer.gradle.runtime.listening.BuildLifecycleListener;
 import jetbrains.buildServer.gradle.runtime.listening.GradleToolingApiProgressListener;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
@@ -16,7 +15,6 @@ import jetbrains.buildServer.gradle.runtime.output.GradleOutputWrapper;
 import jetbrains.buildServer.gradle.runtime.output.OutputType;
 import jetbrains.buildServer.gradle.runtime.output.TestOutputParser;
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage;
-import jetbrains.buildServer.util.SortedProperties;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
@@ -96,9 +94,10 @@ public class GradleBuildConfigurator {
 
   @NotNull
   public static String getInitScriptClasspath() throws IOException {
-    return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()                               // service-messages
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath() // runtime-util
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()      // gradle-runner-runtime
-           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();          // Unsure if it is needed
+    return new File(ClasspathUtil.getClasspathEntry(ServiceMessage.class)).getAbsolutePath()                                // service-messages
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(ComparisonFailureUtil.class)).getAbsolutePath()  // runtime-util
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(TestOutputParser.class)).getAbsolutePath()       // gradle-runner-runtime
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GradleRunnerConstants.class)).getAbsolutePath()  // gradle-runner-common
+           + File.pathSeparator + new File(ClasspathUtil.getClasspathEntry(GsonBuilder.class)).getAbsolutePath();           // Unsure if it is needed
   }
 }
