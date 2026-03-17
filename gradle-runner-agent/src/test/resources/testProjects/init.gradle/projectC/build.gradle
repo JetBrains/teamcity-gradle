@@ -5,8 +5,20 @@ dependencies {
     testCompile files('../../lib/testng-5.14.1.jar')
 }
 
-test {
+tasks.withType(Test) {
   logging.captureStandardOutput LogLevel.INFO
+}
+
+test.enabled = false
+
+task junit(type: Test) {
+  if(gradle.gradleVersion < "4") {
+    setTestClassesDir(test.getTestClassesDir())
+  } else {
+    setTestClassesDirs(test.getTestClassesDirs())
+  }
+  classpath = test.classpath
+  include '**/GreeterJUnitTest.class'
 }
 
 task testng(type: Test) {
@@ -19,4 +31,5 @@ task testng(type: Test) {
     setTestClassesDirs(test.getTestClassesDirs())
   }
   classpath = test.classpath
+  include '**/GreeterTestNGTest.class'
 }

@@ -369,6 +369,7 @@ public class BaseGradleRunnerTest {
 
   @BeforeMethod
   public void setUp() throws Exception {
+    myRunnerParams.clear();
     myTeamCityConfigParameters.clear();
     myTestLogger.onTestStart();
   }
@@ -400,6 +401,10 @@ public class BaseGradleRunnerTest {
     }
 
     String gradleVersionNum = getGradleVersion(gradleVersion);
+    if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") < 0) {
+      // Older Gradle versions cannot run on newer JDKs
+      myRunnerParams.put("target.jdk.home", System.getenv("JDK_1_8"));
+    }
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
     }

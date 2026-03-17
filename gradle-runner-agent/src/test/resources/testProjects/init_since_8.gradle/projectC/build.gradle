@@ -2,11 +2,22 @@ apply plugin: 'java'
 
 dependencies {
   testImplementation files('../../lib/junit-4.8.1.jar')
-  testImplementation files('../../lib/testng-5.14.1.jar')
+  testImplementation files(
+          '../../lib/testng-6.9.10.jar',
+          '../../lib/jcommander-1.48.jar',
+  )
 }
 
-test {
+tasks.withType(Test).configureEach {
   logging.captureStandardOutput LogLevel.INFO
+}
+
+test.enabled = false
+
+tasks.register('junit', Test) {
+  setTestClassesDirs(test.getTestClassesDirs())
+  setClasspath(test.getClasspath())
+  include '**/GreeterJUnitTest.class'
 }
 
 tasks.register('testng', Test) {
@@ -16,4 +27,5 @@ tasks.register('testng', Test) {
   }
   setTestClassesDirs(test.getTestClassesDirs())
   setClasspath(test.getClasspath())
+  include '**/GreeterTestNGTest.class'
 }

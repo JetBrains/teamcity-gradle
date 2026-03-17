@@ -1003,6 +1003,6 @@
 ##teamcity[message tc:tags='tc:internal' text='        System.out.println(unexistingMethod());' status='ERROR']
 ##teamcity[message tc:tags='tc:internal' text='                           ^' status='ERROR']
 ##teamcity[message tc:tags='tc:internal' text='  symbol:   method unexistingMethod()' status='ERROR']
-##teamcity[message tc:tags='tc:internal' text='  location: class my.module.Greeter' status='ERROR']
+##teamcity[message tc:tags='tc:internal' text='  location: class Greeter' status='ERROR']
 ##teamcity[message tc:tags='tc:internal' text='1 error' status='ERROR']
 ##teamcity[compilationFinished tc:tags='tc:internal' compiler=':compileJava']

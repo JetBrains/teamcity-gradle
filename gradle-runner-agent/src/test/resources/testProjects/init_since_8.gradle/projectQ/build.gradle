@@ -10,7 +10,10 @@ repositories {
 }
 
 dependencies {
-    testImplementation files('../../lib/testng-5.14.1.jar')
+    testImplementation files(
+            '../../lib/testng-6.9.10.jar',
+            '../../lib/jcommander-1.48.jar',
+    )
 }
 
 test {

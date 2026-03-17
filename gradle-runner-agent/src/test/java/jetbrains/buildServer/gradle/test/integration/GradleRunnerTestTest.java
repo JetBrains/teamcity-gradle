@@ -29,7 +29,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   @Test(dataProvider = "gradle-version-provider")
   public void failedAndSkippedJUnitTest(final String gradleVersion) throws Exception {
-    testTest(PROJECT_C_NAME, "clean test", "failedProjectCJUnitSequence.txt", gradleVersion);
+    testTest(PROJECT_C_NAME, "clean junit", "failedProjectCJUnitSequence.txt", gradleVersion);
   }
 
   @Test(dataProvider = "gradle-version-provider")

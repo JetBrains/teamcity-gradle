@@ -290,11 +290,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
   }
 
   protected void testTest(String project, String command, String seqFile, String gradleVersion, String pattern) throws Exception {
-    if (VersionComparatorUtil.compare(getGradleVersion(gradleVersion), "8.0") < 0) {
-      // Older gradles cannot be run on new JDKs
-      myRunnerParams.put("target.jdk.home", System.getenv("JDK_11"));
-    }
-
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(project, command, seqFile);
     gradleRunConfiguration.setPatternStr(pattern);
     gradleRunConfiguration.setGradleVersion(gradleVersion);

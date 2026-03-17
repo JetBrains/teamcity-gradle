@@ -51,10 +51,8 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
       config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_5.txt");
     } else if (isJre6) {
       config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_6.txt");
-    } else if (isJre7 || isJre8) {
-      config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_7.txt");
     } else {
-      fail("Compiler test requires JRE version 5,6,7 or 8 to run; Current version: " + System.getProperty("java.specification.version"));
+      config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_7.txt");
     }
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
