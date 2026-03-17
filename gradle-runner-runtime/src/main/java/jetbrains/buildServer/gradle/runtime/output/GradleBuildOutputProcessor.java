@@ -12,7 +12,6 @@ import jetbrains.buildServer.gradle.runtime.listening.event.FailureResult;
 import jetbrains.buildServer.gradle.runtime.listening.event.TaskFinishedEvent;
 import jetbrains.buildServer.gradle.runtime.listening.event.TaskOutputEvent;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
-import jetbrains.buildServer.messages.DefaultMessagesInfo;
 import jetbrains.buildServer.messages.serviceMessages.CompilationFinished;
 import jetbrains.buildServer.messages.serviceMessages.CompilationStarted;
 import jetbrains.buildServer.messages.serviceMessages.Message;
@@ -146,7 +145,8 @@ public class GradleBuildOutputProcessor implements BuildEventListener {
 
   @NotNull
   private ServiceMessage internalize(@NotNull final ServiceMessage message) {
-    message.addTag(DefaultMessagesInfo.TAG_INTERNAL);
+    //message.addTag(DefaultMessagesInfo.TAG_INTERNAL);
+    message.addTag("tc:internal");
     return message;
   }
 }
