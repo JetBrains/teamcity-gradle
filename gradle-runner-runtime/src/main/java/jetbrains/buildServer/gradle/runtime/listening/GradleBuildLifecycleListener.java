@@ -1,7 +1,12 @@
 package jetbrains.buildServer.gradle.runtime.listening;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.stream.Stream;
 import jetbrains.buildServer.gradle.runtime.BuildContext;
 import jetbrains.buildServer.gradle.runtime.listening.event.BuildEvent;
@@ -9,7 +14,6 @@ import jetbrains.buildServer.gradle.runtime.listening.event.BuildFinishedEventIm
 import jetbrains.buildServer.gradle.runtime.listening.event.BuildResult;
 import jetbrains.buildServer.gradle.runtime.listening.event.TaskOutputEvent;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
-import jetbrains.buildServer.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 import static jetbrains.buildServer.gradle.agent.propertySplit.SplitPropertiesFilenameBuilder.buildStaticPropertiesFilename;
@@ -59,10 +63,12 @@ public class GradleBuildLifecycleListener implements BuildLifecycleListener {
   private void createTaskOutputDir() {
     File taskOutputDir = new File(myBuildContext.getTaskOutputDir());
     if (taskOutputDir.exists()) {
-      if (!FileUtil.delete(taskOutputDir)) {
+      try {
+        delete(taskOutputDir);
+      } catch (IOException e) {
         String msg = String.format("Unable to start build. Couldn't delete task output directory: path=%s", myBuildContext.getTaskOutputDir());
         myLogger.warn(msg);
-        throw new RuntimeException(msg);
+        throw new RuntimeException(msg, e);
       }
     }
 
@@ -70,6 +76,24 @@ public class GradleBuildLifecycleListener implements BuildLifecycleListener {
       String msg = String.format("Couldn't create task output directory: path=%s", myBuildContext.getTaskOutputDir());
       myLogger.warn(msg);
       throw new RuntimeException(msg);
+    }
+  }
+
+  private void delete(@NotNull File file) throws IOException {
+    Path path = file.toPath();
+    if (!Files.exists(path)) return;
+
+    try (Stream<Path> walk = Files.walk(path)) {
+      walk.sorted(Comparator.reverseOrder())
+          .forEach(p -> {
+            try {
+              Files.delete(p);
+            } catch (IOException e) {
+              throw new UncheckedIOException(e);
+            }
+          });
+    } catch (UncheckedIOException e) {
+      throw e.getCause();
     }
   }
 
@@ -96,8 +120,11 @@ public class GradleBuildLifecycleListener implements BuildLifecycleListener {
 
   private void deleteTaskOutputDir() {
     File taskOutputDir = new File(myBuildContext.getTaskOutputDir());
-    if (!FileUtil.delete(taskOutputDir)) {
-      myLogger.warn(String.format("Couldn't delete task output directory: path=%s", myBuildContext.getTaskOutputDir()));
+    try {
+      delete(taskOutputDir);
+    }
+    catch (IOException e) {
+      myLogger.warn(String.format("Couldn't delete task output directory: path=%s, message: " + e.getMessage(), myBuildContext.getTaskOutputDir()));
     }
   }
 }

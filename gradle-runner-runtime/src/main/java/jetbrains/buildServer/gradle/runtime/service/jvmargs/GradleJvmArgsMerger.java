@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jetbrains.buildServer.gradle.runtime.logging.GradleToolingLogger;
-import jetbrains.buildServer.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +67,7 @@ public class GradleJvmArgsMerger {
     Map<String, LinkedHashSet<String>> result = new LinkedHashMap<>();
     Collection<String> concatenated = Stream.concat(gradleProjectJvmArgs.stream(), tcJvmArgs.stream())
             .filter(this::isNotEmpty)
-            .map(StringUtil::unquoteString)
+            .map(this::unquoteString)
             .collect(Collectors.toList());
 
     String lastKey = null;
@@ -85,6 +84,14 @@ public class GradleJvmArgsMerger {
 
     return result;
   }
+
+  @NotNull private String unquoteString( @NotNull String s ) {
+    if (s.length() <= 1 || s.charAt(0) != '"' || s.charAt(s.length() - 1) != '"') {
+      return s;
+    }
+    return s.substring(1, s.length() - 1);
+  }
+
 
   /**
    * Merges JVM argument's values.
