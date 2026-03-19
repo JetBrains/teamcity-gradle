@@ -26,6 +26,9 @@
       <class name="jetbrains.buildServer.gradle.test.unit.GradleDaemonEnhancementClassesProviderTest"/>
 
       <!-- Kotlin -->
+      <class name="jetbrains.buildServer.gradle.test.unit.versionDetection.GradleVersionDetectorTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.versionDetection.VersionDetectionCommandExecutionTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.versionDetection.VersionResolutionCheckExtensionsTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.gradleExecution.GradleCommandExecutionTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerBuildSessionTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerContextTest"/>

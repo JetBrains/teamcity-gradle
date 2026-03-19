@@ -12,6 +12,7 @@ import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCache
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.gradleExecution.GradleCommandLineProvider;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
+import jetbrains.buildServer.gradle.agent.versionDetection.GradleVersionDetector;
 import jetbrains.buildServer.log.Loggers;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +25,6 @@ public class GradleRunnerBuildSessionFactory implements MultiCommandBuildSession
   private final GradleLaunchModeSelector gradleLaunchModeSelector;
   private final GradleConfigurationCacheDetector gradleConfigurationCacheDetector;
   private final CommandLineParametersProcessor commandLineParametersProcessor;
-  private final GradleVersionDetector gradleVersionDetector;
   private final GradleUserHomeManager gradleUserHomeManager;
 
   public GradleRunnerBuildSessionFactory(GradleCommandLineComposerHolder composerHolder,
@@ -32,14 +32,12 @@ public class GradleRunnerBuildSessionFactory implements MultiCommandBuildSession
                                          GradleLaunchModeSelector gradleLaunchModeSelector,
                                          GradleConfigurationCacheDetector gradleConfigurationCacheDetector,
                                          CommandLineParametersProcessor commandLineParametersProcessor,
-                                         GradleVersionDetector gradleVersionDetector,
                                          GradleUserHomeManager gradleUserHomeManager) {
     this.composerHolder = composerHolder;
     this.tasksComposer = tasksComposer;
     this.gradleLaunchModeSelector = gradleLaunchModeSelector;
     this.gradleConfigurationCacheDetector = gradleConfigurationCacheDetector;
     this.commandLineParametersProcessor = commandLineParametersProcessor;
-    this.gradleVersionDetector = gradleVersionDetector;
     this.gradleUserHomeManager = gradleUserHomeManager;
   }
 
@@ -47,6 +45,7 @@ public class GradleRunnerBuildSessionFactory implements MultiCommandBuildSession
   public MultiCommandBuildSession createSession(@NotNull BuildRunnerContext runnerContext)
    {
     GradleRunnerContext gradleRunnerContext = new GradleRunnerContext(runnerContext);
+    GradleVersionDetector gradleVersionDetector = new GradleVersionDetector(gradleRunnerContext);
     GradleCommandLineProvider gradleCommandLineProvider = new GradleCommandLineProvider(
       gradleRunnerContext,
       composerHolder,
@@ -54,10 +53,9 @@ public class GradleRunnerBuildSessionFactory implements MultiCommandBuildSession
       gradleLaunchModeSelector,
       gradleConfigurationCacheDetector,
       commandLineParametersProcessor,
-      gradleVersionDetector,
       gradleUserHomeManager
     );
-    return new GradleRunnerBuildSession(gradleRunnerContext, gradleCommandLineProvider);
+    return new GradleRunnerBuildSession(gradleRunnerContext, gradleVersionDetector, gradleCommandLineProvider);
    }
 
    @NotNull public AgentBuildRunnerInfo getBuildRunnerInfo()

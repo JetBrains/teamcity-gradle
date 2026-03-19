@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.util.VersionComparatorUtil;
-import org.gradle.util.internal.DefaultGradleVersion;
+import jetbrains.buildServer.gradle.agent.versionDetection.GradleVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +23,7 @@ public class GradleConfigurationCacheDetector {
                                              @NotNull List<String> gradleParams,
                                              @Nullable File gradleUserHome,
                                              @NotNull File projectDirectory,
-                                             @Nullable DefaultGradleVersion gradleVersion) {
+                                             @Nullable GradleVersion gradleVersion) {
     try {
       return gradleOptionValueFetcher.fetchOptionValue(
         GradleOptionValueFetchingParameters.builder()
@@ -51,7 +51,7 @@ public class GradleConfigurationCacheDetector {
                                                       @NotNull List<String> gradleParams,
                                                       @Nullable File gradleUserHome,
                                                       @NotNull File projectDirectory,
-                                                      @Nullable DefaultGradleVersion gradleVersion) {
+                                                      @Nullable GradleVersion gradleVersion) {
     try {
       return gradleOptionValueFetcher.fetchOptionValue(
         GradleOptionValueFetchingParameters.builder()
@@ -87,11 +87,11 @@ public class GradleConfigurationCacheDetector {
    * The key "org.gradle.configuration-cache" didn't work before version 8.1.
    * However, when it was present in gradle.properties, there were messages in the build log indicating that the configuration cache was detected, which could be misleading.
    */
-  public boolean isVersionWithStableConfigCache(@NotNull DefaultGradleVersion gradleVersion) {
+  public boolean isVersionWithStableConfigCache(@NotNull GradleVersion gradleVersion) {
     return VersionComparatorUtil.compare(gradleVersion.getVersion(), "8.1") >= 0;
   }
 
-  private Collection<String> getConfigurationCachePropertyNames(@Nullable DefaultGradleVersion gradleVersion,
+  private Collection<String> getConfigurationCachePropertyNames(@Nullable GradleVersion gradleVersion,
                                                                 @NotNull String stablePropertyName,
                                                                 @NotNull String unstablePropertyName) {
     if (gradleVersion == null) {

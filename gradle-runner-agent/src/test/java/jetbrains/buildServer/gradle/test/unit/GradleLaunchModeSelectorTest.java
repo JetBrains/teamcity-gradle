@@ -9,7 +9,7 @@ import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.GradleLaunchMode;
 import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
-import org.gradle.util.internal.DefaultGradleVersion;
+import jetbrains.buildServer.gradle.agent.versionDetection.GradleVersion;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
@@ -74,7 +74,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withGradleVersion(DefaultGradleVersion.version(gradleVersion))
+                                                                                                     .withGradleVersion(new GradleVersion(gradleVersion))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -94,7 +94,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
+                                                                                                     .withGradleVersion(new GradleVersion("8.0"))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -114,7 +114,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
+                                                                                                     .withGradleVersion(new GradleVersion("8.0"))
                                                                                                      .withConfigurationCacheEnabled(false)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -134,7 +134,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
+                                                                                                     .withGradleVersion(new GradleVersion("8.0"))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(true)
                                                                                                      .withUnsupportedByToolingArgs(Collections.emptySet())
@@ -156,7 +156,7 @@ public class GradleLaunchModeSelectorTest {
     GradleLaunchMode result = gradleLaunchModeSelector.selectMode(GradleLaunchModeSelector.Parameters.builder()
                                                                                                      .withLogger(logger)
                                                                                                      .withConfigurationParameters(configurationParameters)
-                                                                                                     .withGradleVersion(DefaultGradleVersion.version("8.0"))
+                                                                                                     .withGradleVersion(new GradleVersion("8.0"))
                                                                                                      .withConfigurationCacheEnabled(true)
                                                                                                      .withConfigurationCacheProblemsIgnored(false)
                                                                                                      .withUnsupportedByToolingArgs(unsupported)

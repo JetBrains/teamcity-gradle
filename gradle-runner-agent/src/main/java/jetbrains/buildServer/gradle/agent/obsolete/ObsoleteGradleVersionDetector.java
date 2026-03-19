@@ -1,4 +1,4 @@
-package jetbrains.buildServer.gradle.agent;
+package jetbrains.buildServer.gradle.agent.obsolete;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -11,7 +11,12 @@ import org.gradle.util.internal.DefaultGradleVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class GradleVersionDetector {
+/**
+ * Left for backwards compatibility,
+ * Remove in a few releases after 2026.1 if the new version detection implementation works without problems.
+ */
+@Deprecated
+public class ObsoleteGradleVersionDetector {
 
   @NotNull
   public Optional<DefaultGradleVersion> detect(@Nullable GradleConnector projectConnector, @NotNull BuildProgressLogger logger) {

@@ -8,8 +8,8 @@ import java.util.Optional;
 import java.util.Set;
 import jetbrains.buildServer.agent.BuildProgressLogger;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
+import jetbrains.buildServer.gradle.agent.versionDetection.GradleVersion;
 import jetbrains.buildServer.util.VersionComparatorUtil;
-import org.gradle.util.internal.DefaultGradleVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,7 +42,7 @@ public class GradleLaunchModeSelector {
   private Optional<GradleLaunchModeSelectionResult> tryToIdentifyModeIndirectly(@NotNull Parameters parameters,
                                                                                 @NotNull String configuredLaunchMode) {
     BuildProgressLogger logger = parameters.getLogger();
-    DefaultGradleVersion gradleVersion = parameters.getGradleVersion();
+    GradleVersion gradleVersion = parameters.getGradleVersion();
 
     if (!isVersionToolingApiCompatible(gradleVersion)) {
       return Optional.empty();
@@ -75,7 +75,7 @@ public class GradleLaunchModeSelector {
                                                       .build());
   }
 
-  private boolean isVersionToolingApiCompatible(@Nullable DefaultGradleVersion gradleVersion) {
+  private boolean isVersionToolingApiCompatible(@Nullable GradleVersion gradleVersion) {
     if (gradleVersion == null) {
       return false;
     }
@@ -112,7 +112,7 @@ public class GradleLaunchModeSelector {
     @NotNull
     private final Map<String, String> configurationParameters;
     @Nullable
-    private final DefaultGradleVersion gradleVersion;
+    private final GradleVersion gradleVersion;
     private final boolean configurationCacheEnabled;
     private final boolean configurationCacheProblemsIgnored;
     @NotNull
@@ -120,7 +120,7 @@ public class GradleLaunchModeSelector {
 
     private Parameters(@NotNull BuildProgressLogger logger,
                        @NotNull Map<String, String> configurationParameters,
-                       @Nullable DefaultGradleVersion gradleVersion,
+                       @Nullable GradleVersion gradleVersion,
                        boolean configurationCacheEnabled,
                        boolean configurationCacheProblemsIgnored,
                        @NotNull Set<String> unsupportedByToolingArgs) {
@@ -143,7 +143,7 @@ public class GradleLaunchModeSelector {
     }
 
     @Nullable
-    public DefaultGradleVersion getGradleVersion() {
+    public GradleVersion getGradleVersion() {
       return gradleVersion;
     }
 
@@ -168,7 +168,7 @@ public class GradleLaunchModeSelector {
     public static final class Builder {
       private BuildProgressLogger logger;
       private Map<String, String> configurationParameters;
-      private DefaultGradleVersion gradleVersion;
+      private GradleVersion gradleVersion;
       private boolean configurationCacheEnabled;
       private boolean configurationCacheProblemsIgnored;
       private Set<String> unsupportedByToolingArgs;
@@ -186,7 +186,7 @@ public class GradleLaunchModeSelector {
         return this;
       }
 
-      public Builder withGradleVersion(DefaultGradleVersion gradleVersion) {
+      public Builder withGradleVersion(GradleVersion gradleVersion) {
         this.gradleVersion = gradleVersion;
         return this;
       }

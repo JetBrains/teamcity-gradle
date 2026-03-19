@@ -17,7 +17,6 @@ import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
 import jetbrains.buildServer.gradle.agent.GradleRunnerContext;
 import jetbrains.buildServer.gradle.agent.GradleToolProvider;
 import jetbrains.buildServer.gradle.agent.GradleUserHomeManager;
-import jetbrains.buildServer.gradle.agent.GradleVersionDetector;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
@@ -26,6 +25,7 @@ import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiC
 import jetbrains.buildServer.gradle.agent.gradleExecution.GradleCommandLineProvider;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
+import jetbrains.buildServer.gradle.agent.obsolete.GradleConnectorProvider;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import jetbrains.buildServer.gradle.runtime.LauncherParameters;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -175,7 +175,7 @@ public class GradleCommandLineProviderTest {
   private ProgramCommandLine getGradleCommandLine() {
     GradleRunnerContext gradleRunnerContext = new GradleRunnerContext(myRunnerContext);
     GradleCommandLineProvider provider = createGradleCommandLineProvider(gradleRunnerContext);
-    return provider.getGradleCommandLine(TCSystemInfo.isUnix);
+    return provider.getGradleCommandLine(TCSystemInfo.isUnix, null, new GradleConnectorProvider(gradleRunnerContext));
   }
 
   @DataProvider(name = "gradle-version-provider")
@@ -437,7 +437,6 @@ public class GradleCommandLineProviderTest {
       myLaunchModeSelector,
       myConfigurationCacheDetector,
       myCommandLineParametersProcessor,
-      new GradleVersionDetector(),
       myGradleUserHomeManager
     );
   }

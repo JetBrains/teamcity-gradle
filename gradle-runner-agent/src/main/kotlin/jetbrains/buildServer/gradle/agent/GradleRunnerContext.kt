@@ -28,6 +28,7 @@ class GradleRunnerContext(val buildRunnerContext: BuildRunnerContext) {
     val isWrapperPropertiesFileMissing: Boolean
     val noWrapperInVirtualContext: Boolean
 
+    val workingDirectory = buildRunnerContext.workingDirectory
     val build = buildRunnerContext.build
     val buildLogger = build.buildLogger
 

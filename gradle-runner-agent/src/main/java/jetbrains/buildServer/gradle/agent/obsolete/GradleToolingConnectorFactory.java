@@ -1,4 +1,4 @@
-package jetbrains.buildServer.gradle.agent;
+package jetbrains.buildServer.gradle.agent.obsolete;
 
 import java.io.File;
 import java.util.Map;
@@ -8,6 +8,11 @@ import org.gradle.tooling.GradleConnector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Left for backwards compatibility,
+ * Remove in a few releases after 2026.1 if the new version / user home detection implementations work without problems.
+ */
+@Deprecated
 public class GradleToolingConnectorFactory {
 
   @NotNull

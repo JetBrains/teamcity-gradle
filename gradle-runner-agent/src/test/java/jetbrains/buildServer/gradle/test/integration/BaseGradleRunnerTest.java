@@ -11,11 +11,10 @@ import java.util.function.Function;
 import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
+import jetbrains.buildServer.agent.impl.OSTypeDetector;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.MultiCommandBuildSession;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
-import jetbrains.buildServer.agent.DefaultVirtualContext;
-import jetbrains.buildServer.agent.impl.OSTypeDetector;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.*;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
@@ -356,7 +355,6 @@ public class BaseGradleRunnerTest {
         new GradleLaunchModeSelector(),
         new GradleConfigurationCacheDetector(new GradleOptionValueFetcher()),
         new CommandLineParametersProcessor(),
-        new GradleVersionDetector(),
         new GradleUserHomeManager()
     );
 

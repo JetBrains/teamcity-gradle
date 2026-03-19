@@ -6,9 +6,9 @@ import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProce
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerParameters
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector
+import jetbrains.buildServer.gradle.agent.obsolete.GradleConnectorProvider
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer
-import org.gradle.tooling.GradleConnector
-import java.io.File
+import jetbrains.buildServer.gradle.agent.versionDetection.GradleVersion
 import java.util.*
 import java.util.stream.Collectors
 import java.util.stream.Stream
@@ -20,14 +20,13 @@ class GradleCommandLineProvider(
     private val gradleLaunchModeSelector: GradleLaunchModeSelector,
     private val gradleConfigurationCacheDetector: GradleConfigurationCacheDetector,
     private val commandLineParametersProcessor: CommandLineParametersProcessor,
-    private val gradleVersionDetector: GradleVersionDetector,
     private val gradleUserHomeManager: GradleUserHomeManager
 ) {
     private val build = gradleRunnerContext.build
     private val logger = build.buildLogger
     private val workingDirectory = gradleRunnerContext.buildRunnerContext.workingDirectory
 
-    fun getGradleCommandLine(isUnix: Boolean): ProgramCommandLine {
+    fun getGradleCommandLine(isUnix: Boolean, detectedGradleVersion: GradleVersion?, connectorProvider: GradleConnectorProvider): ProgramCommandLine {
         val gradleTasks = tasksComposer.getGradleTasks(gradleRunnerContext.buildRunnerContext.runnerParameters)
         val userDefinedParams = ConfigurationParamsUtil.getGradleParams(gradleRunnerContext.buildRunnerContext.runnerParameters)
 
@@ -45,14 +44,13 @@ class GradleCommandLineProvider(
             )
         }
 
-        val projectConnector = getGradleConnector(workingDirectory, gradleRunnerContext.useWrapper, gradleRunnerContext.gradleHome, gradleRunnerContext.gradleWrapperProperties)
+        val projectConnector = connectorProvider.getConnector()
         val gradleUserHome = gradleUserHomeManager.detectGradleUserHome(gradleTasks, userDefinedParams, gradleRunnerContext.environmentVariables, projectConnector).orElse(null)
-        val gradleVersion = gradleVersionDetector.detect(projectConnector, logger).orElse(null)
         val configurationCacheEnabled = gradleConfigurationCacheDetector.isConfigurationCacheEnabled(
-            logger, gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion
+            logger, gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, detectedGradleVersion
         )
         val configurationCacheProblemsIgnored = gradleConfigurationCacheDetector.areConfigurationCacheProblemsIgnored(
-            logger, gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, gradleVersion
+            logger, gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, detectedGradleVersion
         )
         val unsupportedByToolingArgs = commandLineParametersProcessor.obtainUnsupportedArguments(
             Stream.concat(gradleTasks.stream(), userDefinedParams.stream()).collect(Collectors.toList())
@@ -63,7 +61,7 @@ class GradleCommandLineProvider(
                 .builder()
                 .withLogger(logger)
                 .withConfigurationParameters(gradleRunnerContext.buildRunnerContext.configParameters)
-                .withGradleVersion(gradleVersion)
+                .withGradleVersion(detectedGradleVersion)
                 .withConfigurationCacheEnabled(configurationCacheEnabled)
                 .withConfigurationCacheProblemsIgnored(configurationCacheProblemsIgnored)
                 .withUnsupportedByToolingArgs(unsupportedByToolingArgs)
@@ -120,25 +118,5 @@ class GradleCommandLineProvider(
             .withExePath(executablePath)
             .withLaunchModeSelectionResult(launchModeSelectionResult)
             .build()
-    }
-
-    private fun getGradleConnector(
-        workingDirectory: File,
-        useWrapper: Boolean,
-        gradleHome: File?,
-        gradleWrapperProperties: File?
-    ): GradleConnector? {
-        return try {
-            GradleToolingConnectorFactory.instantiate(
-                workingDirectory,
-                useWrapper,
-                gradleHome,
-                gradleWrapperProperties,
-                gradleRunnerContext.buildRunnerContext.configParameters
-            )
-        } catch (t: Throwable) {
-            logger.warning("Unable to obtain project connector: ${t.message}")
-            null
-        }
     }
 }
