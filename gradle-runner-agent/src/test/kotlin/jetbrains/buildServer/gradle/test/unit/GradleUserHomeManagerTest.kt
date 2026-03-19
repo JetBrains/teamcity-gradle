@@ -4,11 +4,9 @@ import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
+import jetbrains.buildServer.gradle.agent.GradleRunnerContext
 import jetbrains.buildServer.gradle.agent.GradleUserHomeManager
-import org.gradle.tooling.GradleConnector
-import org.gradle.tooling.ProjectConnection
-import org.gradle.tooling.model.build.BuildEnvironment
-import org.gradle.tooling.model.build.GradleEnvironment
 import org.testng.Assert.assertEquals
 import org.testng.Assert.assertTrue
 import org.testng.annotations.BeforeMethod
@@ -18,14 +16,10 @@ import java.io.File
 
 @Test
 class GradleUserHomeManagerTest {
-    @MockK private lateinit var projectConnector: GradleConnector
-    @MockK private lateinit var projectConnection: ProjectConnection
-    @MockK private lateinit var buildEnvironment: BuildEnvironment
-    @MockK private lateinit var gradleEnvironment: GradleEnvironment
+    @MockK private lateinit var gradleRunnerContext: GradleRunnerContext
     private lateinit var gradleUserHomeManager: GradleUserHomeManager
     private val gradleUserHomeEnv = File("/GradleUserHome/FromEnvironment")
     private val environmentVariables = mapOf("GRADLE_USER_HOME" to gradleUserHomeEnv.path)
-    private val gradleUserHomeDefault = File("/UserHome/.gradle")
 
     @BeforeMethod
     fun setUp() {
@@ -33,10 +27,7 @@ class GradleUserHomeManagerTest {
         clearAllMocks()
         gradleUserHomeManager = GradleUserHomeManager()
 
-        every { projectConnector.connect() } returns projectConnection
-        every { projectConnection.getModel(BuildEnvironment::class.java) } returns buildEnvironment
-        every { buildEnvironment.gradle } returns gradleEnvironment
-        every { gradleEnvironment.gradleUserHome } returns gradleUserHomeDefault
+        every { gradleRunnerContext.environmentVariables } returns environmentVariables
     }
 
     @DataProvider
@@ -115,7 +106,7 @@ class GradleUserHomeManagerTest {
                                                                       gradleArguments: List<String>,
                                                                       expectedValue: File) {
         // act
-        val result = gradleUserHomeManager.detectGradleUserHome(gradleTasks, gradleArguments, environmentVariables, projectConnector)
+        val result = gradleUserHomeManager.detectGradleUserHome(gradleTasks, gradleArguments, gradleRunnerContext, mockk(relaxed = true))
 
         // assert
         assertTrue(result.isPresent)
@@ -129,7 +120,7 @@ class GradleUserHomeManagerTest {
         val gradleArguments = listOf("--info")
 
         // act
-        val result = gradleUserHomeManager.detectGradleUserHome(gradleTasks, gradleArguments, environmentVariables, projectConnector)
+        val result = gradleUserHomeManager.detectGradleUserHome(gradleTasks, gradleArguments, gradleRunnerContext, mockk(relaxed = true))
 
         // assert
         assertTrue(result.isPresent)
@@ -141,12 +132,14 @@ class GradleUserHomeManagerTest {
         // arrange
         val gradleTasks = listOf("clean build")
         val gradleArguments = listOf("--info")
+        every { gradleRunnerContext.environmentVariables } returns mapOf()
+        System.setProperty("user.home", "/UserHome")
 
         // act
-        val result = gradleUserHomeManager.detectGradleUserHome(gradleTasks, gradleArguments, mapOf(), projectConnector)
+        val result = gradleUserHomeManager.detectGradleUserHome(gradleTasks, gradleArguments, gradleRunnerContext, mockk(relaxed = true))
 
         // assert
         assertTrue(result.isPresent)
-        assertEquals(result.get(), gradleUserHomeDefault)
+        assertEquals(result.get(), File("/UserHome/.gradle"))
     }
 }

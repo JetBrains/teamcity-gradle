@@ -7,4 +7,10 @@ object GradleConnectorFeatureFlags {
     @Deprecated("Remove in a few releases after 2026.1 if the new version detection implementation works without problems")
     fun GradleRunnerContext.shouldUseObsoleteVersionDetection(): Boolean =
         buildRunnerContext.configParameters["teamcity.internal.gradle.runner.useProjectConnectorVersionDetection"]?.toBoolean() ?: false
+
+    @JvmStatic
+    @Deprecated("Remove in a few releases after 2026.1 if the new user home detection implementation works without problems")
+    fun shouldUseObsoleteUserHomeDetection(gradleRunnerContext: GradleRunnerContext): Boolean =
+        gradleRunnerContext
+            .buildRunnerContext.configParameters["teamcity.internal.gradle.runner.useProjectConnectorUserHomeDetection"]?.toBoolean() ?: false
 }

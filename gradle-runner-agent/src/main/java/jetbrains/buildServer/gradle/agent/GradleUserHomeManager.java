@@ -7,11 +7,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jetbrains.buildServer.gradle.agent.obsolete.GradleConnectorFeatureFlags;
+import jetbrains.buildServer.gradle.agent.obsolete.GradleConnectorProvider;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.model.build.BuildEnvironment;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static jetbrains.buildServer.gradle.agent.util.GradleCommandLineUtil.extractEqualSignSeparatedParamValue;
 
@@ -32,19 +34,19 @@ public class GradleUserHomeManager {
   @NotNull
   public Optional<File> detectGradleUserHome(@NotNull List<String> gradleTasks,
                                              @NotNull List<String> gradleParams,
-                                             @NotNull Map<String, String> env,
-                                             @Nullable GradleConnector projectConnector) {
+                                             @NotNull GradleRunnerContext gradleRunnerContext,
+                                             @NotNull GradleConnectorProvider connectorProvider) {
     Optional<File> overriddenInCommandLine = tryToGetFromCommandLine(gradleTasks, gradleParams);
     if (overriddenInCommandLine.isPresent()) {
       return overriddenInCommandLine;
     }
 
-    Optional<File> overriddenInEvironmentVariables = tryToGetFromEnvironmentVariables(env);
+    Optional<File> overriddenInEvironmentVariables = tryToGetFromEnvironmentVariables(gradleRunnerContext.getEnvironmentVariables());
     if (overriddenInEvironmentVariables.isPresent()) {
       return overriddenInEvironmentVariables;
     }
 
-    return Optional.ofNullable(projectConnector).map(this::tryToDetectDefault).orElse(Optional.empty());
+    return tryToDetectDefault(gradleRunnerContext, connectorProvider);
   }
 
   /**
@@ -89,13 +91,25 @@ public class GradleUserHomeManager {
     return Optional.ofNullable(env.get("GRADLE_USER_HOME")).map(File::new);
   }
 
-  private Optional<File> tryToDetectDefault(@NotNull GradleConnector projectConnector) {
-    try (ProjectConnection connection = projectConnector.connect()) {
-      BuildEnvironment buildEnvironment = connection.getModel(BuildEnvironment.class);
-      return Optional.ofNullable(buildEnvironment.getGradle().getGradleUserHome());
-    } catch (Throwable t) {
-      LOG.warnAndDebugDetails("Unable to detect Gradle User Home", t);
-      return Optional.empty();
+  private Optional<File> tryToDetectDefault(@NotNull GradleRunnerContext gradleRunnerContext, @NotNull GradleConnectorProvider connectorProvider) {
+    if (GradleConnectorFeatureFlags.shouldUseObsoleteUserHomeDetection(gradleRunnerContext)) {
+      GradleConnector projectConnector = connectorProvider.getConnector();
+      if (projectConnector == null) {
+        return Optional.empty();
+      }
+
+      try (ProjectConnection connection = projectConnector.connect()) {
+        BuildEnvironment buildEnvironment = connection.getModel(BuildEnvironment.class);
+        return Optional.ofNullable(buildEnvironment.getGradle().getGradleUserHome());
+      } catch (Throwable t) {
+        LOG.warnAndDebugDetails("Unable to detect Gradle User Home", t);
+        return Optional.empty();
+      }
     }
+
+    // This matches the previous Gradle User Home resolution logic which used Gradle's Tooling API (see Gradle's GradleUserHomeLookup).
+    // In a virtual context this will return the Gradle User Home on the host, which might or might not be desirable.
+    String defaultLocation = System.getProperty("user.home") + "/.gradle";
+    return Optional.of(new File(defaultLocation));
   }
 }

@@ -44,8 +44,12 @@ class GradleCommandLineProvider(
             )
         }
 
-        val projectConnector = connectorProvider.getConnector()
-        val gradleUserHome = gradleUserHomeManager.detectGradleUserHome(gradleTasks, userDefinedParams, gradleRunnerContext.environmentVariables, projectConnector).orElse(null)
+        val gradleUserHome = gradleUserHomeManager.detectGradleUserHome(
+            gradleTasks,
+            userDefinedParams,
+            gradleRunnerContext,
+            connectorProvider
+        ).orElse(null)
         val configurationCacheEnabled = gradleConfigurationCacheDetector.isConfigurationCacheEnabled(
             logger, gradleTasks, userDefinedParams, gradleUserHome, workingDirectory, detectedGradleVersion
         )

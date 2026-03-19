@@ -1,22 +1,17 @@
 package jetbrains.buildServer.gradle.test.unit;
 
 import com.intellij.openapi.util.TCSystemInfo;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.*;
 import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.TempFiles;
-import jetbrains.buildServer.agent.*;
+import jetbrains.buildServer.agent.AgentRunningBuild;
+import jetbrains.buildServer.agent.BuildAgentConfiguration;
+import jetbrains.buildServer.agent.BuildParametersMap;
+import jetbrains.buildServer.agent.BuildRunnerContext;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil;
-import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
-import jetbrains.buildServer.gradle.agent.GradleRunnerContext;
-import jetbrains.buildServer.gradle.agent.GradleToolProvider;
-import jetbrains.buildServer.gradle.agent.GradleUserHomeManager;
+import jetbrains.buildServer.gradle.agent.*;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
@@ -41,6 +36,11 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.*;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static org.assertj.core.api.BDDAssertions.then;
