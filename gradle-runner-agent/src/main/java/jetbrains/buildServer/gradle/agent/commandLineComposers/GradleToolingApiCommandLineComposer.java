@@ -41,6 +41,13 @@ import org.slf4j.impl.StaticLoggerBinder;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static jetbrains.buildServer.gradle.agent.ConfigurationParamsUtil.getBooleanOrDefault;
+import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.TEAMCITY_BUILD_CHANGED_FILES_KEY;
+import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY;
+import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY;
+import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.TEAMCITY_BUILD_TEMP_DIR_KEY;
+import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY;
+import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY;
+import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY;
 
 public class GradleToolingApiCommandLineComposer implements GradleCommandLineComposer {
   @NotNull
@@ -95,7 +102,48 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
       .ofNullable(System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY))
       .ifPresent(it -> props.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, it));
 
+    Optional<Boolean> doNotPopulateGradleProperties = Optional
+            .ofNullable(parameters.getConfigParameters().get(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES))
+            .map(Boolean::valueOf);
+    if (doNotPopulateGradleProperties.isPresent()) {
+      props.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, doNotPopulateGradleProperties.get().toString());
+      // Set up the system properties needed for the init script when Gradle properties are not available
+      if (doNotPopulateGradleProperties.get()) {
+        Map<String, String> systemPropertiesForInitScript = getSystemPropertiesRequiredByInitScript(parameters);
+        props.putAll(systemPropertiesForInitScript);
+      }
+    }
+
     return props;
+  }
+
+  private Map<String, String> getSystemPropertiesRequiredByInitScript(@NotNull GradleCommandLineComposerParameters parameters) {
+    Map<String, String> systemPropertiesForInitScript = new HashMap<>();
+    Map<String, String> buildSystemProperties = parameters.getRunnerContext().getBuildParameters().getSystemProperties();
+    Map<String, String> buildConfigParameters = parameters.getConfigParameters();
+
+    String gradleTestJvmArgsSystemProp = buildSystemProperties.getOrDefault(TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY, "");
+    systemPropertiesForInitScript.put(TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY, gradleTestJvmArgsSystemProp);
+
+    String buildStacktraceLogDirSystemProp = buildSystemProperties.getOrDefault(TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY, "");
+    systemPropertiesForInitScript.put(TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY, buildStacktraceLogDirSystemProp);
+
+    String buildChangedFilesFileSystemProp = buildSystemProperties.getOrDefault(TEAMCITY_BUILD_CHANGED_FILES_KEY, "");
+    systemPropertiesForInitScript.put(TEAMCITY_BUILD_CHANGED_FILES_KEY, buildChangedFilesFileSystemProp);
+
+    String buildTempDirSystemProp = buildSystemProperties.getOrDefault(TEAMCITY_BUILD_TEMP_DIR_KEY, "");
+    systemPropertiesForInitScript.put(TEAMCITY_BUILD_TEMP_DIR_KEY, buildTempDirSystemProp);
+
+    String useTestRetryPluginConfigParam = buildConfigParameters.getOrDefault(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY, "true");
+    systemPropertiesForInitScript.put(TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY, useTestRetryPluginConfigParam);
+
+    String testNameFormatConfigParam = buildConfigParameters.getOrDefault(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY, "");
+    systemPropertiesForInitScript.put(TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY, testNameFormatConfigParam);
+
+    String ignoredSuiteFormatConfigParam = buildConfigParameters.getOrDefault(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY, "");
+    systemPropertiesForInitScript.put(TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY, ignoredSuiteFormatConfigParam);
+
+    return systemPropertiesForInitScript;
   }
 
   @NotNull

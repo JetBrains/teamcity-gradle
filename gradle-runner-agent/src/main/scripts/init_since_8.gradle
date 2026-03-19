@@ -66,10 +66,10 @@ public class DependencyBasedTestRun {
 
 
   private def findAffectedProjects(Project project) {
-    String changedFilesFile = (String) project.teamcity[TEAMCITY_BUILD_CHANGED_FILES_KEY]
+    String changedFilesFile = Util.getPropertyFromProjectOrSystemProperties(project, TEAMCITY_BUILD_CHANGED_FILES_KEY)
 
     if (changedFilesFile != null && !changedFilesFile.equals("")) {
-      def changedFiles = readChangedFiles(project.teamcity)
+      def changedFiles = readChangedFiles(changedFilesFile)
       def sourceSetsToProject = readSourceSets(project)
 
       logger.debug("Modified Files: ${changedFiles}")
@@ -104,8 +104,8 @@ public class DependencyBasedTestRun {
     return result
   }
 
-  private def readChangedFiles(Map TCProps) {
-    def lines = new File(TCProps[TEAMCITY_BUILD_CHANGED_FILES_KEY]).readLines()
+  private def readChangedFiles(String changedFilesFile) {
+    def lines = new File(changedFilesFile).readLines()
     def personalMatch = /(.*):(.*):<personal>/
     def allMatch = /(.*):(.*):(.*)/
 
@@ -283,8 +283,8 @@ class ProjectPropertyStorage {
   private final File buildDir
 
   ProjectPropertyStorage(Project project) {
-    this.buildStacktraceLogDir = getPropertyFromProject(project, TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY)
-    this.buildTempDir = getPropertyFromProject(project, TEAMCITY_BUILD_TEMP_DIR_KEY)
+    this.buildStacktraceLogDir = Util.getPropertyFromProjectOrSystemProperties(project, TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY)
+    this.buildTempDir = Util.getPropertyFromProjectOrSystemProperties(project, TEAMCITY_BUILD_TEMP_DIR_KEY)
     this.buildDir = project.buildDir
   }
 
@@ -302,12 +302,6 @@ class ProjectPropertyStorage {
 
   File getBuildDir() {
     buildDir
-  }
-
-  private String getPropertyFromProject(Project project, String name) {
-    return project.hasProperty("ext")
-            ? project.ext.teamcity[name]
-            : project.property(name)
   }
 }
 
@@ -628,7 +622,8 @@ public class TeamcityRerunTestsListener implements ProjectEvaluationListener {
     if (TeamcityRerunTestsService.newOption == "true") return
     TeamcityRerunTestsService.newOption = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY")
     if ("true".equals(TeamcityRerunTestsService.newOption)) return
-    if (propertyReader != null && propertyReader[TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY] == "false") return
+    def useTestRetryPlugin = Util.getPropertyFromPropertyReaderOrSystemProperties(propertyReader, TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY)
+    if (useTestRetryPlugin == "false") return
 
     project.gradle.taskGraph.whenReady { graph ->
       for (Task task : graph.allTasks) {
@@ -960,6 +955,26 @@ class GradleDaemonClasspathEnhancer implements Action<Test> {
   }
 }
 
+public class Util {
+  static String getPropertyFromProjectOrSystemProperties(Project project, String propertyName) {
+    boolean gradlePropertiesNotPopulated = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES))
+    if (gradlePropertiesNotPopulated) {
+      return System.getProperty(propertyName)
+    } else {
+      return project.teamcity[propertyName]
+    }
+  }
+
+  static String getPropertyFromPropertyReaderOrSystemProperties(Map propertyReader, String propertyName) {
+    boolean gradlePropertiesNotPopulated = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES))
+    if (gradlePropertiesNotPopulated) {
+      return System.getProperty(propertyName)
+    } else {
+      return propertyReader[propertyName]
+    }
+  }
+}
+
 List<String> gradleDaemonEnhancementClassNames = initGradleDaemonEnhancementClassNames()
 
 def initGradleDaemonEnhancementClassNames() {
@@ -980,15 +995,19 @@ final AtomicLong testCounter = new AtomicLong(0)
 
 String propsFilePath = System.getProperty(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY)
 if (null == propsFilePath) propsFilePath = System.getenv(TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY)
+boolean doNotPopulateGradleProperties = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES))
 boolean shouldReadAllParameters = Boolean.valueOf(System.getProperty(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM))
-final Map propertyReader = propsFilePath != null ? new GradleBuildPropertiesContainer(propsFilePath, shouldReadAllParameters) : [:]
+final Map propertyReader = !doNotPopulateGradleProperties && propsFilePath != null ?
+        new GradleBuildPropertiesContainer(propsFilePath, shouldReadAllParameters) :
+        [:]
 
 gradle.addListener(new TeamcityPropertiesListener(logger, propertyReader, { project ->
   // init jvm args
-  final String jvmargs = (String)project.teamcity[TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY]
+  final String jvmargs = Util.getPropertyFromProjectOrSystemProperties(project, TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY)
   final String[] arguments = jvmargs == null || jvmargs.equals("") ? new String[0] : jvmargs.split("\n")
   project.tasks.withType(AbstractTestTask).configureEach { task ->
-    new TestTaskWrapper(task).setTmpDirectory(project.teamcity[TEAMCITY_BUILD_TEMP_DIR_KEY]).jvmArgs(arguments)
+    def buildTempDirectory = Util.getPropertyFromProjectOrSystemProperties(project, TEAMCITY_BUILD_TEMP_DIR_KEY)
+    new TestTaskWrapper(task).setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
   }
 }))
 
@@ -1004,13 +1023,15 @@ gradle.projectsEvaluated { Gradle gradle ->
   gradle.rootProject.allprojects { Project project ->
     project.tasks.withType(AbstractTestTask).configureEach { task ->
       TestTaskWrapper testTask = new TestTaskWrapper(task)
-      def descriptor = TestNameDescriptor.of(propertyReader[TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY])
+      def testNameFormat = Util.getPropertyFromPropertyReaderOrSystemProperties(propertyReader, TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY)
+      def descriptor = TestNameDescriptor.of(testNameFormat)
 
-      def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, descriptor,
-                                                  propertyReader[TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY], [
-                                                          out: Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"]),
-                                                          err: Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
-                                                  ])
+      def ignoredSuiteFormat = Util.getPropertyFromPropertyReaderOrSystemProperties(propertyReader, TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY)
+      def skip = [
+              out: Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"]),
+              err: Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
+      ]
+      def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, descriptor, ignoredSuiteFormat, skip)
       testTask.addTestListener(testListener)
       testTask.addTestOutputListener(testListener)
 

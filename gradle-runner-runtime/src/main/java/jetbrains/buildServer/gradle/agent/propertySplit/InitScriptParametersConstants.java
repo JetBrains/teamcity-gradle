@@ -24,6 +24,7 @@ public class InitScriptParametersConstants {
   public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY;
   public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY;
   public static final String GRADLE_RUNNER_READ_ALL_CONFIG_PARAM = GradleRunnerConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM;
+  public static final String GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES = GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES;
 
   public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = GradleRunnerConstants.GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY;
 }
