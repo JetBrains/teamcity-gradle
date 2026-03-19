@@ -18,7 +18,7 @@
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerOpentest4jTest"/>
       <class name="jetbrains.buildServer.gradle.test.integration.GradleRunnerBuildCacheTest"/>
 
-      <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerServiceTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleCommandLineProviderTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.TeamCityBuildPropertiesGradleSplitterTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleLaunchModeSelectorTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleJvmArgsMergerTest"/>
@@ -26,6 +26,9 @@
       <class name="jetbrains.buildServer.gradle.test.unit.GradleDaemonEnhancementClassesProviderTest"/>
 
       <!-- Kotlin -->
+      <class name="jetbrains.buildServer.gradle.test.unit.gradleExecution.GradleCommandExecutionTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerBuildSessionTest"/>
+      <class name="jetbrains.buildServer.gradle.test.unit.GradleRunnerContextTest"/>
       <class name="jetbrains.buildServer.gradle.test.unit.GradleUserHomeManagerTest"/>
     </classes>
   </test>

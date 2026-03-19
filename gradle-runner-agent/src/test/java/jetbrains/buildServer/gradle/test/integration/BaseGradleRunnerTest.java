@@ -14,7 +14,8 @@ import jetbrains.buildServer.agent.*;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.MultiCommandBuildSession;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
-import jetbrains.buildServer.agent.runner2.SingleCommandLineBuildSessionFactoryAdapter;
+import jetbrains.buildServer.agent.DefaultVirtualContext;
+import jetbrains.buildServer.agent.impl.OSTypeDetector;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.*;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
@@ -349,7 +350,7 @@ public class BaseGradleRunnerTest {
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
 
-    final SingleCommandLineBuildSessionFactoryAdapter adapter = new SingleCommandLineBuildSessionFactoryAdapter(new GradleRunnerServiceFactory(
+    final GradleRunnerBuildSessionFactory factory = new GradleRunnerBuildSessionFactory(
         composerHolder,
         tasksComposer,
         new GradleLaunchModeSelector(),
@@ -357,9 +358,9 @@ public class BaseGradleRunnerTest {
         new CommandLineParametersProcessor(),
         new GradleVersionDetector(),
         new GradleUserHomeManager()
-    ));
+    );
 
-    final MultiCommandBuildSession session = adapter.createSession(myMockRunner);
+    final MultiCommandBuildSession session = factory.createSession(myMockRunner);
     final GenericCommandLineBuildProcess proc = new GenericCommandLineBuildProcess(myMockRunner, session, myMockExtensionHolder);
     proc.start();
     proc.waitFor();
@@ -474,6 +475,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockRunner).getBuild(); will(returnValue(myMockBuild));
       allowing(myMockRunner).getRunType(); will(returnValue(GradleRunnerConstants.RUNNER_TYPE));
       allowing(myMockRunner).isVirtualContext(); will(returnValue(myVirtualContext));
+      allowing(myMockRunner).getVirtualContext(); will(returnValue(new DefaultVirtualContext(new OSTypeDetector(), false)));
 
       allowing(buildParams).getAllParameters(); will(returnValue(myBuildEnvVars));
       allowing(buildParams).getEnvironmentVariables(); will(returnValue(myBuildEnvVars));
@@ -487,6 +489,7 @@ public class BaseGradleRunnerTest {
       allowing(myMockLogger).logBuildProblem(with(any(BuildProblemData.class)));
       allowing(myMockLogger).activityFinished(with(any(String.class)), with(any(String.class)));
       allowing(myMockLogger).ignoreServiceMessages(with(any(Runnable.class)));
+      allowing(myMockLogger).debug(with(any(String.class)));
 
       allowing(myMockExtensionHolder).getExtensions(with(Expectations.<Class<AgentExtension>>anything())); will(returnValue(Collections.emptyList()));
 
