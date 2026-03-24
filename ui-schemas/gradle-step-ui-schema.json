@@ -1,5 +1,6 @@
 {
   "type": "VerticalLayout",
+  "title": "Gradle",
   "elements": [
     {
       "type": "InputPathControl",
