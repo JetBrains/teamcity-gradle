@@ -2,7 +2,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
 import javax.inject.Inject
 import org.gradle.api.flow.*
@@ -52,9 +51,10 @@ public class DependencyBasedTestRun {
 
 
   private def findAffectedProjects(Project project) {
+    String changedFilesFile = System.getProperty("teamcity.build.changedFiles.file")
 
-    if (project.teamcity.containsKey("teamcity.build.changedFiles.file")) {
-      def changedFiles = readChangedFiles(project.teamcity);
+    if (changedFilesFile != null && !changedFilesFile.isEmpty()) {
+      def changedFiles = readChangedFiles(changedFilesFile)
       def sourceSetsToProject = readSourceSets(project);
 
       logger.debug("Modified Files: ${changedFiles}")
@@ -89,10 +89,8 @@ public class DependencyBasedTestRun {
     return result
   }
 
-  private def readChangedFiles(Map TCProps) {
-    String filename = TCProps["teamcity.build.changedFiles.file"]
-
-    def lines = new File(filename).readLines()
+  private def readChangedFiles(String changedFilesFile) {
+    def lines = new File(changedFilesFile).readLines()
     def personalMatch = /(.*):(.*):<personal>/
     def allMatch = /(.*):(.*):(.*)/
 
@@ -1246,20 +1244,15 @@ class TestFilterWrapper {
   }
 }
 
-final AtomicLong testCounter = new AtomicLong(0);
-final AtomicReference<Properties> tcConfigurationParameters = new AtomicReference<Properties>(new Properties())
+final AtomicLong testCounter = new AtomicLong(0)
 
 gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
   // init jvm args
-  final String jvmargs = (String)project.teamcity["gradle.test.jvmargs"]
-  final String[] arguments = jvmargs == null ? new String[0] : jvmargs.split("\n")
+  final String jvmargs = System.getProperty("gradle.test.jvmargs")
+  final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
   TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper task ->
-    task.setTmpDirectory(project.teamcity["teamcity.build.tempDir"]).jvmArgs(arguments)
-  }
-  // read teamcity configuration parameters
-  String tcConfigFile = project.teamcity["teamcity.configuration.properties.file"]
-  if (tcConfigFile != null && new File(tcConfigFile).exists()) {
-    tcConfigurationParameters.set(TeamcityPropertiesListener.getProps(project, logger, tcConfigFile))
+    def buildTempDirectory = System.getProperty("teamcity.build.tempDir")
+    task.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
   }
 }))
 
@@ -1271,11 +1264,11 @@ gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
   gradle.rootProject.allprojects { Project project ->
     TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
-      Properties tcConfigParams = tcConfigurationParameters.get()
-      def descriptor = TestNameDescriptor.of(tcConfigParams["teamcity.internal.gradle.testNameFormat"])
+      def testNameFormat = System.getProperty("teamcity.internal.gradle.testNameFormat")
+      def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
+      def ignoredSuiteFormat = System.getProperty("teamcity.internal.gradle.ignoredSuiteFormat")
 
-      def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, descriptor,
-                                                  tcConfigParams["teamcity.internal.gradle.ignoredSuiteFormat"])
+      def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
       testTask.addTestListener(testListener)
       testTask.addTestOutputListener(testListener)
       testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
