@@ -23,20 +23,29 @@ public class GradleLaunchModeSelector {
   @NotNull
   public GradleLaunchModeSelectionResult selectMode(@NotNull Parameters parameters) {
     String configuredLaunchMode = ConfigurationParamsUtil.getGradleLaunchMode(parameters.getConfigurationParameters());
-    GradleLaunchModeSelectionResult defaultMode = GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.COMMAND_LINE).build();
 
-    if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE)) {
-      return defaultMode;
+    switch (configuredLaunchMode) {
+      case GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE:
+        return getExplicit(GradleLaunchMode.COMMAND_LINE, configuredLaunchMode);
+      case GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_V2_LAUNCH_MODE:
+        return getExplicit(GradleLaunchMode.COMMAND_LINE_V2, configuredLaunchMode);
+      case GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE:
+        return getExplicit(GradleLaunchMode.TOOLING_API, configuredLaunchMode);
     }
 
-    if (configuredLaunchMode.equals(GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE)) {
-      return GradleLaunchModeSelectionResult.builder()
-                                            .withLaunchMode(GradleLaunchMode.TOOLING_API)
-                                            .withReason(composeLaunchingViaToolingApiReason(configuredLaunchMode, false, false))
-                                            .build();
-    }
+    GradleLaunchModeSelectionResult commandLineLaunchMode = GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.COMMAND_LINE).build();
+    return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode).orElse(commandLineLaunchMode);
+  }
 
-    return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode).orElse(defaultMode);
+  private GradleLaunchModeSelectionResult getExplicit(GradleLaunchMode launchMode, String configuredLaunchMode) {
+    String reason = "\"" + GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM + "\"" +
+            " configuration parameter" +
+            " is set to " +
+            "\"" + configuredLaunchMode + "\"";
+    return GradleLaunchModeSelectionResult.builder()
+            .withLaunchMode(launchMode)
+            .withReason(reason)
+            .build();
   }
 
   private Optional<GradleLaunchModeSelectionResult> tryToIdentifyModeIndirectly(@NotNull Parameters parameters,
@@ -71,7 +80,7 @@ public class GradleLaunchModeSelector {
 
     return Optional.of(GradleLaunchModeSelectionResult.builder()
                                                       .withLaunchMode(GradleLaunchMode.TOOLING_API)
-                                                      .withReason(composeLaunchingViaToolingApiReason(configuredLaunchMode, true, true))
+                                                      .withReason(composeLaunchingViaToolingApiReason(configuredLaunchMode))
                                                       .build());
   }
 
@@ -83,9 +92,7 @@ public class GradleLaunchModeSelector {
   }
 
   @NotNull
-  private String composeLaunchingViaToolingApiReason(@NotNull String configuredLaunchMode,
-                                                     boolean reportVersionToolingCompatible,
-                                                     boolean reportConfigurationCacheEnabled) {
+  private String composeLaunchingViaToolingApiReason(@NotNull String configuredLaunchMode) {
     List<String> result = new ArrayList<>();
 
     if (!configuredLaunchMode.isEmpty()) {
@@ -95,15 +102,10 @@ public class GradleLaunchModeSelector {
                                     .append("\"").append(configuredLaunchMode).append("\"").toString());
     }
 
-    if (reportVersionToolingCompatible) {
-      result.add(new StringBuilder().append("Gradle version is ").append(GRADLE_TOOLING_API_VERSION_FROM).append("+").toString());
-    }
+    result.add(new StringBuilder().append("Gradle version is ").append(GRADLE_TOOLING_API_VERSION_FROM).append("+").toString());
+    result.add("Gradle's configuration-cache is enabled");
 
-    if (reportConfigurationCacheEnabled) {
-      result.add("Gradle's configuration-cache is enabled");
-    }
-
-    return !result.isEmpty() ? String.join(", ", result) : "unknown reason";
+    return String.join(", ", result);
   }
 
   public static class Parameters {
