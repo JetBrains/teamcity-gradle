@@ -51,13 +51,6 @@ public class ConfigurationParamsUtil
   }
 
   @NotNull
-  public static String getGradleInitScript(@NotNull final String gradleVersion) {
-    return VersionComparatorUtil.compare(gradleVersion, "8") >= 0
-           ? GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME
-           : GradleRunnerConstants.INIT_SCRIPT_NAME;
-  }
-
-  @NotNull
   public static String getGradleLaunchMode(@NotNull final Map<String, String> configurationParameters) {
     return emptyIfNull(configurationParameters.get(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM));
   }

@@ -6,14 +6,20 @@ package jetbrains.buildServer.gradle.agent;
 public enum GradleLaunchMode {
 
   /**
-   * Launch build via Gradle Tooling API.
-   * For Gradle 8.0 and newer
+   * Launch the build via the Gradle Tooling API.
+   * Can be used with Gradle 8.1 or newer.
    */
   TOOLING_API,
 
   /**
-   * Launch build via Gradle command line (the old way).
-   * For Gradle before 8.0
+   * Launch the build via the Gradle command line using the old init script.
+   * Used for Gradle versions earlier than 8.1.
    */
-  COMMAND_LINE
+  COMMAND_LINE,
+
+  /**
+   * Launch the build via the Gradle command line using the new init script.
+   * Can be used with Gradle 8.1 or newer.
+   */
+  COMMAND_LINE_V2
 }
