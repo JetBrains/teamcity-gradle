@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
+import javax.inject.Inject
+import org.gradle.api.flow.*
 
 
 public class DependencyBasedTestRun {
@@ -979,38 +981,53 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
   }
 }
 
-public class TeamcityExceptionsListener extends BuildAdapter {
-  def logger
+// region Build problem reporting
 
-  public TeamcityExceptionsListener(Logger log) {
-    logger = log
-  }
+abstract class TeamcityBuildProblemReportingPlugin implements Plugin<Gradle> {
+  @Inject abstract FlowScope getFlowScope()
+  @Inject abstract FlowProviders getFlowProviders()
 
-  @Override
-  void buildFinished(BuildResult result) {
-    def failure = result.getFailure()
-    if (failure != null) {
-      while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCause() && failure.getCause() != null) {
-        failure = failure.getCause()
-      }
-      def message;
-      if (failure instanceof org.gradle.api.tasks.TaskExecutionException && failure.getCause() != null) {
-        message = "${failure.getMessage()} ${failure.getCause().getClass().getName()}: ${failure.getCause().getMessage()}"
-      } else {
-        message = "${failure.getClass().getName()}: ${failure.getMessage()}"
-      }
-      if (message.contains("There were failing tests") || message.contains("Compilation failed") || message.contains("Compilation error")) {
-        // do not report tests and compilation failures as build problems, as they are logged separately
-        return
-      }
-      logger.warn(new ServiceMessage(name: "buildProblem",
-                                     attributes: [type       : "gradleBuildProblem",
-                                                  identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
-                                                  description: message
-                                     ]).asString())
+  void apply(Gradle gradle) {
+    flowScope.always(TeamcityBuildProblemAction) { spec ->
+      spec.parameters.buildResult.set(flowProviders.buildWorkResult)
     }
   }
 }
+
+abstract class TeamcityBuildProblemAction implements FlowAction<Parameters> {
+  interface Parameters extends FlowParameters {
+    @Input
+    Property<BuildWorkResult> getBuildResult()
+  }
+
+  @Override
+  void execute(Parameters parameters) {
+    def result = parameters.buildResult.get()
+    if (!result.failure.present) return
+
+    def failure = result.failure.get()
+    while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCause() && failure.getCause() != null) {
+      failure = failure.getCause()
+    }
+    def message
+    if (failure instanceof org.gradle.api.tasks.TaskExecutionException && failure.getCause() != null) {
+      message = "${failure.getMessage()} ${failure.getCause().getClass().getName()}: ${failure.getCause().getMessage()}"
+    } else {
+      message = "${failure.getClass().getName()}: ${failure.getMessage()}"
+    }
+    if (message.contains("There were failing tests") || message.contains("Compilation failed") || message.contains("Compilation error")) {
+      // do not report tests and compilation failures as build problems, as they are logged separately
+      return
+    }
+    println(new ServiceMessage(name: "buildProblem",
+                               attributes: [type       : "gradleBuildProblem",
+                                            identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
+                                            description: message
+                               ]).asString())
+  }
+}
+
+// endregion
 
 /**
  * Use WrappedException if you need to make a error message shorter
@@ -1290,7 +1307,7 @@ gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
   }
 }))
 
-gradle.addListener(new TeamcityExceptionsListener(logger))
+apply plugin: TeamcityBuildProblemReportingPlugin
 gradle.addListener(new TeamcityRerunTestsListener(logger, tcConfigurationParameters))
 gradle.useLogger(new TeamcityTaskListener(logger, isParallelExec))
 gradle.projectsEvaluated { Gradle gradle ->
