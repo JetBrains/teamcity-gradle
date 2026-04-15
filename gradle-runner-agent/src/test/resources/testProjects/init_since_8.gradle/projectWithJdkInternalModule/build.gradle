@@ -1,7 +1,9 @@
-import jdk.internal.module.ModuleInfoWriter
 tasks.register('internalThings') {
     doLast {
-        ModuleInfoWriter writer = new ModuleInfoWriter()
-        println("writer's Meta Class: ${writer.metaClass}")
+        def moduleBootstrap = Class.forName("jdk.internal.module.ModuleBootstrap")
+        def warnMethod = moduleBootstrap.getDeclaredMethod("warn", String.class)
+        warnMethod.setAccessible(true)
+        warnMethod.invoke(null, "TeamCity internal module access probe")
+        println("internal module access succeeded")
     }
 }

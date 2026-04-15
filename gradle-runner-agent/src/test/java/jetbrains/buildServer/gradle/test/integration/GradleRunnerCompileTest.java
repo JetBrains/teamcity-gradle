@@ -34,8 +34,8 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-  // junit version 5 doesn't work on gradle version 2.0
-  @Test(dataProvider = "gradle-version-provider>2.0")
+  // JUnit version 5 doesn't work on Gradle version 2.0. The build file option is not supported in Gradle 9+, so this test setup is not possible on 9+.
+  @Test(dataProvider = "2.0 < gradle-version-provider < 9.0")
   public void configureOnDemand(final String gradleVersion) throws Exception {
     GradleRunConfiguration config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_A_NAME, BUILD_CMD + " -b sub-module1/build.gradle", "compileDemandMultiProjectABlockSequence.txt");
     config.setGradleVersion(gradleVersion);
@@ -59,7 +59,7 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "8 > gradle-version-provider >= 3.0")
+  @Test(dataProvider = "3.0 <= gradle-version-provider < 8")
   public void failedParallelCompileTestLess8(final String gradleVersion) throws Exception {
     GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "failedCompilationParallel.txt");
     config.setGradleVersion(gradleVersion);
@@ -94,7 +94,8 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "gradle-version-provider")
+  // This test is not relevant for Gradle 9+ because the build file argument was deprecated
+  @Test(dataProvider = "gradle-version-provider<9")
   public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {
     GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "projectABlockSequence.txt");
     myRunnerParams.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "projectA/run.gradle");

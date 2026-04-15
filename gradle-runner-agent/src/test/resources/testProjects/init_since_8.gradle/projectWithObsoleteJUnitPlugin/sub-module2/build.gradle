@@ -1,0 +1,3 @@
+version 'unspecified'
+
+println "##tc-property name='load-module' value='sub-module 2'"

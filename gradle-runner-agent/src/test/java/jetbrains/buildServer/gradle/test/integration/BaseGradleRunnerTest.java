@@ -93,6 +93,7 @@ public class BaseGradleRunnerTest {
   protected static final String DEMAND_MULTI_PROJECT_B_NAME = "demandMultiProjectB";
   protected static final String WRAPPED_PROJECT_A_NAME = "wrappedProjectA";
   protected static final String OPENTEST4J_PROJECT = "opentest4jProject";
+  protected static final String PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN = "projectWithObsoleteJUnitPlugin";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
   private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
 
@@ -155,75 +156,97 @@ public class BaseGradleRunnerTest {
 
   private static final boolean IS_JRE_8 = System.getProperty("java.specification.version").contains("1.8");
 
-
   @DataProvider(name = "gradle-version-provider")
-  public static Iterator<String[]> getGradlePaths() {
+  public static Iterator<String[]> getPathsForAllAvailableGradleVersions() {
     return generateGradlePaths().iterator();
   }
 
-  @DataProvider(name = "gradle-version-provider>2.0")
-  public static Iterator<String[]> getGradlePaths20() {
+  @DataProvider(name = "2.0 < gradle-version-provider < 9.0")
+  public static Iterator<String[]> get_paths_for_gradle_from_2_0_exclusive_to_9_0_exclusive() {
     return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "2.0") > 0)
-                    .iterator();
-  }
-
-  @DataProvider(name = "gradle-version-provider>=8")
-  public static Iterator<String[]> getGradlePaths8() {
-    return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8") >= 0)
-                    .iterator();
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "2.0") > 0)
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "9.0") < 0)
+            .iterator();
   }
 
   @DataProvider(name = "gradle-version-provider>=3.0")
-  public static Iterator<String[]> getGradlePaths30() {
+  public static Iterator<String[]> get_paths_for_gradle_3_0_and_later() {
     return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "3.0") >= 0)
-                    .iterator();
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "3.0") >= 0)
+            .iterator();
   }
 
-  @DataProvider(name = "8 > gradle-version-provider >= 3.0")
-  public static Iterator<String[]> getGradlePaths3080() {
+  @DataProvider(name = "3.0 <= gradle-version-provider < 8")
+  public static Iterator<String[]> get_paths_for_gradle_from_3_0_inclusive_to_8_0_exclusive() {
     return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "3.0") >= 0)
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8.0") < 0)
-                    .iterator();
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "3.0") >= 0)
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8.0") < 0)
+            .iterator();
   }
 
   @DataProvider(name = "gradle-version-provider>=4.4")
-  public static Iterator<String[]> getGradlePaths44() {
+  public static Iterator<String[]> get_paths_for_gradle_4_4_and_later() {
     return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.4") >= 0)
-                    .iterator();
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.4") >= 0)
+            .iterator();
   }
 
   @DataProvider(name = "gradle-version-provider>=4.7")
-  public static Iterator<String[]> getGradlePaths47() {
+  public static Iterator<String[]> get_paths_for_gradle_4_7_and_later() {
     return generateGradlePaths().stream()
-                    .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.7") >= 0)
-                    .iterator();
-  }
-
-  @DataProvider(name = "gradle-version-provider>=5.0")
-  public static Iterator<String[]> getGradlePaths50() {
-    return generateGradlePaths().stream()
-                           .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "5.0") >= 0)
-                           .iterator();
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.7") >= 0)
+            .iterator();
   }
 
   @DataProvider(name = "gradle-version-provider<4.4")
-  public static Iterator<String[]> getGradlePathsLess44() {
+  public static Iterator<String[]> get_paths_for_gradle_earlier_than_4_4() {
     return generateGradlePaths().stream()
-                           .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.4") < 0)
-                           .iterator();
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "4.4") < 0)
+            .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>=5.0")
+  public static Iterator<String[]> get_paths_for_gradle_5_0_and_later() {
+    return generateGradlePaths().stream()
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "5.0") >= 0)
+            .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>=8")
+  public static Iterator<String[]> get_paths_for_gradle_8_0_and_later() {
+    return generateGradlePaths().stream()
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8") >= 0)
+            .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider=8.x")
+  public static Iterator<String[]> get_paths_for_gradle_8_x_only() {
+    return generateGradlePaths().stream()
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8.0") >= 0)
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "9.0") < 0)
+            .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider>=9")
+  public static Iterator<String[]> get_paths_for_gradle_9_0_and_later() {
+    return generateGradlePaths().stream()
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "9") >= 0)
+            .iterator();
+  }
+
+  @DataProvider(name = "gradle-version-provider<9")
+  public static Iterator<String[]> get_paths_for_gradle_earlier_than_9_0() {
+    return generateGradlePaths().stream()
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "9") < 0)
+            .iterator();
   }
 
   @DataProvider(name = "gradle-last-version-provider")
-  public static Iterator<String[]> getGradlePathsLast() {
+  public static Iterator<String[]> getPathForLatestAvailableGradleVersion() {
     return generateGradlePaths().stream()
-      .max((a,b) -> VersionComparatorUtil.compare(getGradleVersionFromPath(a[0]), getGradleVersionFromPath(b[0])))
-      .map(path -> Collections.singletonList(path).iterator())
-      .orElseGet(Collections::emptyIterator);
+            .max((a, b) -> VersionComparatorUtil.compare(getGradleVersionFromPath(a[0]), getGradleVersionFromPath(b[0])))
+            .map(path -> Collections.singletonList(path).iterator())
+            .orElseGet(Collections::emptyIterator);
   }
 
   public static List<String[]> generateGradlePaths() {
@@ -404,6 +427,12 @@ public class BaseGradleRunnerTest {
       // Older Gradle versions cannot run on newer JDKs
       myRunnerParams.put("target.jdk.home", System.getenv("JDK_1_8"));
     }
+    if (VersionComparatorUtil.compare(gradleVersionNum, "9.0") > 0) {
+      // Gradle 9+ requires JDK 17+
+      myRunnerParams.put("target.jdk.home", System.getenv("JDK_21_0"));
+    }
+
+
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
     }

@@ -8,7 +8,7 @@ tasks.register('custom', CustomTask) {
   reports.enabledReports.junitXml.outputLocation = file("build")
 }
 
-class CustomTask extends AbstractTestTask {
+abstract class CustomTask extends AbstractTestTask {
   protected CustomTestExecutionSpec createTestExecutionSpec() { new CustomTestExecutionSpec() }
   protected CustomTestExecuter createTestExecuter() { new CustomTestExecuter() }
 }
@@ -20,7 +20,7 @@ class CustomTestExecuter implements TestExecuter<CustomTestExecutionSpec> {
     testResultProcessor.started(new DefaultTestSuiteDescriptor("suite", "suite"), new TestStartEvent(100L))
 
     def name = "testName"
-    testResultProcessor.started(new DefaultTestDescriptor(name, "Foo", "bar"), new TestStartEvent(100L))
+    testResultProcessor.started(new DefaultTestDescriptor(name, "Foo", "bar"), new TestStartEvent(100L, "suite"))
     testResultProcessor.failure(name, TestFailure.fromTestFrameworkFailure(new RuntimeException("custom error", null, true, false)))
     testResultProcessor.completed(name, new TestCompleteEvent(200L))
 

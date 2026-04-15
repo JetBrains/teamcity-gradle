@@ -167,14 +167,14 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
   @Test(dataProvider = "gradle-version-provider>=5.0")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsOnlySubmoduleWithPlugin(final String gradleVersion) throws Exception {
-    testTest(MULTI_PROJECT_E_NAME, "clean test -b projectA/build.gradle -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithPlugin.txt", gradleVersion,
+    testTest(MULTI_PROJECT_E_NAME, ":projectA:clean :projectA:test -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithPlugin.txt", gradleVersion,
              "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
   @Test(dataProvider = "gradle-version-provider>=5.0")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsOnlySubmoduleWithoutPlugin(final String gradleVersion) throws Exception {
-    testTest(MULTI_PROJECT_E_NAME, "clean test -b projectB/build.gradle -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithoutPlugin.txt", gradleVersion,
+    testTest(MULTI_PROJECT_E_NAME, ":projectB:clean :projectB:test -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithoutPlugin.txt", gradleVersion,
              "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
@@ -224,7 +224,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     }
   }
 
-  @Test(dataProvider = "gradle-last-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=8")
   public void testComparisonServiceMessage(final String gradleVersion) throws Exception {
     testTest(PROJECT_PRINT_NAME, "clean test --tests my.ComparisonTest", "testComparisonServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }

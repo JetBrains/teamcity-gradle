@@ -2,6 +2,8 @@ package jetbrains.buildServer.gradle.test.integration;
 
 import java.util.List;
 import java.util.Random;
+import java.util.function.Predicate;
+
 import jetbrains.buildServer.util.StringUtil;
 import org.testng.annotations.Test;
 
@@ -105,8 +107,9 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.contains("teamcity.build.parameters' has changed")), buildFullLog);
   }
 
-  @Test(dataProvider = "gradle-version-provider>=8")
-  public void shouldReadDynamicPropertiesByDefaultWhenCCIsDiabled(String gradleVersion) throws Exception {
+  // Tested only on Gradle 8.x, as Gradle 9+ does not allow access to the project model at execution time
+  @Test(dataProvider = "gradle-version-provider=8.x")
+  public void shouldReadDynamicPropertiesByDefaultWhenCCIsDisabled(String gradleVersion) throws Exception {
     // given: dynamic property that used in the gradle project
     // build.number is TC's property that changes from build to build
     myTeamCitySystemProps.put("build.number", String.valueOf(new Random().nextInt()));
@@ -202,7 +205,10 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     // See https://docs.gradle.org/8.2/userguide/configuration_cache.html#config_cache:requirements:use_project_during_execution
     String buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\n" + buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("Configuration cache problems found in this build")), buildFullLog);
+    Predicate<String> isConfigurationCacheProblem = line ->
+            line.startsWith("Configuration cache problems found in this build")
+                    || line.contains("problem was found storing the configuration cache.");
+    assertTrue(messages.stream().anyMatch(isConfigurationCacheProblem), buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.contains("invocation of 'Task.project' at execution time is unsupported")), buildFullLog);
   }
 
@@ -245,10 +251,11 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "gradle-version-provider>=8")
+  // The JUnit platform Gradle plugin is not compatible with Gradle 9+
+  @Test(dataProvider = "gradle-version-provider=8.x")
   public void shouldRunJupiterTestsWithConfigurationCache(final String gradleVersion) throws Exception {
     // given
-    GradleRunConfiguration config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_B_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
+    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
     config.setGradleVersion(gradleVersion);
 
     // when: first run
@@ -258,7 +265,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
 
     // when: second run / then: tests ran with configuration cache reused
-    config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_B_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCacheJupiter.txt");
+    config = new GradleRunConfiguration(PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCacheJupiter.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("(##teamcity\\[importData (.*?)(?<!\\|)\\])|(Reusing configuration cache)");
     runAndCheckServiceMessages(config);
@@ -292,4 +299,3 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("Reusing configuration cache.")), buildFullLog);
   }
 }
-

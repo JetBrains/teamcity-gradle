@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
 import jetbrains.buildServer.gradle.agent.commandLine.GradleToolingCommandLineOptionsProvider;
 import jetbrains.buildServer.util.StringUtil;
+import jetbrains.buildServer.util.VersionComparatorUtil;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertTrue;
@@ -22,6 +23,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
                                                .stream()
                                                .filter(arg -> !arg.equals("--watch-fs") && !arg.equals("--continuous"))
                                                // Continuous build doesn't work w/o watch-fs. watch-fs leads to test failures when watching the file system is not supported
+                                               .filter(arg -> VersionComparatorUtil.compare(gradleVersion, "9") >= 0 && !arg.equals("--build-file"))
+                                               // The build file option is not supported in Gradle 9+
                                                .collect(Collectors.toList()));
 
     for (String supportedArg : supported) {
@@ -53,6 +56,8 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
                                                .stream()
                                                .filter(arg -> !arg.equals("-t"))
                                                // Continuous build doesn't work w/o watch-fs. watch-fs leads to test failures when watching the file system is not supported
+                                               .filter(arg -> VersionComparatorUtil.compare(gradleVersion, "9") >= 0 && !arg.equals("-b"))
+                                               // The build file option is not supported in Gradle 9+
                                                .collect(Collectors.toList()));
 
     for (String supportedArg : supported) {
@@ -149,7 +154,7 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
   @Test(dataProvider = "gradle-version-provider>=8")
   public void should_NotFilterOutGradleTasks_When_TasksArePassedAsArguments(final String gradleVersion) throws Exception {
     // arrange
-    String buildCmd = ":sub-module1:clean sub-module1:test compileJava --parallel -b build.gradle --stacktrace";
+    String buildCmd = ":sub-module1:clean sub-module1:test compileJava --parallel --stacktrace";
     final GradleRunConfiguration config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_A_NAME, buildCmd, null);
     config.setGradleVersion(gradleVersion);
 

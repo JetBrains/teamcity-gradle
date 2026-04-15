@@ -8,7 +8,7 @@ tasks.register('custom', CustomTask) {
   reports.enabledReports.junitXml.outputLocation = file("build")
 }
 
-class CustomTask extends AbstractTestTask {
+abstract class CustomTask extends AbstractTestTask {
   protected CustomTestExecutionSpec createTestExecutionSpec() { new CustomTestExecutionSpec() }
 
   protected CustomTestExecuter createTestExecuter() { new CustomTestExecuter() }
@@ -62,7 +62,7 @@ class CustomTestExecuter implements TestExecuter<CustomTestExecutionSpec> {
             ]
     ].forEach { test ->
       testResultProcessor.with {
-        started(new DefaultTestDescriptor(test.className, test.className, test.name, test.classDisplayName, test.displayName ?: test.name), new TestStartEvent(time.next))
+        started(new DefaultTestDescriptor(test.className, test.className, test.name, test.classDisplayName, test.displayName ?: test.name), new TestStartEvent(time.next, "suite"))
         completed(test.className, new TestCompleteEvent(time.next))
       }
     }

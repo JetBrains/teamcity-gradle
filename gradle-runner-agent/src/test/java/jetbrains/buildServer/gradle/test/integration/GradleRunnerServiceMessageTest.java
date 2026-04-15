@@ -63,6 +63,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
       resultMessage = resultMessage.replaceAll( "(file:(/)?)?" + myCoDir.getAbsolutePath().replaceAll("\\\\", "/"), "##Checkout_directory##"); // substitute temp checkout dir
       resultMessage = resultMessage.replace("##Checkout_directory##/" + GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME, "##Checkout_directory##"); // substitute temp checkout dir
       resultMessage = resultMessage.replace("##Checkout_directory##/" + GradleRunnerConstants.INIT_SCRIPT_NAME, "##Checkout_directory##"); // substitute temp checkout dir
+      resultMessage = resultMessage.replaceAll("(file:)/+(##Checkout_directory##)", "$1//$2"); // normalize file URI prefixes across platforms
       resultMessage = resultMessage.replaceAll("wrapper/dists/gradle-([0-9.]+)-bin/[^/]+", "wrapper/dists/gradle-$1-bin/##HASH##");
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[testMetadata.*?)value='(.*?)/[0-9]+\\.log'", "$1value='$2/##NUMBER##.log'"); // drop file number
       resultMessage = resultMessage.replaceAll("^(##teamcity\\[testMetadata.*?value='(.*?))/[0-9]+/",
@@ -206,10 +207,13 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
 
     public String getSequenceFileName(@NotNull final File dir) {
       if (myGradleVersion.startsWith("gradle-")) {
+        if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "9") >= 0) {
+          final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".9." + FileUtil.getExtension(mySequenceFileName);
+          if (new File(dir, file).exists()) return file;
+        }
         if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "8") >= 0) {
           final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".8." + FileUtil.getExtension(mySequenceFileName);
-          //if (new File(dir, file).exists()) return file;
-          return file;
+          if (new File(dir, file).exists()) return file;
         }
         if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "3") >= 0) {
           final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName);

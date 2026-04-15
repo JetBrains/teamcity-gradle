@@ -519,6 +519,12 @@ public class GradleConfigurationCacheDetectorTest {
       {"8.5", true},
       {"8.6", true},
       {"8.7", true},
+      {"8.14", true},
+      {"8.14.4", true},
+      {"9.0", true},
+      {"9.0.0", true},
+      {"9.4", true},
+      {"9.4.1", true},
     };
   }
 

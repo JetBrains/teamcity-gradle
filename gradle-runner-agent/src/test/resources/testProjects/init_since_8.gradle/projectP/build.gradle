@@ -8,7 +8,7 @@ tasks.register('custom', CustomTask) {
   reports.enabledReports.junitXml.outputLocation = file("build")
 }
 
-class CustomTask extends AbstractTestTask {
+abstract class CustomTask extends AbstractTestTask {
   protected CustomTestExecutionSpec createTestExecutionSpec() { new CustomTestExecutionSpec() }
 
   protected CustomTestExecuter createTestExecuter() { new CustomTestExecuter() }
@@ -20,12 +20,21 @@ class CustomTestExecuter implements TestExecuter<CustomTestExecutionSpec> {
   void execute(CustomTestExecutionSpec testExecutionSpec, TestResultProcessor testResultProcessor) {
     def time = new TestTime()
     testResultProcessor.started(new DefaultTestSuiteDescriptor("suite", "org.jetbrains"), new TestStartEvent(time.next))
-    testResultProcessor.started(new DefaultTestDescriptor("test", "MyTest", "test"), new TestStartEvent(time.next))
+    testResultProcessor.started(
+            new DefaultTestDescriptor("test", "MyTest", "test"),
+            new TestStartEvent(time.next, "suite")
+    )
     (0..101).forEach{
+      def logTime = time.next
       testResultProcessor.output("test", new TestOutputEvent(){
-        Destination getDestination(){
+        long getLogTime() {
+          logTime
+        }
+
+        Destination getDestination() {
           Destination.StdOut
         }
+
         String getMessage() {
           "$it\n"
         }

@@ -182,7 +182,8 @@ public class GradleCommandLineProviderTest {
   public static String[][] getGradlePaths() {
     return new String[][]{
       {"old"},
-      {"8.2"}
+      {"8.2"},
+      {"9.4.1"}
     };
   }
 
@@ -206,8 +207,10 @@ public class GradleCommandLineProviderTest {
     return new Object[][]{
       {"old", "--daemon"},
       {"8.2", "--daemon"},
+      {"9.4.1", "--daemon"},
       {"old", "-Dorg.gradle.daemon=true"},
-      {"8.2", "-Dorg.gradle.daemon=true"}
+      {"8.2", "-Dorg.gradle.daemon=true"},
+      {"9.4.1", "-Dorg.gradle.daemon=true"}
     };
   }
 

@@ -61,7 +61,9 @@ public class GradleLaunchModeSelectorTest {
       { "8.0.1", GradleLaunchMode.TOOLING_API},
       { "8.1", GradleLaunchMode.TOOLING_API},
       { "8.1.1", GradleLaunchMode.TOOLING_API},
-      { "9.1.3", GradleLaunchMode.TOOLING_API},
+      { "9.0", GradleLaunchMode.TOOLING_API},
+      { "9.4", GradleLaunchMode.TOOLING_API},
+      { "9.4.1", GradleLaunchMode.TOOLING_API},
     };
   }
   @Test(dataProvider = "gradleVersionProvider")
