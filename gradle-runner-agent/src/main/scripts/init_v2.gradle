@@ -984,8 +984,11 @@ public class TeamcityRerunTestsListener extends  BuildAdapter {
 // region Build problem reporting
 
 abstract class TeamcityBuildProblemReportingPlugin implements Plugin<Gradle> {
-  @Inject abstract FlowScope getFlowScope()
-  @Inject abstract FlowProviders getFlowProviders()
+  @Inject
+  abstract FlowScope getFlowScope()
+
+  @Inject
+  abstract FlowProviders getFlowProviders()
 
   void apply(Gradle gradle) {
     flowScope.always(TeamcityBuildProblemAction) { spec ->
@@ -1002,28 +1005,39 @@ abstract class TeamcityBuildProblemAction implements FlowAction<Parameters> {
 
   @Override
   void execute(Parameters parameters) {
-    def result = parameters.buildResult.get()
-    if (!result.failure.present) return
+    BuildWorkResult buildWorkResult = parameters.buildResult.get()
+    if (!buildWorkResult.failure.present) return
 
-    def failure = result.failure.get()
-    while (!(failure instanceof org.gradle.api.tasks.TaskExecutionException) && failure != failure.getCause() && failure.getCause() != null) {
-      failure = failure.getCause()
-    }
-    def message
-    if (failure instanceof org.gradle.api.tasks.TaskExecutionException && failure.getCause() != null) {
-      message = "${failure.getMessage()} ${failure.getCause().getClass().getName()}: ${failure.getCause().getMessage()}"
-    } else {
-      message = "${failure.getClass().getName()}: ${failure.getMessage()}"
-    }
+    Throwable failure = getRootCauseOfFailure(buildWorkResult)
+    String message = getMessageForFailure(failure)
+
     if (message.contains("There were failing tests") || message.contains("Compilation failed") || message.contains("Compilation error")) {
       // do not report tests and compilation failures as build problems, as they are logged separately
       return
     }
-    println(new ServiceMessage(name: "buildProblem",
-                               attributes: [type       : "gradleBuildProblem",
-                                            identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
-                                            description: message
-                               ]).asString())
+    ServiceMessage serviceMessage = new ServiceMessage(
+            name: "buildProblem",
+            attributes: [type       : "gradleBuildProblem",
+                         identity   : ("gradleBuildProblem ${message}" as String).hashCode(),
+                         description: message
+            ])
+    println(serviceMessage.asString())
+  }
+
+  private static Throwable getRootCauseOfFailure(BuildWorkResult buildWorkResult) {
+    Throwable failure = buildWorkResult.failure.get()
+    while (!(failure instanceof TaskExecutionException) && failure != failure.getCause() && failure.getCause() != null) {
+      failure = failure.getCause()
+    }
+
+    return failure
+  }
+
+  private static String getMessageForFailure(Throwable failure) {
+    if (failure instanceof TaskExecutionException && failure.getCause() != null) {
+      return "${failure.getMessage()} ${failure.getCause().getClass().getName()}: ${failure.getCause().getMessage()}"
+    }
+    return "${failure.getClass().getName()}: ${failure.getMessage()}"
   }
 }
 
