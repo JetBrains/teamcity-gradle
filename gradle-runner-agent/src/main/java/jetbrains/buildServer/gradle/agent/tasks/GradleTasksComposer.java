@@ -91,12 +91,16 @@ public class GradleTasksComposer {
     } else {
       File runnerPluginDir = new File(pluginsDirectory, GradleRunnerConstants.RUNNER_TYPE);
       String initScriptName;
-      if (gradleLaunchMode == GradleLaunchMode.COMMAND_LINE) {
-        initScriptName = INIT_SCRIPT_NAME;
-      } else if (gradleLaunchMode == GradleLaunchMode.COMMAND_LINE_V2) {
-        initScriptName = INIT_SCRIPT_V2_NAME;
-      } else {
-        initScriptName = INIT_SCRIPT_SINCE_8_NAME;
+      switch (gradleLaunchMode) {
+        case COMMAND_LINE:
+          initScriptName = INIT_SCRIPT_NAME;
+          break;
+        case COMMAND_LINE_V2:
+          initScriptName = INIT_SCRIPT_V2_NAME;
+          break;
+        default:
+          initScriptName = INIT_SCRIPT_SINCE_8_NAME;
+          break;
       }
       initScript = new File(new File(runnerPluginDir, INIT_SCRIPT_DIR), initScriptName);
     }

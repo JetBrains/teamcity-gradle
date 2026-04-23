@@ -26,18 +26,18 @@ public class GradleLaunchModeSelector {
 
     switch (configuredLaunchMode) {
       case GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE:
-        return getExplicit(GradleLaunchMode.COMMAND_LINE, configuredLaunchMode);
+        return getExplicitlyConfiguredMode(GradleLaunchMode.COMMAND_LINE, configuredLaunchMode);
       case GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_V2_LAUNCH_MODE:
-        return getExplicit(GradleLaunchMode.COMMAND_LINE_V2, configuredLaunchMode);
+        return getExplicitlyConfiguredMode(GradleLaunchMode.COMMAND_LINE_V2, configuredLaunchMode);
       case GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE:
-        return getExplicit(GradleLaunchMode.TOOLING_API, configuredLaunchMode);
+        return getExplicitlyConfiguredMode(GradleLaunchMode.TOOLING_API, configuredLaunchMode);
+      default:
+        GradleLaunchModeSelectionResult commandLineLaunchMode = GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.COMMAND_LINE).build();
+        return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode).orElse(commandLineLaunchMode);
     }
-
-    GradleLaunchModeSelectionResult commandLineLaunchMode = GradleLaunchModeSelectionResult.builder().withLaunchMode(GradleLaunchMode.COMMAND_LINE).build();
-    return tryToIdentifyModeIndirectly(parameters, configuredLaunchMode).orElse(commandLineLaunchMode);
   }
 
-  private GradleLaunchModeSelectionResult getExplicit(GradleLaunchMode launchMode, String configuredLaunchMode) {
+  private GradleLaunchModeSelectionResult getExplicitlyConfiguredMode(GradleLaunchMode launchMode, String configuredLaunchMode) {
     String reason = "\"" + GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM + "\"" +
             " configuration parameter" +
             " is set to " +
