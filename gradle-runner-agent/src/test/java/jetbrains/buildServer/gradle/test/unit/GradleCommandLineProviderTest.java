@@ -15,7 +15,7 @@ import jetbrains.buildServer.gradle.agent.*;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.gradleExecution.GradleCommandLineProvider;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
@@ -139,7 +139,7 @@ public class GradleCommandLineProviderTest {
 
     myTasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
-      new GradleSimpleCommandLineComposer(myTasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), myTasksComposer)
+      new GradleCliCommandLineComposer(myTasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), myTasksComposer)
     );
     myComposerHolder = new GradleCommandLineComposerHolder(composers);
     myLaunchModeSelector = new GradleLaunchModeSelector();

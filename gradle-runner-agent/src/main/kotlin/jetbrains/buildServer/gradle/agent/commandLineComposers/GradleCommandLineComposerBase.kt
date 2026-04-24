@@ -5,9 +5,7 @@ import jetbrains.buildServer.agent.runner.SimpleProgramCommandLine
 import jetbrains.buildServer.gradle.agent.GradleLaunchMode
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer
 
-class GradleSimpleV2CommandLineComposer(private val tasksComposer: GradleTasksComposer) : GradleCommandLineComposer {
-    override fun getLaunchMode(): GradleLaunchMode = GradleLaunchMode.COMMAND_LINE_V2
-
+abstract class GradleCommandLineComposerBase(private val tasksComposer: GradleTasksComposer) : GradleCommandLineComposer {
     override fun compose(parameters: GradleCommandLineComposerParameters): ProgramCommandLine {
         val gradleParameters = buildList {
             addAll(parameters.initialGradleParams)
