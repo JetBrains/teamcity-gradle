@@ -12,8 +12,8 @@
   <bean id="commandLineParametersProcessor" class="jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor"/>
   <bean id="gradleToolProvider" class="jetbrains.buildServer.gradle.agent.GradleToolProvider" autowire="constructor"/>
   <bean id="gradleToolingApiCommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer" autowire="constructor"/>
-  <bean id="gradleSimpleCommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleCommandLineComposer" autowire="constructor"/>
-  <bean id="gradleSimpleV2CommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleSimpleV2CommandLineComposer" autowire="constructor"/>
+  <bean id="gradleSimpleCommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer" autowire="constructor"/>
+  <bean id="gradleSimpleV2CommandLineComposer" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliV2CommandLineComposer" autowire="constructor"/>
   <bean id="gradleCommandLineComposerHolder" class="jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder" autowire="constructor"/>
   <bean id="gradleTasksComposer" class="jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer" autowire="constructor"/>
   <bean id="gradleTestFilterPostProcessor" class="jetbrains.buildServer.gradle.agent.tasks.GradleTestFilterPostProcessor" autowire="constructor"/>
