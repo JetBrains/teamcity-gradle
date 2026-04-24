@@ -51,7 +51,7 @@
         </td>
     </tr>
     <tr>
-        <th><label>Gradle Wrapper:<bs:help file="Gradle#Main+Settings"/></label></th>
+        <th><label>Gradle Wrapper:<bs:help file="Gradle#Main+Settings" preservePlus="true"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.GRADLE_WRAPPER_FLAG%>"/>
           <label for="ui.gradleRunner.gradle.wrapper.useWrapper">Use gradle wrapper to build project</label>
         </td>
@@ -69,7 +69,7 @@
 
 <l:settingsGroup title="Run Parameters" className="advancedSetting">
     <tr class="advancedSetting">
-        <th><label>Debug:<bs:help file="Gradle#Run+Parameters"/></label></th>
+        <th><label>Debug:<bs:help file="Gradle#Run+Parameters" preservePlus="true"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.DEBUG%>"/>
             <label for="ui.gradleRunner.gradle.debug.enabled">Log debug messages</label>
             <div style="display: ${debugValue eq 'true' ? 'none' : ''}" id="ui.gradleRunner.gradle.debug.enabled.message">
@@ -78,7 +78,7 @@
         </td>
     </tr>
     <tr class="advancedSetting">
-        <th><label>Stacktrace:<bs:help file="Gradle#Run+Parameters"/></label></th>
+        <th><label>Stacktrace:<bs:help file="Gradle#Run+Parameters" preservePlus="true"/></label></th>
         <td><props:checkboxProperty name="<%=GradleRunnerConstants.STACKTRACE%>"/>
             <label for="ui.gradleRunner.gradle.stacktrace.enabled">Print stacktrace</label>
             <br/>
