@@ -254,7 +254,8 @@ class Util {
   }
 
   static String getFlowIdForTask(String taskPath) {
-    return "%%teamcity%%-" + String.valueOf(taskPath.hashCode())
+    String flowIfPrefix = "%%teamcity%%-"
+    return flowIfPrefix + String.valueOf(taskPath.hashCode())
   }
 }
 
@@ -314,6 +315,7 @@ abstract class CompileTaskErrorOutputService implements BuildService<BuildServic
   private static class ErrorOutputListener implements StandardOutputListener {
     private volatile StringBuffer stringBuffer = new StringBuffer()
 
+    @Override
     void onOutput(CharSequence chars) {
       stringBuffer.append(chars)
     }
@@ -372,7 +374,7 @@ public class TeamcityTestListener {
     this.project = new ProjectPropertyStorage(project)
     logger = log
     isParallelBuild = isParallel
-    flow = new FlowWrapper(TeamcityTaskBuildService.DEFAULT_FLOW_ID_PREFIX + String.valueOf(task.project.getPath().hashCode()))
+    flow = new FlowWrapper(Util.getFlowIdForTask(task.project.getPath()))
     this.testCounter = testCounter
     this.testNameDescriptor = testNameDescriptor
     this.ignoredSuiteFormat = ignoredSuiteFormat?.trim() ? Pattern.compile(ignoredSuiteFormat) : null
