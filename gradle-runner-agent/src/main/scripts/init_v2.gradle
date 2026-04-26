@@ -384,10 +384,6 @@ class TeamcityTestListener implements TestListener, TestOutputListener {
     flowWrapper = new FlowWrapper(Util.getFlowIdForTask(testTaskWrapper.getTaskPath()))
   }
 
-  /**
-   * Called before a test suite is started.
-   * @param suite The suite whose tests are about to be executed.
-   */
   @Override
   void beforeSuite(TestDescriptor testDescriptor) {
     def suiteDescriptorWrapper = new SuiteDescriptorWrapper(testDescriptor, flowWrapper, ignoredSuiteFormat)
@@ -397,24 +393,15 @@ class TeamcityTestListener implements TestListener, TestOutputListener {
     }
   }
 
-  /**
-   * Called after a test suite is finished.
-   * @param suite The suite whose tests have finished being executed.
-   * @param result The aggregate result for the suite.
-   */
   @Override
   void afterSuite(TestDescriptor testDescriptor, TestResult testResult) {
     def suiteDescriptorWrapper = new SuiteDescriptorWrapper(testDescriptor, flowWrapper, ignoredSuiteFormat)
     suiteDescriptorWrapper.finish { ServiceMessage flowMessage, ServiceMessage suiteFinishedMessage ->
       this.logger.lifecycle(suiteFinishedMessage.asString())
-      if (flowMessage != null ) this.logger.lifecycle(flowMessage.asString())
+      if (flowMessage != null) this.logger.lifecycle(flowMessage.asString())
     }
   }
 
-  /**
-   * Called before a test is started.
-   * @param test The test which is about to be executed.
-   */
   @Override
   void beforeTest(TestDescriptor testDescriptor) {
     def testDescriptorWrapper = new TestDescriptorWrapper(testDescriptor, testNameDescriptor, flowWrapper, buildDirectoriesResolver, ignoredSuiteFormat)
@@ -424,11 +411,6 @@ class TeamcityTestListener implements TestListener, TestOutputListener {
     }
   }
 
-  /**
-   * Called after a test is finished.
-   * @param test The test which has finished executing.
-   * @param result The test result.
-   */
   @Override
   void afterTest(TestDescriptor testDescriptor, TestResult testResult) {
     def testDescriptorWrapper = new TestDescriptorWrapper(testDescriptor, testNameDescriptor, flowWrapper, buildDirectoriesResolver, ignoredSuiteFormat)
@@ -485,6 +467,12 @@ abstract class TestTaskBuildLogSetupService implements BuildService<BuildService
   private final Set<String> testTaskPaths = ConcurrentHashMap.newKeySet()
   private final Set<String> testRetryTaskPaths = ConcurrentHashMap.newKeySet()
 
+  @Override
+  void onFinish(FinishEvent finishEvent) {
+    if (!(finishEvent instanceof TaskFinishEvent)) return
+    closeLogBlockForTestTask(finishEvent.descriptor.taskPath)
+  }
+
   void openLogBlockForTestTask(Task task, boolean taskSupportsRetries = false) {
     def taskPath = task.path
 
@@ -502,12 +490,7 @@ abstract class TestTaskBuildLogSetupService implements BuildService<BuildService
     }
   }
 
-  @Override
-  void onFinish(FinishEvent finishEvent) {
-    if (!(finishEvent instanceof TaskFinishEvent)) return
-
-    def taskPath = finishEvent.descriptor.taskPath
-
+  void closeLogBlockForTestTask(String taskPath) {
     if (!testTaskPaths.remove(taskPath)) return
 
     def flowId = Util.getFlowIdForTask(taskPath)
