@@ -12,10 +12,9 @@ import org.gradle.tooling.events.OperationCompletionListener
 import org.gradle.tooling.events.task.TaskFinishEvent
 import org.gradle.tooling.events.task.TaskFailureResult
 
-
 public class DependencyBasedTestRun {
 
-  def logger
+  Logger logger
 
   public DependencyBasedTestRun(Logger logger) {
     this.logger = logger
@@ -33,6 +32,11 @@ public class DependencyBasedTestRun {
         break;
 
       case "do_incremental":
+        if (BuildFeatures.areIsolatedProjectsEnabled(gradle)) {
+          logger.lifecycle("Incremental mode is not compatible with Gradle Isolated Projects. Falling back to a full build.")
+          gradle.startParameter.taskNames = ["build"]
+          break
+        }
         logger.debug("Will look for affected projects")
         def modifiedProjects = findAffectedProjects(rootProject);
         if (modifiedProjects.empty) {
@@ -326,6 +330,15 @@ class BuildFeatures {
     } catch (ClassNotFoundException ignored) {
       def startParameter = gradle.startParameter
       return startParameter.class.getMethod("isConfigurationCacheRequested").invoke(startParameter)
+    }
+  }
+
+  static boolean areIsolatedProjectsEnabled(Gradle gradle) {
+    try {
+      return getBuildFeatures(gradle).isolatedProjects.active.getOrElse(false)
+    } catch (ClassNotFoundException ignored) {
+      def value = System.getProperty("org.gradle.unsafe.isolated-projects")
+      return value != null && value.toBoolean()
     }
   }
 
@@ -1348,36 +1361,42 @@ ProjectExtraPropertiesExtender.logBuildPropertiesUsageWarningMessageIfNeeded(gra
 gradle.addListener(new ProjectExtraPropertiesExtender(logger))
 
 final AtomicLong testCounter = new AtomicLong(0)
+gradle.addListener(new AfterEvaluateListener({ Project project ->
+  // init jvm args
+  final String jvmargs = System.getProperty("gradle.test.jvmargs")
+  final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
+  TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
+    def buildTempDirectory = System.getProperty("teamcity.build.tempDir")
+    testTask.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
+
+    def testNameFormat = System.getProperty("teamcity.internal.gradle.testNameFormat")
+    def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
+    def ignoredSuiteFormat = System.getProperty("teamcity.internal.gradle.ignoredSuiteFormat")
+
+    def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
+    testTask.addTestListener(testListener)
+    testTask.addTestOutputListener(testListener)
+    testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
+    testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
+
+    // add executable tests
+    testTask.filter.updateFilters(System.getenv("TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"), logger)
+    // will be empty if parallel tests enabled
+    testTask.filter.updateFilters(System.getenv("TEAMCITY_RISK_TESTS_ARTIFACT_PATH"), logger)
+  }
+}))
+
+gradle.addListener(new AfterEvaluateListener({ Project project ->
+  project.tasks.matching { Task task -> task.name == "junitPlatformTest" }.configureEach { Task task ->
+    task.doFirst {
+      task.outputs?.files?.each { file ->
+        def message = new ServiceMessage(name: "importData", attributes: [type: "junit", path: "$file.absolutePath/*.xml".toString()])
+        println(message.asString())
+      }
+    }
+  }
+}))
+
 gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
-  gradle.rootProject.allprojects { Project project ->
-    // init jvm args
-    final String jvmargs = System.getProperty("gradle.test.jvmargs")
-    final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
-    TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
-      def buildTempDirectory = System.getProperty("teamcity.build.tempDir")
-      testTask.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
-
-      def testNameFormat = System.getProperty("teamcity.internal.gradle.testNameFormat")
-      def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
-      def ignoredSuiteFormat = System.getProperty("teamcity.internal.gradle.ignoredSuiteFormat")
-
-      def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
-      testTask.addTestListener(testListener)
-      testTask.addTestOutputListener(testListener)
-      testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
-      testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
-      // add executable tests
-      testTask.filter.updateFilters(System.getenv("TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"), logger)
-      // will be empty if parallel tests enabled
-      testTask.filter.updateFilters(System.getenv("TEAMCITY_RISK_TESTS_ARTIFACT_PATH"), logger)
-    }
-  }
-
-  gradle.rootProject.allprojects.each { project ->
-    project.getTasks().findByName("junitPlatformTest")?.outputs?.files?.each { file ->
-      def message = new ServiceMessage(name: "importData", attributes: [type: "junit", path: "$file.absolutePath/*.xml".toString()])
-      println(message.asString())
-    }
-  }
 }
