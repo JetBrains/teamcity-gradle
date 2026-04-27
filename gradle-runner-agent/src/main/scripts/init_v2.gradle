@@ -278,6 +278,9 @@ class AfterEvaluateListener implements ProjectEvaluationListener {
 
 // region Setup of build log presentation for compile tasks stderr
 
+/**
+ * Collects stderr output for compile tasks and reports them as compilation error messages, creating a "compilation error" build problem.
+ */
 abstract class CompileTaskErrorOutputService implements BuildService<BuildServiceParameters.None>, OperationCompletionListener {
   private static final Logger logger = Logging.getLogger(CompileTaskErrorOutputService)
 
@@ -302,18 +305,17 @@ abstract class CompileTaskErrorOutputService implements BuildService<BuildServic
     def errorOutputListener = errorOutputListeners.remove(taskPath)
     if (errorOutputListener == null) return
 
-    def blockName = "Error output of task " + taskPath
     def flowId = Util.getFlowIdForTask(taskPath)
 
-    logger.lifecycle(new ServiceMessage(name: "blockOpened", attributes: [name: blockName]).withFlowId(flowId).asString())
+    logger.lifecycle(new ServiceMessage(name: "compilationStarted", attributes: [compiler: taskPath]).withFlowId(flowId).asString())
     errorOutputListener.getMessages().each { msg ->
       logger.lifecycle(new ServiceMessage(name: "message", attributes: [text: msg, status: "ERROR"]).withFlowId(flowId).asString())
     }
-    logger.lifecycle(new ServiceMessage(name: "blockClosed", attributes: [name: blockName]).withFlowId(flowId).asString())
+    logger.lifecycle(new ServiceMessage(name: "compilationFinished", attributes: [compiler: taskPath]).withFlowId(flowId).asString())
   }
 
   private static class ErrorOutputListener implements StandardOutputListener {
-    private volatile StringBuffer stringBuffer = new StringBuffer()
+    private final StringBuffer stringBuffer = new StringBuffer()
 
     @Override
     void onOutput(CharSequence chars) {
@@ -321,8 +323,8 @@ abstract class CompileTaskErrorOutputService implements BuildService<BuildServic
     }
 
     Collection<String> getMessages() {
-      def lines = stringBuffer.toString().split('\\r?\\n')
       def messages = []
+      def lines = stringBuffer.toString().split('\\r?\\n')
       for (line in lines) {
         def trimmedLine = line.trim()
         if (trimmedLine.length() > 0) {
@@ -334,6 +336,9 @@ abstract class CompileTaskErrorOutputService implements BuildService<BuildServic
   }
 }
 
+/**
+ * Registers {@link CompileTaskErrorOutputService} and sets it up to handle task starts and completions.
+ */
 abstract class CompileTaskErrorOutputPlugin implements Plugin<Gradle> {
   @Inject
   abstract BuildEventsListenerRegistry getBuildEventsListenerRegistry()
