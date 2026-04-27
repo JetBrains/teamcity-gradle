@@ -363,6 +363,10 @@ abstract class CompileTaskErrorOutputPlugin implements Plugin<Gradle> {
 
 // region Test reporting, test suite reporting, test retry
 
+/**
+ * Converts Gradle test lifecycle and output callbacks into TeamCity service messages,
+ * including suite/test events, test stdout and stderr, and failure metadata.
+ */
 class TeamcityTestListener implements TestListener, TestOutputListener {
   public boolean skipStdErr = false
   public boolean skipStdOut = false
@@ -473,18 +477,17 @@ abstract class TestTaskBuildLogSetupService implements BuildService<BuildService
     closeLogBlockForTestTask(finishEvent.descriptor.taskPath)
   }
 
-  void openLogBlockForTestTask(Task task, boolean taskSupportsRetries = false) {
-    def taskPath = task.path
-
+  void openLogBlockForTestTask(Task task, boolean enableTestRetryForTask = false) {
     if (!AbstractTestTask.isAssignableFrom(task.class)) return
 
+    def taskPath = task.path
     testTaskPaths.add(taskPath)
 
     def flowId = Util.getFlowIdForTask(taskPath)
 
     logger.lifecycle(new ServiceMessage(name: "blockOpened", attributes: [name: getTestBlockName(taskPath)]).withFlowId(flowId).asString())
 
-    if (taskSupportsRetries) {
+    if (enableTestRetryForTask) {
       testRetryTaskPaths.add(taskPath)
       logger.lifecycle(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: "true"]).withFlowId(flowId).asString())
     }
@@ -507,6 +510,10 @@ abstract class TestTaskBuildLogSetupService implements BuildService<BuildService
   }
 }
 
+/**
+ * Registers a build service that opens and closes TeamCity log blocks around test tasks
+ * and sets up test retry support when the task is configured to rerun failed tests.
+ */
 abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
   @Inject
   abstract BuildEventsListenerRegistry getBuildEventsListenerRegistry()
@@ -518,18 +525,20 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
 
     gradle.addListener(new AfterEvaluateListener({ Project project ->
       project.tasks.configureEach { Task task ->
-        def taskSupportsRetries = doesTaskSupportTestRetries(task)
+        def enableTestRetryForTask = doesTaskNeedExplicitTestRetrySupport(task)
         task.doFirst {
-          testTaskBuildLogSetupServiceProvider.get().openLogBlockForTestTask(it, taskSupportsRetries)
+          testTaskBuildLogSetupServiceProvider.get().openLogBlockForTestTask(it, enableTestRetryForTask)
         }
       }
     }))
     buildEventsListenerRegistry.onTaskCompletion(testTaskBuildLogSetupServiceProvider)
   }
 
-  static boolean doesTaskSupportTestRetries(Task task) {
+  static boolean doesTaskNeedExplicitTestRetrySupport(Task task) {
     if (!AbstractTestTask.isAssignableFrom(task.class)) return
 
+    // Check if test retries are supported on the build configuration level.
+    // If yes, then we do not need to set up explicit test retry for the task.
     String testRetryEnvVar = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY")
     boolean isTeamCityTestRetryEnabled = testRetryEnvVar != null && testRetryEnvVar.toBoolean()
     if (isTeamCityTestRetryEnabled) return false
