@@ -997,6 +997,9 @@ abstract class TeamcityBuildProblemReportingPlugin implements Plugin<Gradle> {
   }
 }
 
+/**
+ * Reports the build failure as a build problem, if eligible.
+ */
 abstract class TeamcityBuildProblemAction implements FlowAction<Parameters> {
   interface Parameters extends FlowParameters {
     @Input
