@@ -1,10 +1,10 @@
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.regex.Pattern
 import javax.inject.Inject
 import org.gradle.api.flow.*
+import org.gradle.api.provider.*
 import org.gradle.api.services.*
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.tooling.events.FinishEvent
@@ -106,77 +106,156 @@ public class DependencyBasedTestRun {
   }
 }
 
-public class TeamcityPropertiesListener implements ProjectEvaluationListener {
+// region Extension of the project's extra properties with TeamCity build properties
 
-  AtomicBoolean initScriptStartReported = new AtomicBoolean(false);
+// This class extends the Gradle project properties (project.ext) with TeamCity build properties.
+// This is quite complicated for setups that use the configuration cache, as it can lead unnecessary configuration cache invalidations.
+// Possibly, a better approach would be to avoid extending project.ext altogether.
+// The property extension can be kept for older Gradle versions and removed for newer versions.
+class ProjectExtraPropertiesExtender implements ProjectEvaluationListener {
 
-  Logger logger;
-  Closure doAfterEvaluate;
+  private final Logger logger
 
-  public TeamcityPropertiesListener(Logger log, Closure doAfterEvaluate) {
-    logger = log
-    this.doAfterEvaluate = doAfterEvaluate
+  ProjectExtraPropertiesExtender(Logger logger) {
+    this.logger = logger
   }
 
-  public void beforeEvaluate(Project project) {
-    loadProps(project);
-    // Marker for TeamCity listener that shows that init script started to execute successfully
-    if (initScriptStartReported.compareAndSet(false, true)) {
-      logger.lifecycle("Starting Gradle in TeamCity build ${project.teamcity["build.number"]}")
+  @Override
+  void beforeEvaluate(Project project) {
+    addTeamCityPropertiesToExtraProperties(project)
+  }
+
+  @Override
+  void afterEvaluate(Project project, ProjectState projectState) {}
+
+  static void logBuildPropertiesUsageWarningMessageIfNeeded(Gradle gradle, Logger logger) {
+    if (doNotPopulateGradleProperties() || !BuildFeatures.isConfigurationCacheRequested(gradle)) return
+
+    def warningMessage =
+            "\nGradle Configuration Cache is used in this build.\n" +
+            "Avoid accessing TeamCity build properties from the Gradle project " +
+            "('project.teamcity.buildprop', 'project.buildprop', 'teamcity.buildprop', '\$buildprop', etc.), " +
+            "as they can cause issues in Configuration Cache setups and will be removed for newer Gradle versions.\n" +
+            "If you experience unwarranted Configuration Cache invalidations, " +
+            "disable the population of the project properties with TeamCity build properties by setting " +
+            "the 'teamcity.internal.gradle.runner.doNotPopulateGradleProperties' configuration parameter to 'true'.\n"
+    logger.lifecycle(warningMessage)
+  }
+
+  private void addTeamCityPropertiesToExtraProperties(Project project) {
+    if (doNotPopulateGradleProperties()) return
+
+    if (!BuildFeatures.isConfigurationCacheRequested(project.gradle)) {
+      // When the configuration cache is not used,
+      // we can simply read the file and directly add the properties from it to the project's extra properties,
+      // as we did in the older init script.
+      setTeamCityPropertiesOnProject(project, getPropertiesFromFile(logger))
+    } else {
+      // When the configuration cache is used, we try add only the properties we consider non-volatile
+      // to ensure backwards compatibility with the previous integration logic (see init_since_8.gradle).
+      // We set up these properties as configuration inputs, so a change to any of these properties will invalidate the configuration cache.
+      Map<Object, Object> nonVolatileProperties = project.providers.of(TeamCityPropertiesValueSource.class) {}.getOrNull()
+      setTeamCityPropertiesOnProject(project, nonVolatileProperties)
     }
   }
 
-  public void afterEvaluate(Project project, ProjectState projectState) {
-    if (project.hasProperty("teamcity") && doAfterEvaluate != null) {
-      doAfterEvaluate(project)
-    }
+  private static boolean doNotPopulateGradleProperties() {
+    return Boolean.valueOf(System.getProperty("teamcity.internal.gradle.runner.doNotPopulateGradleProperties"))
   }
 
-  static Properties getProps(Project project, Logger logger, String file) {
-    File propsFile = project.file(file)
-    Properties props = new Properties()
-    InputStream input
-
+  private static Properties getPropertiesFromFile(Logger logger) {
     try {
-      input = new FileInputStream(propsFile)
-      props.load(input)
-    } catch (FileNotFoundException e) {
-      logger.error(e.getMessage(), e)
+      return PropertiesFileReader.loadPropertiesFromFile()
     } catch (IOException e) {
-      logger.error(e.getMessage(), e)
-    } finally {
-      try {
-        input?.close()
-      } catch (IOException e) {
-        Logger.log(LogLevel.ERROR, "Failed to close file stream!", e)
-      }
-    }
-    return props
-  }
-
-  private void loadProps(Project p) {
-    String propsFilePath = System.getProperty("teamcity.build.properties.file");
-    if (null == propsFilePath) {
-      propsFilePath = System.getenv("TEAMCITY_BUILD_PROPERTIES_FILE");
-    }
-
-    if (null != propsFilePath) {
-      Properties props = getProps(p, logger, propsFilePath)
-      addCustomProperties(p, props)
-    } else {
-      addCustomProperties(p, new HashMap())
+      logger.log(LogLevel.ERROR, e.getMessage(), e)
+      return new Properties()
     }
   }
 
-  private void addCustomProperties(Project p, Map props) {
-    if (p.hasProperty("ext")) {
-      props.each { k,v -> p.ext.set(k, v)}
-      p.ext.teamcity = props
-    } else {
-      p.setProperty("teamcity", props)
-    }
+  private static void setTeamCityPropertiesOnProject(Project project, Map<Object, Object> properties) {
+    properties.each { key, value -> project.ext.set(key, value) }
+    project.ext.teamcity = properties
   }
 }
+
+class PropertiesFileReader {
+  // This method reads the file using RandomAccessFile, so that the file is not tracked as a configuration phase input.
+  // Thus, changes to the file do not invalidate the configuration cache.
+  // We need this because the properties file changes every build and we want to avoid unnecessary cache invalidations.
+  static Properties loadPropertiesFromFile() throws IOException {
+    String filePath = getPropertiesFilePath()
+    if (filePath == null) return new Properties()
+
+    Properties properties = new Properties()
+    new RandomAccessFile(filePath, "r").withCloseable { RandomAccessFile randomAccessFile ->
+      byte[] data = new byte[(int) randomAccessFile.length()]
+      randomAccessFile.readFully(data)
+      properties.load(new ByteArrayInputStream(data))
+    }
+
+    return properties
+  }
+
+  private static String getPropertiesFilePath() {
+    return System.getProperty("teamcity.build.properties.file") ?:
+            System.getenv("TEAMCITY_BUILD_PROPERTIES_FILE")
+  }
+}
+
+// This class filters the properties we consider "non-volatile", meaning their values do not change from build to build.
+// The heuristics used are quite unreliable. They are kept only for backwards compatibility with the previous integration logic (see init_since_8.gradle).
+class NonVolatileBuildPropertiesFilter {
+  static Map<Object, Object> filterNonVolatileProperties(Properties properties) {
+    return properties.findAll { Object key, Object value ->
+      !isAVolatileProperty(key)
+    } as Map<Object, Object>
+  }
+
+  private static boolean isAVolatileProperty(Object key) {
+    String propertyKey = key.toString()
+
+    // Drop the dependency name prefix
+    if (propertyKey.startsWith("dep.")) {
+      propertyKey = propertyKey.substring(propertyKey.indexOf('.', 4) + 1)
+    }
+
+    if (propertyKey.startsWith("build.")) return true
+    if (propertyKey.startsWith("teamcity.build.id")) return true
+    if (nonVolatileTeamCityPrefixes.any { String prefix -> propertyKey.startsWith(prefix) }) return false
+
+    return propertyKey.startsWith("teamcity.")
+  }
+
+  private static final List<String> nonVolatileTeamCityPrefixes = [
+          "teamcity.build.",
+          "teamcity.buildConfName",
+          "teamcity.buildType.",
+          "teamcity.configuration.",
+          "teamcity.runner.",
+          "teamcity.projectName",
+          "teamcity.tests."
+  ]
+}
+
+// ValueSource used to track non-volatile build properties as a configuration phase input.
+abstract class TeamCityPropertiesValueSource implements ValueSource<Map<Object, Object>, ValueSourceParameters.None>, Describable {
+  @Override
+  Map<Object, Object> obtain() {
+    try {
+      Properties properties = PropertiesFileReader.loadPropertiesFromFile()
+      return NonVolatileBuildPropertiesFilter.filterNonVolatileProperties(properties)
+    } catch (IOException ignored) {
+      return null
+    }
+  }
+
+  @Override
+  String getDisplayName() {
+    return "TeamCity build properties collection"
+  }
+}
+
+// endregion
 
 class ServiceMessage {
   static final List<String> IGNORED_TAGD = ['tc:tags', 'flowId', 'parent']
@@ -237,6 +316,23 @@ class ServiceMessage {
       }
     }
     return msg.append('\'')
+  }
+}
+
+class BuildFeatures {
+  static boolean isConfigurationCacheRequested(Gradle gradle) {
+    try {
+      return getBuildFeatures(gradle).configurationCache.requested.getOrElse(false)
+    } catch (ClassNotFoundException ignored) {
+      def startParameter = gradle.startParameter
+      return startParameter.class.getMethod("isConfigurationCacheRequested").invoke(startParameter)
+    }
+  }
+
+  private static Object getBuildFeatures(Gradle gradle) {
+    Class buildFeaturesClass = Class.forName("org.gradle.api.configuration.BuildFeatures", false, gradle.class.classLoader)
+    def services = gradle.class.getMethod("getServices").invoke(gradle)
+    return services.get(buildFeaturesClass)
   }
 }
 
@@ -1244,26 +1340,24 @@ class TestFilterWrapper {
   }
 }
 
-final AtomicLong testCounter = new AtomicLong(0)
-
-gradle.addListener(new TeamcityPropertiesListener(logger, { project ->
-  // init jvm args
-  final String jvmargs = System.getProperty("gradle.test.jvmargs")
-  final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
-  TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper task ->
-    def buildTempDirectory = System.getProperty("teamcity.build.tempDir")
-    task.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
-  }
-}))
-
 apply plugin: CompileTaskErrorOutputPlugin
 apply plugin: TestTaskBuildLogSetupPlugin
 apply plugin: TeamcityBuildProblemReportingPlugin
 
+ProjectExtraPropertiesExtender.logBuildPropertiesUsageWarningMessageIfNeeded(gradle, logger)
+gradle.addListener(new ProjectExtraPropertiesExtender(logger))
+
+final AtomicLong testCounter = new AtomicLong(0)
 gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
   gradle.rootProject.allprojects { Project project ->
+    // init jvm args
+    final String jvmargs = System.getProperty("gradle.test.jvmargs")
+    final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
     TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
+      def buildTempDirectory = System.getProperty("teamcity.build.tempDir")
+      testTask.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
+
       def testNameFormat = System.getProperty("teamcity.internal.gradle.testNameFormat")
       def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
       def ignoredSuiteFormat = System.getProperty("teamcity.internal.gradle.ignoredSuiteFormat")
