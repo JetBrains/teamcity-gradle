@@ -1,16 +1,20 @@
+import org.gradle.api.flow.*
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.ValueSource
+import org.gradle.api.provider.ValueSourceParameters
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+import org.gradle.build.event.BuildEventsListenerRegistry
+import org.gradle.tooling.events.FinishEvent
+import org.gradle.tooling.events.OperationCompletionListener
+import org.gradle.tooling.events.task.TaskFailureResult
+import org.gradle.tooling.events.task.TaskFinishEvent
+
+import javax.inject.Inject
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.regex.Pattern
-import javax.inject.Inject
-import org.gradle.api.flow.*
-import org.gradle.api.provider.*
-import org.gradle.api.services.*
-import org.gradle.build.event.BuildEventsListenerRegistry
-import org.gradle.tooling.events.FinishEvent
-import org.gradle.tooling.events.OperationCompletionListener
-import org.gradle.tooling.events.task.TaskFinishEvent
-import org.gradle.tooling.events.task.TaskFailureResult
 
 class Constants {
   // region TeamCity variables and properties that affect the init script behavior
@@ -1365,7 +1369,7 @@ class TestTaskWrapper {
       }
     } else {
       // Fallback
-      taskCollection.all { task ->
+      taskCollection.configureEach { task ->
         TestTaskWrapper wrapper = new TestTaskWrapper(task)
         action(wrapper)
       }
