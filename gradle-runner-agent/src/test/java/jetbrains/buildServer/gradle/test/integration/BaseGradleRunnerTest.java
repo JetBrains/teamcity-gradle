@@ -319,7 +319,12 @@ public class BaseGradleRunnerTest {
 
   protected File getWorkingDir(String gradleVersionNum,
                                String projectName) {
-    return new File(new File(myCoDir, ConfigurationParamsUtil.getGradleInitScript(gradleVersionNum)), projectName);
+    return new File(new File(myCoDir, getDefaultInitScriptName(gradleVersionNum)), projectName);
+  }
+
+  @NotNull
+  private static String getDefaultInitScriptName(@NotNull String gradleVersion) {
+    return VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? INIT_SCRIPT_SINCE_8_NAME : INIT_SCRIPT_NAME;
   }
 
   @BeforeMethod
