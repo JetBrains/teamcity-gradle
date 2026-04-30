@@ -642,7 +642,7 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
   }
 
   static boolean doesTaskNeedExplicitTestRetrySupport(Task task) {
-    if (!AbstractTestTask.isAssignableFrom(task.class)) return
+    if (!AbstractTestTask.isAssignableFrom(task.class)) return false
 
     // Check if test retries are supported on the build configuration level.
     // If yes, then we do not need to set up explicit test retry for the task.
@@ -653,28 +653,37 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
     def useTestRetryPlugin = System.getProperty("teamcity.internal.gradle.useTestRetryPlugin")
     if (useTestRetryPlugin == "false") return false
 
-    def retryPlugin = task.getExtensions()?.findByName("retry")
-    def develocityPlugin = task.getExtensions()?.findByName("develocity")
-    def retries = getMaxRetries(retryPlugin, develocityPlugin)
-    if (retries == null || !retries.metaClass.respondsTo(retries, "getOrNull")) return false
-    return retries.getOrNull() ?: 0 > 0
+    def develocityPluginRetryCount = getDevelocityPluginRetryCountOrNull(task)
+    if (develocityPluginRetryCount != null && develocityPluginRetryCount > 0) return true
+
+    def retryPluginRetryCount = getRetryPluginRetryCountOrNull(task)
+    return retryPluginRetryCount != null && retryPluginRetryCount > 0
   }
 
-  static def getMaxRetries(def retryPlugin, def develocityPlugin) {
-    def maxRetries = null
-
+  static Integer getDevelocityPluginRetryCountOrNull(Task task) {
+    def develocityPlugin = task.getExtensions()?.findByName("develocity")
     if (develocityPlugin != null && develocityPlugin.metaClass.respondsTo(develocityPlugin, "testRetry")) {
       def develocityTestRetry = develocityPlugin.getTestRetry()
       if (develocityTestRetry != null && develocityTestRetry.metaClass.respondsTo(develocityTestRetry, "getMaxRetries")) {
-        maxRetries = develocityTestRetry.getMaxRetries()
+        return getRetryCountOrNull(develocityTestRetry.getMaxRetries())
       }
     }
 
-    if (maxRetries == null && retryPlugin != null && retryPlugin.metaClass.respondsTo(retryPlugin, "getMaxRetries")) {
-      maxRetries = retryPlugin.getMaxRetries()
+    return null
+  }
+
+  static Integer getRetryPluginRetryCountOrNull(Task task) {
+    def retryPlugin = task.getExtensions()?.findByName("retry")
+    if (retryPlugin != null && retryPlugin.metaClass.respondsTo(retryPlugin, "getMaxRetries")) {
+      return getRetryCountOrNull(retryPlugin.getMaxRetries())
     }
 
-    return maxRetries
+    return null
+  }
+
+  static Integer getRetryCountOrNull(def retries) {
+    if (retries == null || !retries.metaClass.respondsTo(retries, "getOrNull")) return null
+    return retries.getOrNull()
   }
 }
 
