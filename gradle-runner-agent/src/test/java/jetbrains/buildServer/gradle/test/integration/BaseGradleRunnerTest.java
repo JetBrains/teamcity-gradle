@@ -104,7 +104,7 @@ public class BaseGradleRunnerTest {
 
   protected final TempFiles myTempFiles = new TempFiles();
 
-  final static Action reportMessage = new CustomAction("Echoes test output") {
+  protected static final Action reportMessage = new CustomAction("Echoes test output") {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
@@ -116,7 +116,7 @@ public class BaseGradleRunnerTest {
     }
   };
 
-  final static Action reportWarning = new CustomAction("Echoes test output") {
+  protected static final Action reportWarning = new CustomAction("Echoes test output") {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
@@ -128,7 +128,7 @@ public class BaseGradleRunnerTest {
     }
   };
 
-    final static Action reportError = new CustomAction("Echoes test output") {
+  protected static final Action reportError = new CustomAction("Echoes test output") {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
@@ -240,14 +240,6 @@ public class BaseGradleRunnerTest {
     return generateGradlePaths().stream()
             .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "9") < 0)
             .iterator();
-  }
-
-  @DataProvider(name = "gradle-last-version-provider")
-  public static Iterator<String[]> getPathForLatestAvailableGradleVersion() {
-    return generateGradlePaths().stream()
-            .max((a, b) -> VersionComparatorUtil.compare(getGradleVersionFromPath(a[0]), getGradleVersionFromPath(b[0])))
-            .map(path -> Collections.singletonList(path).iterator())
-            .orElseGet(Collections::emptyIterator);
   }
 
   public static List<String[]> generateGradlePaths() {

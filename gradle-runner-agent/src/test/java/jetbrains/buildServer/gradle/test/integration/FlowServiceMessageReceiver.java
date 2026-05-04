@@ -63,7 +63,7 @@ public class FlowServiceMessageReceiver extends GradleRunnerServiceMessageTest.S
     list.add(text);
   }
 
-  protected void validateTestFlows(int totalTestCount) {
+  public void validateTestFlows(int totalTestCount) {
       int testCount = 0;
       Pattern testMsg = Pattern.compile("##teamcity\\[(\\w+?)(Started|Finished|Ignored)\\s+name='(.*?)'.*(?<!\\|)\\]");
 
