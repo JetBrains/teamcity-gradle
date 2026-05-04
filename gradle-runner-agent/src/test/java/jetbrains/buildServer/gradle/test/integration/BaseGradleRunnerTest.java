@@ -442,7 +442,7 @@ public class BaseGradleRunnerTest {
 
 
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
-      myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
+      myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_V2_LAUNCH_MODE);
     }
 
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);

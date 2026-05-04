@@ -512,7 +512,7 @@ abstract class CompileTaskErrorOutputPlugin implements Plugin<Gradle> {
   @Override
   void apply(Gradle gradle) {
     def compileTaskErrorOutputServiceProvider =
-            gradle.sharedServices.registerIfAbsent("compileTaskErrorOutputService", CompileTaskErrorOutputService)
+            gradle.sharedServices.registerIfAbsent("compileTaskErrorOutputService", CompileTaskErrorOutputService) {}
 
     gradle.addListener(new AfterEvaluateListener({ Project project ->
       project.tasks.configureEach { Task task ->
@@ -687,7 +687,7 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
   @Override
   void apply(Gradle gradle) {
     def testTaskBuildLogSetupServiceProvider =
-            gradle.sharedServices.registerIfAbsent("testTaskBuildLogSetupService", TestTaskBuildLogSetupService)
+            gradle.sharedServices.registerIfAbsent("testTaskBuildLogSetupService", TestTaskBuildLogSetupService) {}
 
     gradle.addListener(new AfterEvaluateListener({ Project project ->
       project.tasks.configureEach { Task task ->
