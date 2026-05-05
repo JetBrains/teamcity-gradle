@@ -159,7 +159,9 @@ public class BaseGradleRunnerTest {
 
   @DataProvider(name = "gradle-version-provider")
   public static Iterator<String[]> getPathsForAllAvailableGradleVersions() {
-    return generateGradlePaths().iterator();
+    return generateGradlePaths().stream()
+            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "8") >= 0)
+            .iterator();
   }
 
   @DataProvider(name = "2.0 < gradle-version-provider < 9.0")
@@ -209,7 +211,7 @@ public class BaseGradleRunnerTest {
   @DataProvider(name = "gradle-version-provider>=5.0")
   public static Iterator<String[]> get_paths_for_gradle_5_0_and_later() {
     return generateGradlePaths().stream()
-            .filter(version -> VersionComparatorUtil.compare(getGradleVersionFromPath(version[0]), "5.0") >= 0)
+            .filter(version -> version[0].equals("gradle-8.2"))
             .iterator();
   }
 

@@ -1,11 +1,11 @@
-package jetbrains.buildServer.gradle.test.integration
+package jetbrains.buildServer.gradle.test.toolingApiTests.integration
 
 import jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES
 import jetbrains.buildServer.util.StringUtil
 import org.testng.Assert.assertTrue
 import org.testng.annotations.Test
 
-class GradleRunnerToolingAPITest : GradleRunnerServiceMessageTest() {
+class DoNotPopulateGradlePropertiesTestForToolingAPI : GradleRunnerServiceMessageTestForToolingApi() {
 
     @Test(dataProvider = "gradle-version-provider>=8")
     fun `should execute happy path when doNotPopulateGradleProperties flag is set`(gradleVersion: String) {
