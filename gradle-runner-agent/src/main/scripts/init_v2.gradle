@@ -32,6 +32,8 @@ class Constants {
 
   // Points to the TeamCity build properties file when passed as a JVM system property.
   public static final String BUILD_PROPERTIES_FILE_SYSTEM_PROP = "teamcity.build.properties.file"
+  // Points to the TeamCity build configuration properties file.
+  public static final String CONFIG_PROPERTIES_FILE_SYSTEM_PROP = "teamcity.configuration.properties.file"
   // Points to the file that lists changed files for dependency-based test runs.
   public static final String BUILD_CHANGED_FILES_FILE_SYSTEM_PROP = "teamcity.build.changedFiles.file"
   // Disables adding TeamCity build properties to Gradle project extra properties.
@@ -67,6 +69,9 @@ class Constants {
   public static final String GRADLE_UNSAFE_ISOLATED_PROJECTS_SYSTEM_PROP = "org.gradle.unsafe.isolated-projects"
   // Supplies extra JVM arguments for Gradle test tasks.
   public static final String TEST_JVMARGS_SYSTEM_PROP = "gradle.test.jvmargs"
+  // Disables adding TeamCity test JVM arguments through a command line argument provider.
+  public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_CONFIG_PARAM = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled"
+  public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_VAR = "TEST_TASK_JVM_ARG_PROVIDER_DISABLED"
 
   // endregion
 }
@@ -1332,9 +1337,13 @@ class TestTaskWrapper {
   void addTestListener(def listener) { testTask.addTestListener(listener) }
   void addTestOutputListener(def listener) { testTask.addTestOutputListener(listener) }
   String getTaskPath() { testTask.path }
-  TestTaskWrapper jvmArgs(Object... arguments) {
+  TestTaskWrapper jvmArgs(String[] arguments) {
     if (testTask instanceof Test) {
-      testTask.jvmArgs(arguments)
+      if (jvmArgsProviderDisabled) {
+        testTask.jvmArgs(arguments)
+      } else {
+        testTask.jvmArgumentProviders.add(new TestTaskJvmArgumentsProvider(arguments))
+      }
     }
     return this
   }
@@ -1374,6 +1383,53 @@ class TestTaskWrapper {
         action(wrapper)
       }
     }
+  }
+
+  private static boolean isJvmArgsProviderDisabled() {
+    String envValue = System.getenv(Constants.TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_VAR)
+    if (envValue != null) return Boolean.valueOf(envValue)
+
+    String systemPropValue = System.getProperty(Constants.TEST_TASK_JVM_ARG_PROVIDER_DISABLED_CONFIG_PARAM)
+    if (systemPropValue != null) return Boolean.valueOf(systemPropValue)
+
+    return Boolean.valueOf(readConfigParameter(Constants.TEST_TASK_JVM_ARG_PROVIDER_DISABLED_CONFIG_PARAM))
+  }
+
+  private static String readConfigParameter(String key) {
+    String configFilePath = getConfigFilePath()
+    if (configFilePath == null || configFilePath.trim().isEmpty()) return null
+
+    Properties configProperties = new Properties()
+    try {
+      new File(configFilePath).withInputStream { stream -> configProperties.load(stream) }
+      return configProperties.getProperty(key)
+    } catch (IOException ignored) {
+      return null
+    }
+  }
+
+  private static String getConfigFilePath() {
+    String configFilePath = System.getProperty(Constants.CONFIG_PROPERTIES_FILE_SYSTEM_PROP)
+    if (configFilePath != null && !configFilePath.trim().isEmpty()) return configFilePath
+
+    try {
+      return PropertiesFileReader.loadPropertiesFromFile().getProperty(Constants.CONFIG_PROPERTIES_FILE_SYSTEM_PROP)
+    } catch (IOException ignored) {
+      return null
+    }
+  }
+}
+
+class TestTaskJvmArgumentsProvider implements org.gradle.process.CommandLineArgumentProvider {
+  private final List<String> arguments
+
+  TestTaskJvmArgumentsProvider(String[] arguments) {
+    this.arguments = Arrays.asList(arguments)
+  }
+
+  @Override
+  Iterable<String> asArguments() {
+    return arguments
   }
 }
 
