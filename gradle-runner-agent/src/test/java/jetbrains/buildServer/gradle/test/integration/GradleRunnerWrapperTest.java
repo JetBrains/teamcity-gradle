@@ -27,7 +27,7 @@ public class GradleRunnerWrapperTest extends GradleRunnerServiceMessageTest {
   public void simpleWrapperTest(final String gradleVersion) throws Exception {
     myRunnerParams.put(GradleRunnerConstants.GRADLE_WRAPPER_FLAG, Boolean.TRUE.toString());
     GradleRunConfiguration config = new GradleRunConfiguration(WRAPPED_PROJECT_A_NAME, "clean", "wrappedProjASequence_clean.txt");
-    config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]");
+    config.setPatternStr("^Downloading(.*)|^Unzipping(.*)|##teamcity\\[(.*?)(?<!\\|)\\]|> Task :clean[^\\r\\n]*|1 actionable task: 1 up-to-date");
     config.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(config);
   }

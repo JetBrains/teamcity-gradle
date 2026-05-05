@@ -22,6 +22,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void setUp() throws Exception {
     super.setUp();
     myRunnerParams.put(GradleRunnerConstants.IS_INCREMENTAL, Boolean.TRUE.toString());
+    System.clearProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM);
   }
 
   @Override
@@ -29,6 +30,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void tearDown() throws Exception {
     super.tearDown();
     myRunnerParams.clear();
+    System.clearProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM);
   }
 
   @Test(dataProvider = "gradle-version-provider")
