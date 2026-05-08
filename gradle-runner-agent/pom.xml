@@ -39,7 +39,6 @@
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>${jetbrains-annotations-agent.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

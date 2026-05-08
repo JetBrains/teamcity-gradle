@@ -13,6 +13,7 @@ initializeWorkspace()
 ext {
   teamcityVersion = anyParam('teamcityVersion') ?: '2025.07'
   versionNumber = anyParam('PluginVersion') ?: teamcityVersion
+  jetbrainsAnnotationsVersion = '13.0'
 }
 def localRepo = anyParamPath('TC_LOCAL_REPO')
 def localGradleRepo = anyParamPath('TC_GRADLE_LOCAL_REPO') ?: anyParamPath('TC_LOCAL_REPO') ?: rootProject.projectDir.toPath().resolve('local-gradle-repo')
@@ -66,6 +67,17 @@ subprojects {
 
   test.useTestNG()
   jar.archiveVersion.set('')
+
+  dependencies {
+    constraints {
+      implementation('org.jetbrains:annotations') {
+        version {
+          strictly rootProject.ext.jetbrainsAnnotationsVersion
+        }
+        because 'Keep TeamCity plugin agent and server artifacts on the same annotations version'
+      }
+    }
+  }
 
   publishing {
     publications {

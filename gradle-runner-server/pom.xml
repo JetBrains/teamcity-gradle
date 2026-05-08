@@ -24,7 +24,6 @@
     <dependency>
       <groupId>org.jetbrains</groupId>
       <artifactId>annotations</artifactId>
-      <version>${jetbrains-annotations.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -56,31 +55,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-agent-annotations</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.jetbrains</groupId>
-                  <artifactId>annotations</artifactId>
-                  <version>${jetbrains-annotations-agent.version}</version>
-                  <type>jar</type>
-                  <outputDirectory>${project.build.directory}/agent-extra-lib</outputDirectory>
-                  <destFileName>annotations-${jetbrains-annotations-agent.version}.jar</destFileName>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.jetbrains.teamcity</groupId>
         <artifactId>teamcity-maven-plugin</artifactId>
         <configuration>
@@ -94,10 +68,6 @@
               <extra>
                 <source>${project.parent.basedir}/gradle-runner-agent/src/main/scripts</source>
                 <destDir>scripts</destDir>
-              </extra>
-              <extra>
-                <source>${project.build.directory}/agent-extra-lib</source>
-                <destDir>lib</destDir>
               </extra>
             </extras>
           </agent>
