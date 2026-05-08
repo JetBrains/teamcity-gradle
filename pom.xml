@@ -21,7 +21,7 @@
     <gradle-tooling-api.version>8.9</gradle-tooling-api.version>
     <slf4j.version>1.7.36</slf4j.version>
     <commons-cli.version>1.4</commons-cli.version>
-    <jetbrains-annotations.version>13.0</jetbrains-annotations.version>
+    <jetbrains-annotations.version>23.0.0</jetbrains-annotations.version>
     <teamcity-maven-plugin.version>1.6.36</teamcity-maven-plugin.version>
 
     <maven.compiler.source>8</maven.compiler.source>
