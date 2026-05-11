@@ -1,6 +1,7 @@
 ### Gradle template
 .gradle/
 build/
+target/
 
 # IDEA
 .idea/
