@@ -56,5 +56,10 @@
       <artifactId>common-api</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jetbrains.teamcity</groupId>
+      <artifactId>tests-support</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
