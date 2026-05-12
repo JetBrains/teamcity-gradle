@@ -27,6 +27,8 @@
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <argLine></argLine>
+    <surefire.addOpens.argLine></surefire.addOpens.argLine>
   </properties>
 
   <organization>
@@ -159,6 +161,11 @@
           <version>3.1.0</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.2.5</version>
+        </plugin>
+        <plugin>
           <groupId>org.jetbrains.teamcity</groupId>
           <artifactId>teamcity-maven-plugin</artifactId>
           <version>${teamcity-maven-plugin.version}</version>
@@ -242,6 +249,25 @@
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>${surefire.addOpens.argLine} ${argLine}</argLine>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>java-9-plus-test-opens</id>
+      <activation>
+        <jdk>[9,)</jdk>
+      </activation>
+      <properties>
+        <surefire.addOpens.argLine>--add-opens=java.base/java.lang=ALL-UNNAMED</surefire.addOpens.argLine>
+      </properties>
+    </profile>
+  </profiles>
 </project>
