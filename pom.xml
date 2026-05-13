@@ -13,16 +13,18 @@
     <revision>${PluginVersion}</revision>
     <PluginVersion>${teamcity.version}</PluginVersion>
     <teamcity.version>2025.07</teamcity.version>
-    <TC_LOCAL_REPO>local-repo</TC_LOCAL_REPO>
     <local.repo.path>${TC_LOCAL_REPO}</local.repo.path>
+    <TC_LOCAL_REPO>local-repo</TC_LOCAL_REPO>
 
     <kotlin.version>2.0.21</kotlin.version>
     <kotlinx-coroutines.version>1.8.1</kotlinx-coroutines.version>
+    <mockk.version>1.13.2</mockk.version>
     <gradle-tooling-api.version>8.9</gradle-tooling-api.version>
     <slf4j.version>1.7.36</slf4j.version>
     <commons-cli.version>1.4</commons-cli.version>
     <jetbrains-annotations.version>23.0.0</jetbrains-annotations.version>
     <teamcity-maven-plugin.version>1.6.36</teamcity-maven-plugin.version>
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     <license-maven-plugin.version>2.7.1</license-maven-plugin.version>
 
     <maven.compiler.source>8</maven.compiler.source>
@@ -40,6 +42,7 @@
   <modules>
     <module>gradle-runner-common</module>
     <module>gradle-runner-runtime</module>
+    <module>gradle-runner-test-runtimes</module>
     <module>gradle-runner-agent</module>
     <module>gradle-runner-server</module>
   </modules>
@@ -65,6 +68,12 @@
       </dependency>
       <dependency>
         <groupId>org.jetbrains.teamcity.plugins</groupId>
+        <artifactId>gradle-runner-test-runtimes</artifactId>
+        <version>${revision}</version>
+        <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.teamcity.plugins</groupId>
         <artifactId>gradle-runner-agent</artifactId>
         <version>${revision}</version>
       </dependency>
@@ -77,6 +86,16 @@
         <groupId>org.jetbrains.kotlinx</groupId>
         <artifactId>kotlinx-coroutines-core</artifactId>
         <version>${kotlinx-coroutines.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-test-jvm</artifactId>
+        <version>${kotlinx-coroutines.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.mockk</groupId>
+        <artifactId>mockk-jvm</artifactId>
+        <version>${mockk.version}</version>
       </dependency>
       <dependency>
         <groupId>org.gradle</groupId>
@@ -132,6 +151,17 @@
 
   <pluginRepositories>
     <pluginRepository>
+      <id>local-teamcity-artifacts</id>
+      <url>file://${local.repo.path}</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>TeamCity</id>
+      <url>https://download.jetbrains.com/teamcity-repository/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
       <id>teamcity-space</id>
       <url>https://packages.jetbrains.team/maven/p/tc/maven</url>
     </pluginRepository>
@@ -164,7 +194,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.2.5</version>
+          <version>${maven-surefire-plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.jetbrains.teamcity</groupId>
@@ -197,6 +227,12 @@
             <goals>
               <goal>compile</goal>
             </goals>
+            <configuration>
+              <sourceDirs>
+                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                <sourceDir>${project.basedir}/src/main/java</sourceDir>
+              </sourceDirs>
+            </configuration>
           </execution>
           <execution>
             <id>test-compile</id>
@@ -204,14 +240,16 @@
             <goals>
               <goal>test-compile</goal>
             </goals>
+            <configuration>
+              <sourceDirs>
+                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                <sourceDir>${project.basedir}/src/test/java</sourceDir>
+              </sourceDirs>
+            </configuration>
           </execution>
         </executions>
         <configuration>
           <jvmTarget>1.8</jvmTarget>
-          <sourceDirs>
-            <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-            <sourceDir>${project.basedir}/src/main/java</sourceDir>
-          </sourceDirs>
         </configuration>
       </plugin>
       <plugin>
@@ -258,8 +296,23 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-testng</artifactId>
+            <version>${maven-surefire-plugin.version}</version>
+          </dependency>
+        </dependencies>
         <configuration>
           <argLine>${surefire.addOpens.argLine} ${argLine}</argLine>
+          <includes>
+            <include>**/Test*.java</include>
+            <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
+            <include>**/*TestCase.java</include>
+            <include>**/*ForToolingApi.java</include>
+            <include>**/*ForToolingAPI.java</include>
+          </includes>
         </configuration>
       </plugin>
       <plugin>

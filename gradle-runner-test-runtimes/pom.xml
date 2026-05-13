@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jetbrains.teamcity.plugins</groupId>
+    <artifactId>gradle-runner</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>gradle-runner-test-runtimes</artifactId>
+  <packaging>pom</packaging>
+
+  <properties>
+    <gradle.test.runtimes.output.dir>${project.build.directory}/gradle-runtime</gradle.test.runtimes.output.dir>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>prepare-gradle-test-runtimes</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir dir="${gradle.test.runtimes.output.dir}"/>
+                <macrodef name="prepare-gradle-test-runtime">
+                  <attribute name="version"/>
+                  <sequential>
+                    <get src="https://services.gradle.org/distributions/gradle-@{version}-bin.zip"
+                         dest="${gradle.test.runtimes.output.dir}/gradle-@{version}-bin.zip"
+                         skipexisting="true"/>
+                    <unzip src="${gradle.test.runtimes.output.dir}/gradle-@{version}-bin.zip"
+                           dest="${gradle.test.runtimes.output.dir}"
+                           overwrite="false"/>
+                    <chmod file="${gradle.test.runtimes.output.dir}/gradle-@{version}/bin/gradle" perm="755"/>
+                  </sequential>
+                </macrodef>
+
+                <prepare-gradle-test-runtime version="2.0"/>
+                <prepare-gradle-test-runtime version="2.5"/>
+                <prepare-gradle-test-runtime version="4.0.2"/>
+                <prepare-gradle-test-runtime version="3.4.1"/>
+                <prepare-gradle-test-runtime version="4.4"/>
+                <prepare-gradle-test-runtime version="4.10.3"/>
+                <prepare-gradle-test-runtime version="5.6.4"/>
+                <prepare-gradle-test-runtime version="6.5.1"/>
+                <prepare-gradle-test-runtime version="8.2"/>
+                <prepare-gradle-test-runtime version="8.9"/>
+                <prepare-gradle-test-runtime version="9.4.1"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
