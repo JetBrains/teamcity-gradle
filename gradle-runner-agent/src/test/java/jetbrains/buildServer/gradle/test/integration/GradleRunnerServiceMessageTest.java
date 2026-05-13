@@ -206,16 +206,17 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     }
 
     public String getSequenceFileName(@NotNull final File dir) {
-      if (myGradleVersion.startsWith("gradle-")) {
-        if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "9") >= 0) {
+      if (myGradleVersion.contains("gradle-")) {
+        final String gradleVersion = getGradleVersionFromPath(myGradleVersion);
+        if (VersionComparatorUtil.compare(gradleVersion, "9") >= 0) {
           final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".9." + FileUtil.getExtension(mySequenceFileName);
           if (new File(dir, file).exists()) return file;
         }
-        if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "8") >= 0) {
+        if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
           final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".8." + FileUtil.getExtension(mySequenceFileName);
           if (new File(dir, file).exists()) return file;
         }
-        if (VersionComparatorUtil.compare(getGradleVersionFromPath(myGradleVersion), "3") >= 0) {
+        if (VersionComparatorUtil.compare(gradleVersion, "3") >= 0) {
           final String file = FileUtil.getNameWithoutExtension(mySequenceFileName) + ".3." + FileUtil.getExtension(mySequenceFileName);
           if (new File(dir, file).exists()) return file;
         }

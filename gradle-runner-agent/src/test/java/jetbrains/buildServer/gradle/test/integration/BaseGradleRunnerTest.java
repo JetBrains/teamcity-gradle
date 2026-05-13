@@ -3,6 +3,7 @@ package jetbrains.buildServer.gradle.test.integration;
 import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.*;
@@ -40,6 +41,7 @@ import org.jmock.api.Action;
 import org.jmock.api.Invocation;
 import org.jmock.lib.action.CustomAction;
 import org.testng.Reporter;
+import org.testng.SkipException;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -56,6 +58,7 @@ import static org.testng.Assert.assertTrue;
 public class BaseGradleRunnerTest {
 
   public static final String PROPERTY_GRADLE_RUNTIME = "gradle.runtime";
+  private static final String PROPERTY_GRADLE_WRAPPER_TEST_DISTRIBUTION_ZIP = "gradle.wrapper.test.distribution.zip";
   public static final String REPORT_SEQ_DIR = "src/test/resources/reportSequences";
 
   public static final String PROJECT_A_NAME = "projectA";
@@ -314,7 +317,7 @@ public class BaseGradleRunnerTest {
   }
 
   protected String getGradleVersion(String gradleVersion) {
-    return gradleVersion.startsWith("gradle-") ? getGradleVersionFromPath(gradleVersion) : gradleVersion;
+    return gradleVersion.contains("gradle-") ? getGradleVersionFromPath(gradleVersion) : gradleVersion;
   }
 
   protected File getWorkingDir(String gradleVersionNum,
@@ -337,8 +340,44 @@ public class BaseGradleRunnerTest {
     myTempDir.mkdir();
     myCoDir = myTempFiles.createTempDir();
     FileUtil.copyDir(new File(curDir, "src/test/resources/testProjects"), myCoDir, true);
+    overrideGradleWrapperDistributions(myCoDir);
     assertTrue(new File(myCoDir, INIT_SCRIPT_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
     assertTrue(new File(myCoDir, INIT_SCRIPT_SINCE_8_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
+  }
+
+  private void overrideGradleWrapperDistributions(final File dir) throws IOException {
+    final String distributionZip = System.getProperty(PROPERTY_GRADLE_WRAPPER_TEST_DISTRIBUTION_ZIP);
+    if (distributionZip == null || distributionZip.isEmpty()) return;
+
+    overrideGradleWrapperDistributions(dir, new File(distributionZip).toURI().toString());
+  }
+
+  private void overrideGradleWrapperDistributions(final File dir, final String distributionUrl) throws IOException {
+    final File[] children = dir.listFiles();
+    if (children == null) return;
+
+    for (File child : children) {
+      if (child.isDirectory()) {
+        overrideGradleWrapperDistributions(child, distributionUrl);
+      } else if ("gradle-wrapper.properties".equals(child.getName())) {
+        overrideGradleWrapperDistribution(child, distributionUrl);
+      }
+    }
+  }
+
+  private void overrideGradleWrapperDistribution(final File propertiesFile, final String distributionUrl) throws IOException {
+    final Properties properties = new Properties();
+    try (InputStream in = Files.newInputStream(propertiesFile.toPath())) {
+      properties.load(in);
+    }
+
+    final String originalUrl = properties.getProperty("distributionUrl");
+    if (originalUrl == null || !originalUrl.contains("gradle-8.2-bin.zip")) return;
+
+    properties.setProperty("distributionUrl", distributionUrl);
+    try (OutputStream out = Files.newOutputStream(propertiesFile.toPath())) {
+      properties.store(out, null);
+    }
   }
 
   private void setupInitScripts(File projectRoot) throws IOException {
@@ -425,11 +464,18 @@ public class BaseGradleRunnerTest {
     String gradleVersionNum = getGradleVersion(gradleVersion);
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") < 0) {
       // Older Gradle versions cannot run on newer JDKs
-      myRunnerParams.put("target.jdk.home", System.getenv("JDK_1_8"));
+      final String jdk8Home = System.getenv("JDK_1_8");
+      if (jdk8Home == null) {
+        throw new SkipException("JDK_1_8 is required to run Gradle " + gradleVersionNum);
+      }
+      myRunnerParams.put("target.jdk.home", jdk8Home);
     }
     if (VersionComparatorUtil.compare(gradleVersionNum, "9.0") > 0) {
       // Gradle 9+ requires JDK 17+
-      myRunnerParams.put("target.jdk.home", System.getenv("JDK_21_0"));
+      final String jdk21Home = System.getenv("JDK_21_0");
+      if (jdk21Home != null) {
+        myRunnerParams.put("target.jdk.home", jdk21Home);
+      }
     }
 
 

@@ -11,6 +11,14 @@
   </parent>
   <artifactId>gradle-runner-agent</artifactId>
 
+  <properties>
+    <gradle.test.runtime.version>${gradle-tooling-api.version}</gradle.test.runtime.version>
+    <gradle.test.runtime.dir>${project.build.directory}/gradle-runtime/gradle-${gradle.test.runtime.version}</gradle.test.runtime.dir>
+    <gradle.wrapper.test.runtime.version>8.2</gradle.wrapper.test.runtime.version>
+    <gradle.wrapper.test.runtime.zip>${project.build.directory}/gradle-runtime/gradle-${gradle.wrapper.test.runtime.version}-bin.zip</gradle.wrapper.test.runtime.zip>
+    <gradle.wrapper.test.distribution.zip/>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.jetbrains.teamcity.plugins</groupId>
@@ -62,4 +70,66 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <gradle.runtime>${gradle.runtime}</gradle.runtime>
+            <gradle.wrapper.test.distribution.zip>${gradle.wrapper.test.distribution.zip}</gradle.wrapper.test.distribution.zip>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>download-gradle-test-runtime</id>
+      <activation>
+        <property>
+          <name>!gradle.runtime</name>
+        </property>
+      </activation>
+      <properties>
+        <gradle.runtime>${gradle.test.runtime.dir}</gradle.runtime>
+        <gradle.wrapper.test.distribution.zip>${gradle.wrapper.test.runtime.zip}</gradle.wrapper.test.distribution.zip>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>download-gradle-test-runtime</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <mkdir dir="${project.build.directory}/gradle-runtime"/>
+                    <get src="https://services.gradle.org/distributions/gradle-${gradle.test.runtime.version}-bin.zip"
+                         dest="${project.build.directory}/gradle-runtime/gradle-${gradle.test.runtime.version}-bin.zip"
+                         skipexisting="true"/>
+                    <get src="https://services.gradle.org/distributions/gradle-${gradle.wrapper.test.runtime.version}-bin.zip"
+                         dest="${gradle.wrapper.test.runtime.zip}"
+                         skipexisting="true"/>
+                    <unzip src="${project.build.directory}/gradle-runtime/gradle-${gradle.test.runtime.version}-bin.zip"
+                           dest="${project.build.directory}/gradle-runtime"
+                           overwrite="false"/>
+                    <chmod file="${gradle.test.runtime.dir}/bin/gradle" perm="755"/>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
