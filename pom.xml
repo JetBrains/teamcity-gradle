@@ -23,6 +23,7 @@
     <commons-cli.version>1.4</commons-cli.version>
     <jetbrains-annotations.version>23.0.0</jetbrains-annotations.version>
     <teamcity-maven-plugin.version>1.6.36</teamcity-maven-plugin.version>
+    <license-maven-plugin.version>2.7.1</license-maven-plugin.version>
 
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
@@ -178,6 +179,11 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>${license-maven-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -254,6 +260,18 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <argLine>${surefire.addOpens.argLine} ${argLine}</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <fileTemplate>${project.basedir}/build-support/third-party-libraries.ftl</fileTemplate>
+          <thirdPartyFilename>third-party-libraries.json</thirdPartyFilename>
+          <outputDirectory>${project.basedir}</outputDirectory>
+          <excludedGroups>org.jetbrains.*|com.jetbrains.*</excludedGroups>
+          <includeTransitiveDependencies>false</includeTransitiveDependencies>
+          <sortArtifactByName>true</sortArtifactByName>
         </configuration>
       </plugin>
     </plugins>
