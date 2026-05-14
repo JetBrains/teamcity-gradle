@@ -131,6 +131,17 @@
 
   <pluginRepositories>
     <pluginRepository>
+      <id>local-teamcity-artifacts</id>
+      <url>file://${local.repo.path}</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>TeamCity</id>
+      <url>https://download.jetbrains.com/teamcity-repository/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
       <id>teamcity-space</id>
       <url>https://packages.jetbrains.team/maven/p/tc/maven</url>
     </pluginRepository>
