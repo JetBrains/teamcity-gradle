@@ -224,7 +224,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     }
   }
 
-  @Test(dataProvider = "gradle-version-provider>=8")
+  @Test(dataProvider = "gradle-version-provider>=4.7")
   public void testComparisonServiceMessage(final String gradleVersion) throws Exception {
     testTest(PROJECT_PRINT_NAME, "clean test --tests my.ComparisonTest", "testComparisonServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }

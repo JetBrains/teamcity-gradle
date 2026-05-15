@@ -193,7 +193,7 @@ public class GradleRunnerTestTestForToolingApi extends GradleRunnerServiceMessag
 
   @Test(dataProvider = "gradle-version-provider>=8")
   public void testComparisonServiceMessage(final String gradleVersion) throws Exception {
-    testTest(PROJECT_PRINT_NAME, "clean test --tests my.ComparisonTest", "testComparisonServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
+    testTest(PROJECT_PRINT_NAME, "clean test --tests my.ComparisonTest", "toolingApi/testComparisonServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
