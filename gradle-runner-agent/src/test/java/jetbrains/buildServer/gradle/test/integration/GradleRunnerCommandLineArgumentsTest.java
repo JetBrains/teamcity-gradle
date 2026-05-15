@@ -140,7 +140,7 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
-  public void should_Fail_When_UnsupportedGradleArgumentsArePassedThatWeDontKnow(final String gradleVersion) throws Exception {
+  public void should_FailAndCreateBuildProblem_When_AnUnknownArgumentIsPassed(final String gradleVersion) throws Exception {
     // arrange
     String buildCmd = "clean build --unknown-arg";
     final GradleRunConfiguration config = new GradleRunConfiguration(DEMAND_MULTI_PROJECT_A_NAME, buildCmd, null);
@@ -151,8 +151,9 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
 
     // assert
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\nFull log:\n" + StringUtil.join("\n", messages));
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("Caused by: org.gradle.cli.CommandLineArgumentException: Unknown command-line option '--unknown-arg'")),
-               "Should fail with an exception due to unknown unsupported arg\nFull log:\n" + StringUtil.join("\n", messages));
+    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##teamcity[buildProblem type='gradleBuildProblem'") &&
+                                                  line.contains("Unknown command-line option |'--unknown-arg|'")),
+               "Should report a build problem due to unknown argument\nFull log:\n" + StringUtil.join("\n", messages));
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
@@ -263,4 +264,3 @@ public class GradleRunnerCommandLineArgumentsTest extends GradleRunnerServiceMes
     }
   }
 }
-
