@@ -89,7 +89,7 @@ public class GradleRunnerCompileTestForToolingApi extends GradleRunnerServiceMes
   // This test is not relevant for Gradle 9+ because the build file argument was deprecated
   @Test(dataProvider = "gradle-version-provider=8.x")
   public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {
-    GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "projectABlockSequence.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration("subdir", "clean build", "toolingApi/projectABlockSequence.txt");
     myRunnerParams.put(GradleRunnerConstants.PATH_TO_BUILD_FILE, "projectA/run.gradle");
     try {
       config.setGradleVersion(gradleVersion);
