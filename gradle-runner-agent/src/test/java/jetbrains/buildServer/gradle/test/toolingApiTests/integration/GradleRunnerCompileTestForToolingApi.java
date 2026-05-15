@@ -52,7 +52,7 @@ public class GradleRunnerCompileTestForToolingApi extends GradleRunnerServiceMes
     } else if (isJre6) {
       config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_6.txt");
     } else {
-      config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "failedCompilationSequence1_7.txt");
+      config = new GradleRunConfiguration(PROJECT_B_NAME, BUILD_CMD, "toolingApi/failedCompilationSequence1_7.txt");
     }
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
@@ -61,7 +61,7 @@ public class GradleRunnerCompileTestForToolingApi extends GradleRunnerServiceMes
 
   @Test(dataProvider = "gradle-version-provider>=8")
   public void failedParallelCompileTest8AndHigher(final String gradleVersion) throws Exception {
-    GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "failedCompilationParallel.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration("MultiProjectD", "clean build --parallel", "toolingApi/failedCompilationParallel.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("##teamcity\\[(message)(.*?)(?<!\\|)\\]");
     runAndCheckServiceMessages(config);
@@ -69,7 +69,7 @@ public class GradleRunnerCompileTestForToolingApi extends GradleRunnerServiceMes
 
   @Test(dataProvider = "gradle-version-provider>=8")
   public void failedKotlinCompileTest(final String gradleVersion) throws Exception {
-    GradleRunConfiguration config = new GradleRunConfiguration("projectKotlinBroken", "clean build", "failedKotlinCompilation.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration("projectKotlinBroken", "clean build", "toolingApi/failedKotlinCompilation.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
