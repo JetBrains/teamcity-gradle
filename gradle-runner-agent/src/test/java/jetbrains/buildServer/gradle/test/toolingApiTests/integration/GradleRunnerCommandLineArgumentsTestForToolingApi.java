@@ -23,8 +23,10 @@ public class GradleRunnerCommandLineArgumentsTestForToolingApi extends GradleRun
                                                .stream()
                                                .filter(arg -> !arg.equals("--watch-fs") && !arg.equals("--continuous"))
                                                // Continuous build doesn't work w/o watch-fs. watch-fs leads to test failures when watching the file system is not supported
-                                               .filter(arg -> VersionComparatorUtil.compare(gradleVersion, "9") >= 0 && !arg.equals("--build-file"))
+                                               .filter(arg -> VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "9") < 0 || !arg.equals("--build-file"))
                                                // The build file option is not supported in Gradle 9+
+                                               .filter(arg -> VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "9") < 0 || !arg.equals("--settings-file"))
+                                               // The settings file option is not supported in Gradle 9+
                                                .collect(Collectors.toList()));
 
     for (String supportedArg : supported) {
@@ -56,8 +58,10 @@ public class GradleRunnerCommandLineArgumentsTestForToolingApi extends GradleRun
                                                .stream()
                                                .filter(arg -> !arg.equals("-t"))
                                                // Continuous build doesn't work w/o watch-fs. watch-fs leads to test failures when watching the file system is not supported
-                                               .filter(arg -> VersionComparatorUtil.compare(gradleVersion, "9") >= 0 && !arg.equals("-b"))
+                                               .filter(arg -> VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "9") < 0 || !arg.equals("-b"))
                                                // The build file option is not supported in Gradle 9+
+                                               .filter(arg -> VersionComparatorUtil.compare(getGradleVersionFromPath(gradleVersion), "9") < 0 || !arg.equals("-c"))
+                                               // The settings file option is not supported in Gradle 9+
                                                .collect(Collectors.toList()));
 
     for (String supportedArg : supported) {
