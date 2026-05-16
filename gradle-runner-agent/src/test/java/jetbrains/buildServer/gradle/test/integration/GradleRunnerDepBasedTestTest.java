@@ -129,18 +129,4 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     File changedFilesFile = myTempFiles.createTempFile(changesList);
     return changedFilesFile.getAbsolutePath().replaceAll("\\\\", "/");
   }
-
-  private File addChangedFilesToRuntimeProps(final String changedFilesPath, final File runtimePropsFile) throws IOException {
-
-    final List<String> properties = FileUtil.readFile(runtimePropsFile);
-    for (int i = 0; i < properties.size(); i++) {
-      String property = properties.get(i);
-      if (property.contains("__changedFiles_file__")) {
-        final String changedFilesProperty = property.replaceFirst("__changedFiles_file__",
-                                                                  changedFilesPath);
-        properties.set(i, changedFilesProperty);
-      }
-    }
-    return myTempFiles.createTempFile(StringUtil.join("\n", properties));
-  }
 }

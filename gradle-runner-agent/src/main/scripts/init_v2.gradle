@@ -107,7 +107,11 @@ public class DependencyBasedTestRun {
           logger.debug("No affected projects found. Running full build.")
           gradle.startParameter.taskNames = ["build"]
         } else {
-          gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
+          gradle.startParameter.taskNames = modifiedProjects.collect {
+            def taskName = it as String
+            if (!taskName.endsWith(":")) taskName += ":"
+            return taskName + "buildDependents"
+          }
           logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
         }
         break;

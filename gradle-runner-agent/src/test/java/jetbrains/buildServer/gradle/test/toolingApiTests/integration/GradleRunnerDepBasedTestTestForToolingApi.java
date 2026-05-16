@@ -41,7 +41,7 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestSingleDep.txt");
+                                                                                     "toolingApi/DepBasedTestSingleDep.txt");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
@@ -54,7 +54,7 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
     myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestDoubleDep.txt");
+                                                                                     "toolingApi/DepBasedTestDoubleDep.txt");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
@@ -65,7 +65,7 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
     myTeamCitySystemProps.put("teamcity.build.changedFiles.file", createFileWithChanges("projectD/src/main/java/my/module/GreeterD.java:ADD:1"));
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestZeroDep.txt");
+                                                                                     "toolingApi/DepBasedTestZeroDep.txt");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
@@ -77,7 +77,7 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestFullBuild.txt");
+                                                                                     "toolingApi/DepBasedTestFullBuild.txt");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
 
     runAndCheckServiceMessages(gradleRunConfiguration);
@@ -91,7 +91,7 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestPersonalChange.txt");
+                                                                                     "toolingApi/DepBasedTestPersonalChange.txt");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
@@ -106,7 +106,7 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestFullBuild.txt");
+                                                                                     "toolingApi/DepBasedTestFullBuild.txt");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
@@ -120,7 +120,7 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
 
     final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
                                                                                      "clean",
-                                                                                     "DepBasedTestFullBuild.txt");
+                                                                                     "toolingApi/DepBasedTestFullBuild.txt");
     gradleRunConfiguration.setGradleVersion(gradleVersion);
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
@@ -128,19 +128,5 @@ public class GradleRunnerDepBasedTestTestForToolingApi extends GradleRunnerServi
   private String createFileWithChanges(final String changesList) throws IOException {
     File changedFilesFile = myTempFiles.createTempFile(changesList);
     return changedFilesFile.getAbsolutePath().replaceAll("\\\\", "/");
-  }
-
-  private File addChangedFilesToRuntimeProps(final String changedFilesPath, final File runtimePropsFile) throws IOException {
-
-    final List<String> properties = FileUtil.readFile(runtimePropsFile);
-    for (int i = 0; i < properties.size(); i++) {
-      String property = properties.get(i);
-      if (property.contains("__changedFiles_file__")) {
-        final String changedFilesProperty = property.replaceFirst("__changedFiles_file__",
-                                                                  changedFilesPath);
-        properties.set(i, changedFilesProperty);
-      }
-    }
-    return myTempFiles.createTempFile(StringUtil.join("\n", properties));
   }
 }
