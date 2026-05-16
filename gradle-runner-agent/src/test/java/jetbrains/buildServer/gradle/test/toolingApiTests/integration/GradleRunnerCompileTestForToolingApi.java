@@ -28,7 +28,7 @@ public class GradleRunnerCompileTestForToolingApi extends GradleRunnerServiceMes
     myTeamCitySystemProps.put("property.bravo", "value bravo");
     myTeamCitySystemProps.put("property charlie", "value charlie");
 
-    GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", "mProjectABlockSequence.txt");
+    GradleRunConfiguration config = new GradleRunConfiguration(MULTI_PROJECT_A_NAME, BUILD_CMD + " printProperties", "toolingApi/mProjectABlockSequence.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_BLOCK_PROPS_MSGS_PATTERN);
     runAndCheckServiceMessages(config);
