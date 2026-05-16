@@ -148,7 +148,7 @@ public class GradleRunnerTestTestForToolingApi extends GradleRunnerServiceMessag
   @Test(dataProvider = "gradle-version-provider>=8")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsOnlySubmoduleWithPlugin(final String gradleVersion) throws Exception {
-    testTest(MULTI_PROJECT_E_NAME, ":projectA:clean :projectA:test -PmaxRetriesProperty=2", "testMultiProjectEOnlySubmoduleWithPlugin.txt", gradleVersion,
+    testTest(MULTI_PROJECT_E_NAME, ":projectA:clean :projectA:test -PmaxRetriesProperty=2", "toolingApi/testMultiProjectEOnlySubmoduleWithPlugin.txt", gradleVersion,
              "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
@@ -162,7 +162,7 @@ public class GradleRunnerTestTestForToolingApi extends GradleRunnerServiceMessag
   @Test(dataProvider = "gradle-version-provider>=8")
   @TestFor(issues = "TW-64037")
   public void testRerunTestsAllModulesWithOnePlugin(final String gradleVersion) throws Exception {
-    testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=2", "testMultiProjectEAllModulesWithOnePlugin.txt", gradleVersion,
+    testTest(MULTI_PROJECT_E_NAME, "clean test -PmaxRetriesProperty=2", "toolingApi/testMultiProjectEAllModulesWithOnePlugin.txt", gradleVersion,
              "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
