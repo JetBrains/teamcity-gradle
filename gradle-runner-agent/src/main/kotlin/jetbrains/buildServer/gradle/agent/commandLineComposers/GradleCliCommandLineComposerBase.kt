@@ -2,8 +2,15 @@ package jetbrains.buildServer.gradle.agent.commandLineComposers
 
 import jetbrains.buildServer.agent.runner.ProgramCommandLine
 import jetbrains.buildServer.agent.runner.SimpleProgramCommandLine
+import jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY
+import jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_ENHANCE_GRADLE_DAEMON_CLASSPATH
+import jetbrains.buildServer.gradle.GradleRunnerConstants.TEAMCITY_BUILD_INIT_PATH
+import jetbrains.buildServer.gradle.agent.GradleDaemonEnhancementClassesProvider
+import jetbrains.buildServer.gradle.agent.GradleLaunchMode
 import jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer
+import jetbrains.buildServer.gradle.runtime.service.GradleBuildConfigurator
+import java.io.IOException
 
 abstract class GradleCliCommandLineComposerBase(private val tasksComposer: GradleTasksComposer) : GradleCommandLineComposer {
     override fun compose(parameters: GradleCommandLineComposerParameters): ProgramCommandLine {
@@ -25,8 +32,9 @@ abstract class GradleCliCommandLineComposerBase(private val tasksComposer: Gradl
         getEnv(parameters).forEach {
             env.putIfAbsent(it.first, it.second)
         }
+        val env1 = getEnvironmentForInitScript(parameters, env)
         return SimpleProgramCommandLine(
-            env,
+            env1,
             parameters.workingDir.toString(),
             parameters.exePath,
             gradleParameters
@@ -53,6 +61,26 @@ abstract class GradleCliCommandLineComposerBase(private val tasksComposer: Gradl
                 yield(parameterName to value)
             }
         }
+    }
+
+    private fun getEnvironmentForInitScript(parameters: GradleCommandLineComposerParameters, env: HashMap<String, String>): Map<String, String> {
+        if (getLaunchMode() != GradleLaunchMode.COMMAND_LINE_V2) return parameters.env
+
+        if (isGradleDaemonClasspathEnhancementEnabled(parameters)) {
+            env[GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY] = GradleDaemonEnhancementClassesProvider.provide()
+        }
+
+        try {
+            env[TEAMCITY_BUILD_INIT_PATH] = GradleBuildConfigurator.getInitScriptClasspath()
+        } catch (e: IOException) {
+            parameters.logger.message("Couldn't configure Gradle init script classpath: ${e.message}")
+        }
+
+        return env
+    }
+
+    private fun isGradleDaemonClasspathEnhancementEnabled(parameters: GradleCommandLineComposerParameters): Boolean {
+        return parameters.configParameters[GRADLE_RUNNER_ENHANCE_GRADLE_DAEMON_CLASSPATH]?.toBooleanStrictOrNull() ?: true
     }
 
     private fun getSystemPropertiesForInitScript(parameters: GradleCommandLineComposerParameters): Sequence<Pair<String, String>> = sequence {
