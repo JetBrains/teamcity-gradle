@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.testng.SkipException;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import static jetbrains.buildServer.util.FileUtil.getExtension;
@@ -26,6 +27,13 @@ import static jetbrains.buildServer.util.FileUtil.getNameWithoutExtension;
 public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
 
   private static final int PROJECT_D_TEST_COUNT = 39;
+
+  @Override
+  @AfterMethod
+  public void tearDown() throws Exception {
+    super.tearDown();
+    myTeamCityConfigParameters.clear();
+  }
 
   @Test(dataProvider = "gradle-version-provider")
   public void failedAndSkippedJUnitTest(final String gradleVersion) throws Exception {
