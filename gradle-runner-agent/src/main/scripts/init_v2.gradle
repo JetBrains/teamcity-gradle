@@ -38,6 +38,8 @@ class Constants {
   public static final String DO_NOT_POPULATE_GRADLE_PROPERTIES_SYSTEM_PROP = "teamcity.internal.gradle.runner.doNotPopulateGradleProperties"
   // Controls whether explicit test retry integration should inspect Gradle retry plugins.
   public static final String USE_TEST_RETRY_PLUGIN_SYSTEM_PROP = "teamcity.internal.gradle.useTestRetryPlugin"
+  // Disables adding TeamCity test JVM arguments through a command line argument provider.
+  public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_CONFIG_PARAM = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled"
   // Points to the directory where TeamCity stores stacktrace logs.
   public static final String BUILD_STACKTRACE_LOG_DIR_SYSTEM_PROP = "teamcity.build.stacktraceLogDir"
   // Points to the TeamCity build temporary directory.
@@ -1332,9 +1334,14 @@ class TestTaskWrapper {
   void addTestListener(def listener) { testTask.addTestListener(listener) }
   void addTestOutputListener(def listener) { testTask.addTestOutputListener(listener) }
   String getTaskPath() { testTask.path }
-  TestTaskWrapper jvmArgs(Object... arguments) {
+  TestTaskWrapper jvmArgs(String[] arguments) {
     if (testTask instanceof Test) {
-      testTask.jvmArgs(arguments)
+      Boolean jvmArgsProviderDisabled = Boolean.valueOf(System.getProperty(Constants.TEST_TASK_JVM_ARG_PROVIDER_DISABLED_CONFIG_PARAM))
+      if (jvmArgsProviderDisabled) {
+        testTask.jvmArgs(arguments)
+      } else {
+        testTask.jvmArgumentProviders.add(new TestTaskJvmArgumentsProvider(arguments))
+      }
     }
     return this
   }
@@ -1374,6 +1381,19 @@ class TestTaskWrapper {
         action(wrapper)
       }
     }
+  }
+}
+
+class TestTaskJvmArgumentsProvider implements org.gradle.process.CommandLineArgumentProvider {
+  private final List<String> arguments
+
+  TestTaskJvmArgumentsProvider(String[] arguments) {
+    this.arguments = Arrays.asList(arguments)
+  }
+
+  @Override
+  Iterable<String> asArguments() {
+    return arguments
   }
 }
 

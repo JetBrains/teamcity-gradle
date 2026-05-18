@@ -19,6 +19,7 @@ public class InitScriptParametersConstants {
   public static final String TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY = "teamcity.internal.gradle.testNameFormat";
   public static final String TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY = "teamcity.internal.gradle.ignoredSuiteFormat";
   public static final String TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY = "teamcity.internal.gradle.useTestRetryPlugin";
+  public static final String TEAMCITY_CONFIGURATION_TEST_TASK_JVM_ARG_PROVIDER_DISABLED = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled";
   public static final String TEAMCITY_CONFIGURATION_BUILD_BRANCH_KEY = "teamcity.build.branch";
 
   public static final String TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY = GradleRunnerConstants.TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY;

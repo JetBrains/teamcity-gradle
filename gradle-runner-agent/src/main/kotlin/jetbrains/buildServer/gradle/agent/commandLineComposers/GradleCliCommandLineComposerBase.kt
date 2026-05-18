@@ -46,6 +46,7 @@ abstract class GradleCliCommandLineComposerBase(private val tasksComposer: Gradl
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY,
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY,
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY,
+            InitScriptParametersConstants.TEAMCITY_CONFIGURATION_TEST_TASK_JVM_ARG_PROVIDER_DISABLED,
         ).forEach { parameterName ->
             parameters.configParameters[parameterName]?.let { value ->
                 yield(parameterName to value)
