@@ -245,7 +245,7 @@ public class GradleRunnerConfigurationCacheTestForToolingApi extends GradleRunne
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
 
     // when: second run / then: tests ran with configuration cache reused
-    config = new GradleRunConfiguration(PROJECT_E_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCache.txt");
+    config = new GradleRunConfiguration(PROJECT_E_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "toolingApi/testsWithConfigurationCache.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("(##teamcity\\[(.*?)(?<!\\|)\\])|(Reusing configuration cache)");
     runAndCheckServiceMessages(config);
