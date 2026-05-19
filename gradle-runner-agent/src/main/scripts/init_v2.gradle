@@ -117,7 +117,7 @@ public class DependencyBasedTestRun {
 
 
   private def findAffectedProjects(Project project) {
-    String changedFilesFile = System.getProperty(Constants.BUILD_CHANGED_FILES_FILE_SYSTEM_PROP)
+    String changedFilesFile = System.getenv(Constants.BUILD_CHANGED_FILES_FILE_SYSTEM_PROP)
 
     if (changedFilesFile != null && !changedFilesFile.isEmpty()) {
       def changedFiles = readChangedFiles(changedFilesFile)
@@ -819,8 +819,8 @@ class BuildDirectoriesResolver {
   private final File buildDir
 
   BuildDirectoriesResolver(Project project) {
-    this.buildStacktraceLogDir = System.getProperty(Constants.BUILD_STACKTRACE_LOG_DIR_SYSTEM_PROP)
-    this.buildTempDir = System.getProperty(Constants.BUILD_TEMP_DIR_SYSTEM_PROP)
+    this.buildStacktraceLogDir = System.getenv(Constants.BUILD_STACKTRACE_LOG_DIR_SYSTEM_PROP)
+    this.buildTempDir = System.getenv(Constants.BUILD_TEMP_DIR_SYSTEM_PROP)
     this.buildDir = project.getLayout().getBuildDirectory().getAsFile().get()
   }
 
@@ -1516,15 +1516,15 @@ gradle.addListener(new ProjectExtraPropertiesExtender(logger))
 final AtomicLong testCounter = new AtomicLong(0)
 gradle.addListener(new AfterEvaluateListener({ Project project ->
   // init jvm args
-  final String jvmargs = System.getProperty(Constants.TEST_JVMARGS_SYSTEM_PROP)
+  final String jvmargs = System.getenv(Constants.TEST_JVMARGS_SYSTEM_PROP)
   final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
   TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
-    def buildTempDirectory = System.getProperty(Constants.BUILD_TEMP_DIR_SYSTEM_PROP)
+    def buildTempDirectory = System.getenv(Constants.BUILD_TEMP_DIR_SYSTEM_PROP)
     testTask.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
 
-    def testNameFormat = System.getProperty(Constants.TEST_NAME_FORMAT_SYSTEM_PROP)
+    def testNameFormat = System.getenv(Constants.TEST_NAME_FORMAT_SYSTEM_PROP)
     def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
-    def ignoredSuiteFormat = System.getProperty(Constants.IGNORED_SUITE_FORMAT_SYSTEM_PROP)
+    def ignoredSuiteFormat = System.getenv(Constants.IGNORED_SUITE_FORMAT_SYSTEM_PROP)
 
     def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
     testTask.addTestListener(testListener)

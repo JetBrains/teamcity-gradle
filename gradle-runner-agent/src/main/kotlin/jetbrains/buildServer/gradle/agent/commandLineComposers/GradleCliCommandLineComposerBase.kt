@@ -21,15 +21,19 @@ abstract class GradleCliCommandLineComposerBase(private val tasksComposer: Gradl
             addAll(parameters.gradleTasks)
         }
 
+        val env = HashMap<String, String>(parameters.env)
+        getEnv(parameters).forEach {
+            env.putIfAbsent(it.first, it.second)
+        }
         return SimpleProgramCommandLine(
-            parameters.env,
+            env,
             parameters.workingDir.toString(),
             parameters.exePath,
             gradleParameters
         )
     }
 
-    private fun getSystemPropertiesForInitScript(parameters: GradleCommandLineComposerParameters): Sequence<Pair<String, String>> = sequence {
+    private fun getEnv(parameters: GradleCommandLineComposerParameters): Sequence<Pair<String, String>> = sequence {
         listOf(
             InitScriptParametersConstants.TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY,
             InitScriptParametersConstants.TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY,
@@ -42,10 +46,19 @@ abstract class GradleCliCommandLineComposerBase(private val tasksComposer: Gradl
         }
 
         listOf(
-            InitScriptParametersConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES,
-            InitScriptParametersConstants.TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY,
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY,
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY,
+        ).forEach { parameterName ->
+            parameters.configParameters[parameterName]?.let { value ->
+                yield(parameterName to value)
+            }
+        }
+    }
+
+    private fun getSystemPropertiesForInitScript(parameters: GradleCommandLineComposerParameters): Sequence<Pair<String, String>> = sequence {
+        listOf(
+            InitScriptParametersConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES,
+            InitScriptParametersConstants.TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY,
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_TEST_TASK_JVM_ARG_PROVIDER_DISABLED,
         ).forEach { parameterName ->
             parameters.configParameters[parameterName]?.let { value ->
