@@ -19,6 +19,7 @@ teamcity {
 }
 
 sourceSets.main.java.srcDirs += 'src/main/scripts'
+sourceSets.test.resources.exclude 'testProjects/**'
 
 dependencies {
     implementation project(':gradle-runner-common')
