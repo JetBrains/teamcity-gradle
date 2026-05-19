@@ -55,23 +55,17 @@ repositories {
     }
 }
 
-def gradleDistributiveVersions = ["2.0", "2.5", "4.0.2", "3.4.1", "4.4", "4.10.3", "5.6.4", "6.5.1", "8.2", "8.9", "9.4.1"]
-def gradleDistributiveDir = rootProject.file(".tools/gradle")
-
 task downloadDistributive {
-    outputs.dirs(gradleDistributiveVersions.collect { version ->
-        new File(gradleDistributiveDir, "gradle-$version")
-    })
-
     doLast {
-        gradleDistributiveVersions.each { version ->
-            if (new File(gradleDistributiveDir, "gradle-$version").exists()) return
+        def versions = ["2.0", "2.5", "4.0.2", "3.4.1", "4.4", "4.10.3", "5.6.4", "6.5.1", "8.2", "8.9", "9.4.1"]
+        versions.each { version ->
+            if (new File("../.tools/gradle/gradle-$version").exists()) return
             def configuration = configurations.detachedConfiguration()
             configuration.transitive = false
             configuration.dependencies.add(dependencies.create("org.jetbrains.teamcity:gradle:$version@zip"))
             copy {
                 from zipTree(configuration.singleFile)
-                into gradleDistributiveDir
+                into "../.tools/gradle"
             }
         }
     }
