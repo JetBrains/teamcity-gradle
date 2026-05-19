@@ -4,7 +4,12 @@ import com.intellij.openapi.util.SystemInfo;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -336,9 +341,42 @@ public class BaseGradleRunnerTest {
     myTempDir = new File(myTempFiles.createTempDir(), "Name With Spaces");
     myTempDir.mkdir();
     myCoDir = myTempFiles.createTempDir();
-    FileUtil.copyDir(new File(curDir, "src/test/resources/testProjects"), myCoDir, true);
+    copyProjectsWorkingDir(new File(curDir, "src/test/resources/testProjects"), myCoDir);
     assertTrue(new File(myCoDir, INIT_SCRIPT_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
     assertTrue(new File(myCoDir, INIT_SCRIPT_SINCE_8_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
+  }
+
+  private void copyProjectsWorkingDir(@NotNull final File sourceDir, @NotNull final File targetDir) throws IOException {
+    final Path sourceRoot = sourceDir.toPath();
+    final Path targetRoot = targetDir.toPath();
+
+    Files.walkFileTree(sourceRoot, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+        Files.createDirectories(targetRoot.resolve(sourceRoot.relativize(dir)));
+        return FileVisitResult.CONTINUE;
+      }
+
+      @Override
+      public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+        final Path target = targetRoot.resolve(sourceRoot.relativize(file));
+        if (shouldLinkFixtureFile(file)) {
+          try {
+            Files.createLink(target, file);
+            return FileVisitResult.CONTINUE;
+          } catch (IOException e) {
+            // Fall through to a regular copy on filesystems that do not support hard links.
+          }
+        }
+        Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+        return FileVisitResult.CONTINUE;
+      }
+    });
+  }
+
+  private boolean shouldLinkFixtureFile(@NotNull final Path file) {
+    final String fileName = file.getFileName().toString();
+    return fileName.endsWith(".jar") || fileName.endsWith(".zip");
   }
 
   private void setupInitScripts(File projectRoot) throws IOException {
