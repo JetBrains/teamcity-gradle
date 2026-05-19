@@ -160,6 +160,7 @@ public class BaseGradleRunnerTest {
   private final TestLogger myTestLogger = new TestLogger();
 
   private static final boolean IS_JRE_8 = System.getProperty("java.specification.version").contains("1.8");
+  private static List<String[]> ourGradlePaths;
 
   @DataProvider(name = "gradle-version-provider")
   public static Iterator<String[]> getPathsForAllAvailableGradleVersions() {
@@ -255,17 +256,23 @@ public class BaseGradleRunnerTest {
   }
 
   public static List<String[]> generateGradlePaths() {
+    if (ourGradlePaths != null) {
+      return new ArrayList<String[]>(ourGradlePaths);
+    }
     if (ourProjectRoot == null) {
       ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
     }
     File gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH);
     if(!gradleDir.exists()) gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL);
     Reporter.log(gradleDir.getAbsolutePath());
+    final List<String[]> result;
     if (gradleDir.exists() && gradleDir.isDirectory()) {
-      return listAvailableVersions(gradleDir);
+      result = listAvailableVersions(gradleDir);
     } else {
-      return Collections.singletonList(new String[]{System.getProperty(PROPERTY_GRADLE_RUNTIME)});
+      result = Collections.singletonList(new String[]{System.getProperty(PROPERTY_GRADLE_RUNTIME)});
     }
+    ourGradlePaths = Collections.unmodifiableList(result);
+    return new ArrayList<String[]>(ourGradlePaths);
   }
 
   private static List<String[]> listAvailableVersions(final @NotNull File gradleDir) {
