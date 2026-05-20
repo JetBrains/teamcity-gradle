@@ -416,6 +416,10 @@ class ServiceMessage {
     return this
   }
 
+  void setFlowId(String flowId) {
+    attributes['flowId'] = flowId
+  }
+
   String asString() {
     StringBuilder msg = new StringBuilder(START_MESSAGE).append(name)
     if (attributes == null || attributes.isEmpty()) {
@@ -993,8 +997,9 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
     switch (result?.getResultType() ?: org.gradle.api.tasks.testing.TestResult.ResultType.SUCCESS) {
       case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
         WrappedException exception = new WrappedException(result.getException())
-        List<ServiceMessage> messages = attacheBigFailTestMessage(exception, testCounter)
-        ServiceMessage failure = exception.getServiceMessage(testName).withFlowId(flowId)
+        List messages = attacheBigFailTestMessage(exception, testCounter)
+        def failure = exception.getServiceMessage(testName)
+        failure.setFlowId(flowId)
         action([*messages, failure])
         break
       case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
@@ -1324,18 +1329,13 @@ class WrappedException extends Exception {
     return false
   }
 
-  public ServiceMessage getServiceMessage(String testName) {
-    if (thMessage == "") return new ServiceMessage(name: "testFailed", attributes: [name: testName, message: message, details: stacktrace])
+  def getServiceMessage(String testName) {
+    if (thMessage == "") return new jetbrains.buildServer.messages.serviceMessages.TestFailed(testName, this)
     Map.Entry<String, String> cfd = extractComparisonFailure(th)
     if (cfd != null) {
-      return new ServiceMessage(name: "testFailed", attributes: [name    : testName,
-                                                                 message : message,
-                                                                 details : stacktrace,
-                                                                 actual  : trim(cfd.key, maxLength),
-                                                                 expected: trim(cfd.value, maxLength),
-                                                                 type    : "comparisonFailure"])
+      return new jetbrains.buildServer.messages.serviceMessages.TestFailed(testName, this, trim(cfd.key, maxLength), trim(cfd.value, maxLength))
     } else {
-      return new ServiceMessage(name: "testFailed", attributes: [name: testName, message: message, details: stacktrace])
+      return new jetbrains.buildServer.messages.serviceMessages.TestFailed(testName, this)
     }
   }
 
