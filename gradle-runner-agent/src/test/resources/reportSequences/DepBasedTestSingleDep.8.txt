@@ -1,3 +1,4 @@
+##teamcity[blockOpened name='Tests of task :projectC:test' flowId='##Flow_ID##']
 ##teamcity[flowStarted flowId='##Flow_ID##' parent='##ParentFlow_ID##']
 ##teamcity[testSuiteStarted name='test.GradleGreeterCTest' flowId='##Flow_ID##']
 ##teamcity[flowStarted flowId='##Flow_ID##' parent='##ParentFlow_ID##']
@@ -11,6 +12,8 @@
 ##teamcity[flowFinished flowId='##Flow_ID##']
 ##teamcity[testSuiteFinished name='test.GradleGreeterCTest' flowId='##Flow_ID##']
 ##teamcity[flowFinished flowId='##Flow_ID##']
+##teamcity[blockClosed name='Tests of task :projectC:test' flowId='##Flow_ID##']
+##teamcity[blockOpened name='Tests of task :projectD:test' flowId='##Flow_ID##']
 ##teamcity[flowStarted flowId='##Flow_ID##' parent='##ParentFlow_ID##']
 ##teamcity[testSuiteStarted name='test.GradleGreeterDTest' flowId='##Flow_ID##']
 ##teamcity[flowStarted flowId='##Flow_ID##' parent='##ParentFlow_ID##']
@@ -24,3 +27,4 @@
 ##teamcity[flowFinished flowId='##Flow_ID##']
 ##teamcity[testSuiteFinished name='test.GradleGreeterDTest' flowId='##Flow_ID##']
 ##teamcity[flowFinished flowId='##Flow_ID##']
+##teamcity[blockClosed name='Tests of task :projectD:test' flowId='##Flow_ID##']

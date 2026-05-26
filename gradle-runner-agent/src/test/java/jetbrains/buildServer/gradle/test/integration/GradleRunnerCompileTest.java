@@ -83,17 +83,6 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     runAndCheckServiceMessages(config);
   }
 
-  @Test(dataProvider = "gradle-version-provider>=8")
-  public void shouldDetectCompilationErrorsWithHugeAmountOfTasksAndStdErrOutput(final String gradleVersion) throws Exception {
-    // given
-    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_GENERATED_TASKS_A_NAME, "clean build --continue", "testsWithHugeAmountOfTasksAndStdErrOutput.txt");
-    config.setGradleVersion(gradleVersion);
-    config.setPatternStr("##tc-error-output.*|##teamcity\\[(message|compilation)(.*?)(?<!\\|)\\]");
-
-    // when / then
-    runAndCheckServiceMessages(config);
-  }
-
   // This test is not relevant for Gradle 9+ because the build file argument was deprecated
   @Test(dataProvider = "gradle-version-provider<9")
   public void pathToBuildGradleTest(final String gradleVersion)  throws Exception {

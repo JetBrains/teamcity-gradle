@@ -16,6 +16,7 @@ import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProce
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliV2CommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.gradleExecution.GradleCommandLineProvider;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
@@ -139,7 +140,9 @@ public class GradleCommandLineProviderTest {
 
     myTasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
-      new GradleCliCommandLineComposer(myTasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), myTasksComposer)
+      new GradleCliCommandLineComposer(myTasksComposer),
+      new GradleCliV2CommandLineComposer(myTasksComposer),
+      new GradleToolingApiCommandLineComposer(Collections.emptyList(), myTasksComposer)
     );
     myComposerHolder = new GradleCommandLineComposerHolder(composers);
     myLaunchModeSelector = new GradleLaunchModeSelector();
@@ -451,7 +454,7 @@ public class GradleCommandLineProviderTest {
     myWorkingDirectory = myTempFiles.createTempDir();
     myInitScript = new File(agentPluginDir, GradleRunnerConstants.RUNNER_TYPE
                                             + "/" + GradleRunnerConstants.INIT_SCRIPT_DIR
-                                            + "/" + ConfigurationParamsUtil.getGradleInitScript(gradleVersion));
+                                            + "/" + getDefaultInitScriptName(gradleVersion));
 
     myConfigParameters.put(GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM,
                            VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE : GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE);
@@ -482,6 +485,9 @@ public class GradleCommandLineProviderTest {
     }});
   }
 
+  private static String getDefaultInitScriptName(String gradleVersion) {
+    return VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? INIT_SCRIPT_SINCE_8_NAME : INIT_SCRIPT_NAME;
+  }
 
   private void reportCmdLine(final ProgramCommandLine cmdLine) throws RunBuildException {
     Reporter.log("Exe path : " + cmdLine.getExecutablePath(), true);

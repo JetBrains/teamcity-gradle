@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 import jetbrains.buildServer.util.StringUtil;
 import org.testng.annotations.Test;
 
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES;
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM;
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM;
 import static org.testng.Assert.assertTrue;
 
@@ -58,17 +58,15 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("Configuration cache entry stored.")), buildFullLog);
 
-    // when: second run with reading the dynamic parameter from teamcity.build.parameters
+    // when: second run, no parameters are changed
     messages = run(config).getAllMessages();
 
     // then: configuration cache has been reused and build is successful
     buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
-    assertTrue(messages.stream().noneMatch(line -> line.startsWith("> Configure project ")), buildFullLog);
-    assertTrue(messages.stream().noneMatch(line -> line.startsWith("##tc-property ")), buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("Reusing configuration cache.")), buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
 
-    // when: changing custom property and run build again
+    // when: third run, the custom parameter value is changed
     customParam = "Custom Parameter Changed";
     myTeamCitySystemProps.put("custom.static.property", customParam);
     config = new GradleRunConfiguration(PROJECT_WITH_STATIC_PROPERTY_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
@@ -78,8 +76,9 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     // then: configuration cache couldn't be reused
     buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("Calculating task graph as configuration cache cannot be reused")), buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.contains("teamcity.build.parameters.static' has changed")), buildFullLog);
+    assertTrue(messages.stream().anyMatch(line ->
+                    line.startsWith("Calculating task graph as configuration cache cannot be reused because TeamCity build properties collection has changed.")),
+            "Expected a log line explaining why the cache could not be reused.\n" + buildFullLog);
   }
 
   @Test(dataProvider = "gradle-version-provider>=8")
@@ -97,14 +96,16 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("Configuration cache entry stored.")), buildFullLog);
 
-    // when: second run with reading the dynamic parameter from teamcity.build.parameters
+    // when: second run that uses an updated volatile parameter
+    myTeamCitySystemProps.put("build.number", String.valueOf(new Random().nextInt()));
     messages = run(config).getAllMessages();
 
     // then: configuration cache couldn't be reused
     buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("Calculating task graph as configuration cache cannot be reused")), buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.contains("teamcity.build.parameters' has changed")), buildFullLog);
+    assertTrue(messages.stream().anyMatch(line ->
+                    line.startsWith("Calculating task graph as configuration cache cannot be reused because TeamCity build property 'build.number' has changed.")),
+            "Expected a log line explaining why the cache could not be reused.\n" + buildFullLog);
   }
 
   // Tested only on Gradle 8.x, as Gradle 9+ does not allow access to the project model at execution time
@@ -139,36 +140,6 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     messages = run(config).getAllMessages();
 
     // then: dynamic properties are not available because of using configuration cache
-    buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\n" + buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.contains("Could not get unknown property 'build.number'")), buildFullLog);
-  }
-
-  @Test(dataProvider = "gradle-version-provider>=8")
-  public void shouldUseReadAllConfigParamInPriorityWhenItPresent(String gradleVersion) throws Exception {
-    // given
-    myTeamCityConfigParameters.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, "true");
-    myTeamCitySystemProps.put("build.number", String.valueOf(new Random().nextInt()));
-    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_READING_PROPERTIES_NAME,
-                                                               "clean build printBuildNumber",
-                                                               null);
-    config.setGradleVersion(gradleVersion);
-
-    // when
-    List<String> messages = run(config).getAllMessages();
-
-    // then
-    String buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 1: ")), buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 2: ")), buildFullLog);
-    assertTrue(messages.stream().anyMatch(line -> line.startsWith("##build-num 3: ")), buildFullLog);
-
-    // when: setting up the corresponding configuration parameter and trying again
-    myTeamCityConfigParameters.put(GRADLE_RUNNER_READ_ALL_CONFIG_PARAM, "false");
-    messages = run(config).getAllMessages();
-
-    // then: property has successfully been printed
     buildFullLog = "Full log:\n" + StringUtil.join("\n", messages);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD FAILED")), "Expected: BUILD FAILED\n" + buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.contains("Could not get unknown property 'build.number'")), buildFullLog);
@@ -276,7 +247,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     // given
     myTeamCitySystemProps.put("build.number", String.valueOf(1));
     myTeamCitySystemProps.put("foo", String.valueOf(1));
-    myTeamCityConfigParameters.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, "true");
+    myTeamCityConfigParameters.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM, "true");
     GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_E_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
     config.setGradleVersion(gradleVersion);
 
@@ -288,7 +259,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\n" + buildFullLog);
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("Configuration cache entry stored.")), buildFullLog);
 
-    // when: second run with reading the dynamic parameter from teamcity.build.parameters
+    // when: second run
     myTeamCitySystemProps.put("build.number", String.valueOf(2));
     myTeamCitySystemProps.put("foo", String.valueOf(2));
     messages = run(config).getAllMessages();

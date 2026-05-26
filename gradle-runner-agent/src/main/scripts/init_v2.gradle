@@ -1,5 +1,4 @@
 import org.gradle.api.flow.*
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 import org.gradle.api.services.BuildService
@@ -16,32 +15,55 @@ import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.regex.Pattern
 
+initscript {
+  dependencies {
+    def initScriptClasspath = System.getenv("TEAMCITY_INIT_SCRIPT_CLASSPATH")
+    if (initScriptClasspath != null && !initScriptClasspath.trim().isEmpty()) {
+      logger.info "Init script classpath: ${initScriptClasspath}"
+      classpath files(initScriptClasspath.split(File.pathSeparator))
+    }
+  }
+}
+
 class Constants {
-  // region TeamCity variables and properties that affect the init script behavior
-
-  // Defines the incremental building mode.
-  public static final String GRADLE_INCREMENTAL_MODE_ENV_VAR = "TEAMCITY_GRADLE_INCREMENTAL_MODE"
-  // Points to the TeamCity build properties file.
+  // Environment variable which points to the TeamCity build properties file. Is set by the agent's core logic.
   public static final String BUILD_PROPERTIES_FILE_ENV_VAR = "TEAMCITY_BUILD_PROPERTIES_FILE"
-  // Indicates whether test retry is supported on the build configuration level.
-  public static final String SUPPORT_TEST_RETRY_ENV_VAR = "TEAMCITY_SUPPORT_TEST_RETRY"
-  // Points to the artifact with tests selected for parallel execution.
-  public static final String PARALLEL_TESTS_ARTIFACT_PATH_ENV_VAR = "TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"
-  // Points to the artifact with risk-based tests selected for execution.
-  public static final String RISK_TESTS_ARTIFACT_PATH_ENV_VAR = "TEAMCITY_RISK_TESTS_ARTIFACT_PATH"
 
-  // Points to the TeamCity build properties file when passed as a JVM system property.
-  public static final String BUILD_PROPERTIES_FILE_SYSTEM_PROP = "teamcity.build.properties.file"
-  // Points to the file that lists changed files for dependency-based test runs.
-  public static final String BUILD_CHANGED_FILES_FILE_SYSTEM_PROP = "teamcity.build.changedFiles.file"
-  // Disables adding TeamCity build properties to Gradle project extra properties.
-  public static final String DO_NOT_POPULATE_GRADLE_PROPERTIES_SYSTEM_PROP = "teamcity.internal.gradle.runner.doNotPopulateGradleProperties"
-  // Controls whether explicit test retry integration should inspect Gradle retry plugins.
-  public static final String USE_TEST_RETRY_PLUGIN_SYSTEM_PROP = "teamcity.internal.gradle.useTestRetryPlugin"
-  // Points to the directory where TeamCity stores stacktrace logs.
-  public static final String BUILD_STACKTRACE_LOG_DIR_SYSTEM_PROP = "teamcity.build.stacktraceLogDir"
-  // Points to the TeamCity build temporary directory.
-  public static final String BUILD_TEMP_DIR_SYSTEM_PROP = "teamcity.build.tempDir"
+  // region Environment variables which are set in the Gradle runner's agent logic and are used internally by the runner's init scripts.
+
+  // Points to the TeamCity build temporary directory. Is set based on the system property provided by the agent's core logic.
+  public static final String BUILD_TEMP_DIR_ENV_VAR = "TEAMCITY_BUILD_TEMP_DIR"
+  // Points to the file that lists changed files for dependency-based test runs. Is set based on the system property provided by the agent's core logic.
+  public static final String CHANGED_FILES_FILE_ENV_VAR = "TEAMCITY_CHANGED_FILES_FILE"
+  // Points to the artifact with tests selected for parallel execution. Is set based on the system property provided by the agent's core logic.
+  public static final String PARALLEL_TESTS_ARTIFACT_PATH_ENV_VAR = "TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"
+  // Points to the artifact with risk-based tests selected for execution. Is set based on the system property provided by the agent's core logic.
+  public static final String RISK_TESTS_ARTIFACT_PATH_ENV_VAR = "TEAMCITY_RISK_TESTS_ARTIFACT_PATH"
+  // Defines the incremental building mode. Is set based on the build step configuration.
+  public static final String GRADLE_INCREMENTAL_MODE_ENV_VAR = "TEAMCITY_GRADLE_INCREMENTAL_MODE"
+  // Indicates whether test retry is supported on the build configuration level. Is set based on the build configuration's test retry setup.
+  public static final String SUPPORT_TEST_RETRY_ENV_VAR = "TEAMCITY_SUPPORT_TEST_RETRY"
+  // Lists classes to add from test classpath into Gradle daemon classloader. Is defined by the Gradle runner's agent logic.
+  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_VAR = "TEAMCITY_GRADLE_DAEMON_ENHANCEMENT_CLASSES"
+  // Supplies extra JVM arguments for Gradle test tasks. Is set by the agent's test coverage logic.
+  public static final String GRADLE_TEST_COVERAGE_JVM_ARGS_ENV_VAR = "TEAMCITY_GRADLE_TEST_COVERAGE_JVM_ARGS"
+  // Disables adding TeamCity build properties to Gradle project extra properties. Is set from the configuration parameters.
+  public static final String DO_NOT_POPULATE_GRADLE_PROPERTIES_ENV_VAR = "TEAMCITY_DO_NOT_POPULATE_GRADLE_PROPERTIES"
+  // Controls whether explicit test retry integration should inspect Gradle retry plugins. Is set from the configuration parameters.
+  public static final String USE_TEST_RETRY_PLUGIN_ENV_VAR = "TEAMCITY_USE_TEST_RETRY_PLUGIN"
+  // Disables adding TeamCity test JVM arguments through a command line argument provider. Is set from the configuration parameters.
+  public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_VAR = "TEAMCITY_TEST_TASK_JVM_ARGUMENTS_PROVIDER_DISABLED"
+  // Selects the format used for TeamCity test names. Is set from the configuration parameters.
+  public static final String TEST_NAME_FORMAT_ENV_VAR = "TEAMCITY_TEST_NAME_FORMAT"
+  // Selects the format used for ignored TeamCity test suites. Is set from the configuration parameters.
+  public static final String IGNORED_SUITE_FORMAT_ENV_VAR = "TEAMCITY_IGNORE_SUITE_FORMAT_FORMAT"
+  // Points to the directory where TeamCity stores stacktrace logs. Is set based on a system property, the origin of which is unknown. Left for backwards compatibility for now.
+  public static final String STACKTRACE_LOG_DIR_ENV_VAR = "TEAMCITY_STACKTRACE_LOG_DIR"
+
+  // endregion
+
+  // region System properties not documented or used anywhere outside the runner's init scripts. Left for backwards compatibility.
+
   // Selects the parser used for TeamCity service messages in Gradle output.
   public static final String MESSAGE_PARSER_TYPE_SYSTEM_PROP = "teamcity.gradle.message.parser.type"
   // Limits the size of test stdout/stderr service messages.
@@ -50,10 +72,6 @@ class Constants {
   public static final String STACKTRACE_MAX_LENGTH_SYSTEM_PROP = "teamcity.gradle.stacktrace.maxLength"
   // Controls when large test exception details are attached as artifacts instead of inline messages.
   public static final String MIN_ATTACHED_TEST_EXCEPTION_SYSTEM_PROP = "teamcity.gradle.minAttachedTestException"
-  // Selects the format used for TeamCity test names.
-  public static final String TEST_NAME_FORMAT_SYSTEM_PROP = "teamcity.internal.gradle.testNameFormat"
-  // Selects the format used for ignored TeamCity test suites.
-  public static final String IGNORED_SUITE_FORMAT_SYSTEM_PROP = "teamcity.internal.gradle.ignoredSuiteFormat"
   // Suppresses forwarding test stdout to TeamCity when enabled.
   public static final String IGNORE_TEST_STDOUT_SYSTEM_PROP = "teamcity.ignoreTestStdOut"
   // Suppresses forwarding test stderr to TeamCity when enabled.
@@ -61,14 +79,8 @@ class Constants {
 
   // endregion
 
-  // Gradle properties used in the script
-
-  // Gradle's isolated projects flag for Gradle versions where isolated projects is an incubating feature.
+  // Gradle's isolated projects system property flag for Gradle versions where isolated projects is an incubating feature.
   public static final String GRADLE_UNSAFE_ISOLATED_PROJECTS_SYSTEM_PROP = "org.gradle.unsafe.isolated-projects"
-  // Supplies extra JVM arguments for Gradle test tasks.
-  public static final String TEST_JVMARGS_SYSTEM_PROP = "gradle.test.jvmargs"
-
-  // endregion
 }
 
 public class DependencyBasedTestRun {
@@ -102,7 +114,11 @@ public class DependencyBasedTestRun {
           logger.debug("No affected projects found. Running full build.")
           gradle.startParameter.taskNames = ["build"]
         } else {
-          gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
+          gradle.startParameter.taskNames = modifiedProjects.collect {
+            def taskName = it as String
+            if (!taskName.endsWith(":")) taskName += ":"
+            return taskName + "buildDependents"
+          }
           logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
         }
         break;
@@ -114,7 +130,7 @@ public class DependencyBasedTestRun {
 
 
   private def findAffectedProjects(Project project) {
-    String changedFilesFile = System.getProperty(Constants.BUILD_CHANGED_FILES_FILE_SYSTEM_PROP)
+    String changedFilesFile = System.getenv(Constants.CHANGED_FILES_FILE_ENV_VAR)
 
     if (changedFilesFile != null && !changedFilesFile.isEmpty()) {
       def changedFiles = readChangedFiles(changedFilesFile)
@@ -197,7 +213,7 @@ class ProjectExtraPropertiesExtender implements ProjectEvaluationListener {
     def warningMessage =
             "\nGradle Configuration Cache is used in this build.\n" +
             "Avoid accessing TeamCity build properties from the Gradle project " +
-            "('project.teamcity.buildprop', 'project.buildprop', 'teamcity.buildprop', '\$buildprop', etc.), " +
+            "('project.teamcity.buildProperty', 'project.buildProperty', 'teamcity.buildProperty', '\$buildProperty', etc.), " +
             "as they can cause issues in Configuration Cache setups and will be removed for newer Gradle versions.\n" +
             "If you experience unwarranted Configuration Cache invalidations, " +
             "disable the population of the project properties with TeamCity build properties by setting " +
@@ -208,22 +224,28 @@ class ProjectExtraPropertiesExtender implements ProjectEvaluationListener {
   private void addTeamCityPropertiesToExtraProperties(Project project) {
     if (doNotPopulateGradleProperties()) return
 
+    Properties properties = getPropertiesFromFile(logger)
     if (!BuildFeatures.isConfigurationCacheRequested(project.gradle)) {
       // When the configuration cache is not used,
       // we can simply read the file and directly add the properties from it to the project's extra properties,
       // as we did in the older init script.
-      setTeamCityPropertiesOnProject(project, getPropertiesFromFile(logger))
+      properties.each { key, value -> project.ext.set(key, value) }
+      project.ext.teamcity = properties
     } else {
-      // When the configuration cache is used, we try add only the properties we consider non-volatile
-      // to ensure backwards compatibility with the previous integration logic (see init_since_8.gradle).
-      // We set up these properties as configuration inputs, so a change to any of these properties will invalidate the configuration cache.
-      Map<Object, Object> nonVolatileProperties = project.providers.of(TeamCityPropertiesValueSource.class) {}.getOrNull()
-      setTeamCityPropertiesOnProject(project, nonVolatileProperties)
+      // When the configuration cache is used, we add only the properties we consider non-volatile to 'project.ext'.
+      // All properties, including volatile ones, can be accessed through the 'project.ext.teamcity' map.
+      // This is done to ensure backwards compatibility with the previous integration logic (see init_since_8.gradle).
+      // These properties are configured as configuration inputs, so a change to any of their values will invalidate the configuration cache.
+      // In particular, a change to any of the non-volatile properties will invalidate the cache, even if the property is never accessed during the build.
+      Map<Object, Object> nonVolatileProperties = project.providers.of(TeamCityNonVolatilePropertiesValueSource.class) {}.getOrNull()
+      nonVolatileProperties.each { key, value -> project.ext.set(key, value) }
+      Map<String, String> tcExtraPropertiesMap = new TeamCityExtraPropertiesMap(project.providers, properties)
+      project.ext.teamcity = tcExtraPropertiesMap
     }
   }
 
   private static boolean doNotPopulateGradleProperties() {
-    return Boolean.valueOf(System.getProperty(Constants.DO_NOT_POPULATE_GRADLE_PROPERTIES_SYSTEM_PROP))
+    return Boolean.valueOf(System.getenv(Constants.DO_NOT_POPULATE_GRADLE_PROPERTIES_ENV_VAR))
   }
 
   private static Properties getPropertiesFromFile(Logger logger) {
@@ -234,11 +256,6 @@ class ProjectExtraPropertiesExtender implements ProjectEvaluationListener {
       return new Properties()
     }
   }
-
-  private static void setTeamCityPropertiesOnProject(Project project, Map<Object, Object> properties) {
-    properties.each { key, value -> project.ext.set(key, value) }
-    project.ext.teamcity = properties
-  }
 }
 
 class PropertiesFileReader {
@@ -246,9 +263,11 @@ class PropertiesFileReader {
   // Thus, changes to the file do not invalidate the configuration cache.
   // We need this because the properties file changes every build and we want to avoid unnecessary cache invalidations.
   static Properties loadPropertiesFromFile() throws IOException {
-    String filePath = getPropertiesFilePath()
+    String filePath = System.getenv(Constants.BUILD_PROPERTIES_FILE_ENV_VAR)
     if (filePath == null) return new Properties()
 
+    def debugServiceMessage = new ServiceMessage(name: "message", attributes: [text: "Reading the Teamcity build properties file '$filePath'", "tc:tags": "tc:internal"])
+    println(debugServiceMessage.asString())
     Properties properties = new Properties()
     new RandomAccessFile(filePath, "r").withCloseable { RandomAccessFile randomAccessFile ->
       byte[] data = new byte[(int) randomAccessFile.length()]
@@ -258,11 +277,6 @@ class PropertiesFileReader {
 
     return properties
   }
-
-  private static String getPropertiesFilePath() {
-    return System.getProperty(Constants.BUILD_PROPERTIES_FILE_SYSTEM_PROP) ?:
-            System.getenv(Constants.BUILD_PROPERTIES_FILE_ENV_VAR)
-  }
 }
 
 // This class filters the properties we consider "non-volatile", meaning their values do not change from build to build.
@@ -270,11 +284,11 @@ class PropertiesFileReader {
 class NonVolatileBuildPropertiesFilter {
   static Map<Object, Object> filterNonVolatileProperties(Properties properties) {
     return properties.findAll { Object key, Object value ->
-      !isAVolatileProperty(key)
+      isANonVolatileProperty(key)
     } as Map<Object, Object>
   }
 
-  private static boolean isAVolatileProperty(Object key) {
+  private static boolean isANonVolatileProperty(Object key) {
     String propertyKey = key.toString()
 
     // Drop the dependency name prefix
@@ -282,11 +296,11 @@ class NonVolatileBuildPropertiesFilter {
       propertyKey = propertyKey.substring(propertyKey.indexOf('.', 4) + 1)
     }
 
-    if (propertyKey.startsWith("build.")) return true
-    if (propertyKey.startsWith("teamcity.build.id")) return true
-    if (nonVolatileTeamCityPrefixes.any { String prefix -> propertyKey.startsWith(prefix) }) return false
+    if (propertyKey.startsWith("build.")) return false
+    if (propertyKey.startsWith("teamcity.build.id")) return false
+    if (nonVolatileTeamCityPrefixes.any { String prefix -> propertyKey.startsWith(prefix) }) return true
 
-    return propertyKey.startsWith("teamcity.")
+    return !propertyKey.startsWith("teamcity.")
   }
 
   private static final List<String> nonVolatileTeamCityPrefixes = [
@@ -300,8 +314,74 @@ class NonVolatileBuildPropertiesFilter {
   ]
 }
 
-// ValueSource used to track non-volatile build properties as a configuration phase input.
-abstract class TeamCityPropertiesValueSource implements ValueSource<Map<Object, Object>, ValueSourceParameters.None>, Describable {
+// This class acts as an unmodifiable map accessible through project.ext.teamcity.
+// Because TeamCityPropertyValueSource is used to retrieve property values,
+// accessing a property by get(), getOrDefault(), or containsKey() will make the configuration cache invalidate
+// for a later build if the property value changes.
+class TeamCityExtraPropertiesMap extends AbstractMap<String, String> {
+  private final ProviderFactory providerFactory
+  private final Properties properties
+
+  TeamCityExtraPropertiesMap(ProviderFactory providerFactory, Properties properties) {
+    this.providerFactory = providerFactory
+    this.properties = properties
+  }
+
+  @Override
+  String get(Object key) {
+    if (key == null) return null
+    return this.providerFactory.of(TeamCityPropertyValueSource.class) {
+      parameters.propertyKey.set(key.toString())
+    }.getOrNull()
+  }
+
+  @Override
+  String getOrDefault(Object key, String defaultValue) {
+    String value = get(key)
+    if (value != null) {
+      return value
+    }
+    return defaultValue
+  }
+
+  @Override
+  boolean containsKey(Object key) {
+    return get(key) != null
+  }
+
+  @Override
+  Set<Entry<String, String>> entrySet() {
+    return Collections.unmodifiableSet(properties.keySet().collect { key ->
+      new AbstractMap.SimpleImmutableEntry<String, String>((String)key, get(key))
+    } as Set)
+  }
+}
+
+// ValueSource used to track accessed build properties as configuration phase inputs.
+abstract class TeamCityPropertyValueSource implements ValueSource<String, Parameters>, Describable {
+  interface Parameters extends ValueSourceParameters {
+    Property<String> getPropertyKey()
+  }
+
+  @Override
+  String obtain() {
+    try {
+      Properties properties = PropertiesFileReader.loadPropertiesFromFile()
+      return properties.getProperty(parameters.propertyKey.get())
+    } catch (IOException ignored) {
+      return null
+    }
+  }
+
+  @Override
+  String getDisplayName() {
+    return "TeamCity build property '${parameters.propertyKey.get()}'"
+  }
+}
+
+// ValueSource used to track all non-volatile build properties as a single configuration phase input.
+// Used to populate 'project.ext' without re-reading the file for each property.
+abstract class TeamCityNonVolatilePropertiesValueSource implements ValueSource<Map<Object, Object>, ValueSourceParameters.None>, Describable {
   @Override
   Map<Object, Object> obtain() {
     try {
@@ -331,6 +411,10 @@ class ServiceMessage {
   ServiceMessage withFlowId(String flowId) {
     attributes['flowId'] = flowId
     return this
+  }
+
+  void setFlowId(String flowId) {
+    attributes['flowId'] = flowId
   }
 
   String asString() {
@@ -512,7 +596,7 @@ abstract class CompileTaskErrorOutputPlugin implements Plugin<Gradle> {
   @Override
   void apply(Gradle gradle) {
     def compileTaskErrorOutputServiceProvider =
-            gradle.sharedServices.registerIfAbsent("compileTaskErrorOutputService", CompileTaskErrorOutputService)
+            gradle.sharedServices.registerIfAbsent("compileTaskErrorOutputService", CompileTaskErrorOutputService) {}
 
     gradle.addListener(new AfterEvaluateListener({ Project project ->
       project.tasks.configureEach { Task task ->
@@ -687,7 +771,7 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
   @Override
   void apply(Gradle gradle) {
     def testTaskBuildLogSetupServiceProvider =
-            gradle.sharedServices.registerIfAbsent("testTaskBuildLogSetupService", TestTaskBuildLogSetupService)
+            gradle.sharedServices.registerIfAbsent("testTaskBuildLogSetupService", TestTaskBuildLogSetupService) {}
 
     gradle.addListener(new AfterEvaluateListener({ Project project ->
       project.tasks.configureEach { Task task ->
@@ -709,7 +793,7 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
     boolean isTeamCityTestRetryEnabled = testRetryEnvVar != null && testRetryEnvVar.toBoolean()
     if (isTeamCityTestRetryEnabled) return false
 
-    def useTestRetryPlugin = System.getProperty(Constants.USE_TEST_RETRY_PLUGIN_SYSTEM_PROP)
+    def useTestRetryPlugin = System.getenv(Constants.USE_TEST_RETRY_PLUGIN_ENV_VAR)
     if (useTestRetryPlugin == "false") return false
 
     def develocityPluginRetryCount = getDevelocityPluginRetryCountOrNull(task)
@@ -752,8 +836,8 @@ class BuildDirectoriesResolver {
   private final File buildDir
 
   BuildDirectoriesResolver(Project project) {
-    this.buildStacktraceLogDir = System.getProperty(Constants.BUILD_STACKTRACE_LOG_DIR_SYSTEM_PROP)
-    this.buildTempDir = System.getProperty(Constants.BUILD_TEMP_DIR_SYSTEM_PROP)
+    this.buildStacktraceLogDir = System.getenv(Constants.STACKTRACE_LOG_DIR_ENV_VAR)
+    this.buildTempDir = System.getenv(Constants.BUILD_TEMP_DIR_ENV_VAR)
     this.buildDir = project.getLayout().getBuildDirectory().getAsFile().get()
   }
 
@@ -910,8 +994,9 @@ public class TestDescriptorWrapper extends DescriptorWrapper {
     switch (result?.getResultType() ?: org.gradle.api.tasks.testing.TestResult.ResultType.SUCCESS) {
       case org.gradle.api.tasks.testing.TestResult.ResultType.FAILURE:
         WrappedException exception = new WrappedException(result.getException())
-        List<ServiceMessage> messages = attacheBigFailTestMessage(exception, testCounter)
-        ServiceMessage failure = exception.getServiceMessage(testName).withFlowId(flowId)
+        List messages = attacheBigFailTestMessage(exception, testCounter)
+        def failure = exception.getServiceMessage(testName)
+        failure.setFlowId(flowId)
         action([*messages, failure])
         break
       case org.gradle.api.tasks.testing.TestResult.ResultType.SKIPPED:
@@ -1241,22 +1326,20 @@ class WrappedException extends Exception {
     return false
   }
 
-  public ServiceMessage getServiceMessage(String testName) {
-    if (thMessage == "") return new ServiceMessage(name: "testFailed", attributes: [name: testName, message: message, details: stacktrace])
+  def getServiceMessage(String testName) {
+    if (thMessage == "") return new jetbrains.buildServer.messages.serviceMessages.TestFailed(testName, this)
     Map.Entry<String, String> cfd = extractComparisonFailure(th)
     if (cfd != null) {
-      return new ServiceMessage(name: "testFailed", attributes: [name    : testName,
-                                                                 message : message,
-                                                                 details : stacktrace,
-                                                                 actual  : trim(cfd.key, maxLength),
-                                                                 expected: trim(cfd.value, maxLength),
-                                                                 type    : "comparisonFailure"])
+      return new jetbrains.buildServer.messages.serviceMessages.TestFailed(testName, this, trim(cfd.key, maxLength), trim(cfd.value, maxLength))
     } else {
-      return new ServiceMessage(name: "testFailed", attributes: [name: testName, message: message, details: stacktrace])
+      return new jetbrains.buildServer.messages.serviceMessages.TestFailed(testName, this)
     }
   }
 
   private Map.Entry<String, String> extractComparisonFailure(Throwable th) {
+    Map.Entry<String, String> comparisonFailure = extractComparisonFailureWithComparisonFailureUtil(th)
+    if (comparisonFailure != null) return comparisonFailure
+
     String actual = th.metaClass.respondsTo(th, 'fActual') ? th.fActual : null
     String expected = th.metaClass.respondsTo(th, 'fExpected') ? th.fExpected : null
     if (actual != null && expected != null) return new AbstractMap.SimpleEntry<String, String>(actual, expected)
@@ -1266,6 +1349,18 @@ class WrappedException extends Exception {
 
     return parseComparison(message, "expected:<", "> but was:<", ">") ?:
            parseComparison(message, "expected [", "] but found [", "]")
+  }
+
+  private Map.Entry<String, String> extractComparisonFailureWithComparisonFailureUtil(Throwable th) {
+    try {
+      def utilClass = Class.forName('jetbrains.buildServer.ComparisonFailureUtil')
+      def cfd = utilClass.extractComparisonFailure(th)
+      return cfd
+              ? new AbstractMap.SimpleEntry<String, String>(cfd.actual, cfd.expected)
+              : null
+    } catch (Exception ignored) {
+      return null
+    }
   }
 
   private Map.Entry<String, String> parseComparison(String msg, String start, String separator, String end) {
@@ -1329,12 +1424,27 @@ class TestTaskWrapper {
    * Use {@link TestTaskWrapper#forAllTestTasks} to instantiate this object correctly.
    */
   private TestTaskWrapper(def testTask) { this.testTask = testTask }
+
   void addTestListener(def listener) { testTask.addTestListener(listener) }
+
   void addTestOutputListener(def listener) { testTask.addTestOutputListener(listener) }
+
   String getTaskPath() { testTask.path }
-  TestTaskWrapper jvmArgs(Object... arguments) {
+
+  void enhanceGradleDaemonClasspath(Logger logger, List<String> classNames) {
+    if (!classNames.isEmpty() && testTask instanceof Test) {
+      testTask.doFirst(new GradleDaemonClasspathEnhancer(logger, classNames))
+    }
+  }
+
+  TestTaskWrapper jvmArgs(String[] arguments) {
     if (testTask instanceof Test) {
-      testTask.jvmArgs(arguments)
+      Boolean jvmArgsProviderDisabled = Boolean.valueOf(System.getenv(Constants.TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_VAR))
+      if (jvmArgsProviderDisabled) {
+        testTask.jvmArgs(arguments)
+      } else {
+        testTask.jvmArgumentProviders.add(new TestTaskJvmArgumentsProvider(arguments))
+      }
     }
     return this
   }
@@ -1373,6 +1483,105 @@ class TestTaskWrapper {
         TestTaskWrapper wrapper = new TestTaskWrapper(task)
         action(wrapper)
       }
+    }
+  }
+}
+
+class TestTaskJvmArgumentsProvider implements org.gradle.process.CommandLineArgumentProvider {
+  private final List<String> arguments
+
+  TestTaskJvmArgumentsProvider(String[] arguments) {
+    this.arguments = Arrays.asList(arguments)
+  }
+
+  @Override
+  Iterable<String> asArguments() {
+    return arguments
+  }
+}
+
+class GradleDaemonClasspathEnhancer implements Action<Test> {
+
+  private final Logger logger
+  private final List<String> classNames
+
+  GradleDaemonClasspathEnhancer(Logger logger, List<String> classNames) {
+    this.logger = logger
+    this.classNames = classNames
+  }
+
+  @Override
+  void execute(Test task) {
+    enhanceGradleDaemonClasspath(logger, task, classNames)
+  }
+
+  private static void enhanceGradleDaemonClasspath(Logger logger, Test task, List<String> classNames) {
+    try {
+      def testClasspath = getTestClasspath(task)
+      def classpath = findJarsForClasses(testClasspath, classNames)
+      logger.debug("Test classpath:")
+      for (def url : testClasspath) {
+        logger.debug(url.toString())
+      }
+      logger.debug("Reduced classpath:")
+      for (def url : classpath) {
+        logger.debug(url.toString())
+      }
+      logger.debug("End of classpath")
+      if (!classpath.isEmpty()) {
+        def classLoader = getDaemonClassLoader()
+        addClasspath(classLoader, classpath)
+      }
+    } catch (Throwable t) {
+      logger.error("Unable to enhance Gradle Daemon by $classNames", t)
+    }
+  }
+
+  private static URLClassLoader getDaemonClassLoader() {
+    try {
+      def daemonMainClass = Class.forName("org.gradle.launcher.daemon.bootstrap.DaemonMain")
+      def classLoader = daemonMainClass.getClassLoader()
+      if (classLoader instanceof URLClassLoader) {
+        return classLoader
+      }
+      throw new IllegalStateException("Unsupported Gradle daemon class loader: $classLoader")
+    } catch (ClassNotFoundException exception) {
+      throw new IllegalStateException("Daemon class loader not found.", exception)
+    }
+  }
+
+  private static List<URL> getTestClasspath(Test task) {
+    return task.classpath.files.collect { it.toURI().toURL() }
+  }
+
+  private static List<URL> findJarsForClasses(List<URL> classpath, List<String> classNames) {
+    def foundClassNames = new HashSet<String>()
+    def reducedClasspath = new ArrayList<URL>()
+    for (def url : classpath) {
+      new URLClassLoader([url] as URL[]).withCloseable { classLoader ->
+        for (def className : classNames) {
+          if (hasClass(classLoader, className)) {
+            foundClassNames.add(className)
+            reducedClasspath.add(url)
+            break
+          }
+        }
+      }
+    }
+    if (foundClassNames.size() != classNames.size()) {
+      return []
+    }
+    return reducedClasspath
+  }
+
+  private static boolean hasClass(URLClassLoader classLoader, String className) {
+    def classFile = className.replace(".", "/") + ".class"
+    return classLoader.findResource(classFile) != null
+  }
+
+  private static void addClasspath(URLClassLoader classLoader, Iterable<URL> classpath) {
+    for (def url : classpath) {
+      classLoader.addURL(url)
     }
   }
 }
@@ -1421,6 +1630,20 @@ class TestFilterWrapper {
   }
 }
 
+List<String> getGradleDaemonEnhancementClassNames() {
+  try {
+    def classNames = System.getenv(Constants.GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_VAR)
+    if (classNames == null) {
+      return []
+    } else {
+      return classNames.split(File.pathSeparator).toList()
+    }
+  } catch (Throwable t) {
+    logger.debug("Error while trying to initialize class names for Gradle daemon classpath enhancing", t)
+    return []
+  }
+}
+
 apply plugin: CompileTaskErrorOutputPlugin
 apply plugin: TestTaskBuildLogSetupPlugin
 apply plugin: TeamcityBuildProblemReportingPlugin
@@ -1429,17 +1652,18 @@ ProjectExtraPropertiesExtender.logBuildPropertiesUsageWarningMessageIfNeeded(gra
 gradle.addListener(new ProjectExtraPropertiesExtender(logger))
 
 final AtomicLong testCounter = new AtomicLong(0)
+final List<String> gradleDaemonEnhancementClassNames = getGradleDaemonEnhancementClassNames()
 gradle.addListener(new AfterEvaluateListener({ Project project ->
   // init jvm args
-  final String jvmargs = System.getProperty(Constants.TEST_JVMARGS_SYSTEM_PROP)
+  final String jvmargs = System.getenv(Constants.GRADLE_TEST_COVERAGE_JVM_ARGS_ENV_VAR)
   final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
   TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
-    def buildTempDirectory = System.getProperty(Constants.BUILD_TEMP_DIR_SYSTEM_PROP)
+    def buildTempDirectory = System.getenv(Constants.BUILD_TEMP_DIR_ENV_VAR)
     testTask.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
 
-    def testNameFormat = System.getProperty(Constants.TEST_NAME_FORMAT_SYSTEM_PROP)
+    def testNameFormat = System.getenv(Constants.TEST_NAME_FORMAT_ENV_VAR)
     def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
-    def ignoredSuiteFormat = System.getProperty(Constants.IGNORED_SUITE_FORMAT_SYSTEM_PROP)
+    def ignoredSuiteFormat = System.getenv(Constants.IGNORED_SUITE_FORMAT_ENV_VAR)
 
     def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
     testTask.addTestListener(testListener)
@@ -1451,6 +1675,8 @@ gradle.addListener(new AfterEvaluateListener({ Project project ->
     testTask.filter.updateFilters(System.getenv(Constants.PARALLEL_TESTS_ARTIFACT_PATH_ENV_VAR), logger)
     // will be empty if parallel tests enabled
     testTask.filter.updateFilters(System.getenv(Constants.RISK_TESTS_ARTIFACT_PATH_ENV_VAR), logger)
+
+    testTask.enhanceGradleDaemonClasspath(logger, gradleDaemonEnhancementClassNames)
   }
 }))
 

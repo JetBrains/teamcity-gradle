@@ -35,7 +35,7 @@ public class GradleRunnerConstants {
    * This param defaults to false. If set to true, properties from the 'teamcity.build.properties' file will no longer be provided as Gradle properties.
    * The 'project.teamcity' Gradle properties extension will not be provided as well.
    */
-  public static final String GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES = "teamcity.internal.gradle.runner.doNotPopulateGradleProperties";
+  public static final String GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM = "teamcity.internal.gradle.runner.doNotPopulateGradleProperties";
   public static final String GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM = "teamcity.internal.gradle.runner.allow.jvm.args.overriding";
   /**
    * A relative path to the gradle-wrapper.properties without a filename.
@@ -75,7 +75,7 @@ public class GradleRunnerConstants {
   public static final String ENV_SUPPORT_TEST_RETRY = "TEAMCITY_SUPPORT_TEST_RETRY";
   public static final String TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH = "TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH";
   public static final String TEAMCITY_RISK_TESTS_ARTIFACT_PATH = "TEAMCITY_RISK_TESTS_ARTIFACT_PATH";
-  public static final String TEAMCITY_BUILD_INIT_PATH = "TEAMCITY_BUILD_INIT_PATH";
+  public static final String TEAMCITY_INIT_SCRIPT_CLASSPATH_ENV_VAR = "TEAMCITY_INIT_SCRIPT_CLASSPATH";
 
   public static final String INIT_SCRIPT_DIR = "scripts";
   public static final String INIT_SCRIPT_NAME = "init.gradle";
@@ -100,7 +100,7 @@ public class GradleRunnerConstants {
   public static final String GRADLE_PARAMS_FILE_ENV_KEY = "TEAMCITY_GRADLE_CONFIG_PARAMETERS";
   public static final String GRADLE_JVM_PARAMS_FILE_ENV_KEY = "TEAMCITY_GRADLE_JVM_PARAMETERS";
   public static final String GRADLE_TASKS_FILE_ENV_KEY = "TEAMCITY_GRADLE_TASKS";
-  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = "GRADLE_DAEMON_ENHANCEMENT_CLASSES";
+  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY = "TEAMCITY_GRADLE_DAEMON_ENHANCEMENT_CLASSES";
   public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_KEY = "TEST_TASK_JVM_ARG_PROVIDER_DISABLED";
   /**
    * Workaround for <a href="https://github.com/gradle/gradle/issues/34491">https://github.com/gradle/gradle/issues/34491</a>.
@@ -113,4 +113,15 @@ public class GradleRunnerConstants {
   public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";
 
   public static final String BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR = "task-output";
+
+  public static final String GRADLE_TEST_COVERAGE_JVM_ARGS_SYSTEM_PROPERTY_KEY = "gradle.test.jvmargs";
+  public static final String STACKTRACE_LOG_DIR_SYSTEM_PROPERTY_KEY = "teamcity.build.stacktraceLogDir";
+  public static final String CHANGED_FILES_FILE_SYSTEM_PROPERTY_KEY = "teamcity.build.changedFiles.file";
+  public static final String BUILD_TEMP_DIR_SYSTEM_PROPERTY_KEY = "teamcity.build.tempDir";
+
+  public static final String TEST_NAME_FORMAT_CONFIG_PARAM = "teamcity.internal.gradle.testNameFormat";
+  public static final String IGNORED_SUITE_FORMAT_CONFIG_PARAM = "teamcity.internal.gradle.ignoredSuiteFormat";
+  public static final String USE_TEST_RETRY_PLUGIN_CONFIG_PARAM = "teamcity.internal.gradle.useTestRetryPlugin";
+  public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_CONFIG_PARAM = "teamcity.internal.gradle.runner.testTaskJvmArgumentsProviderDisabled";
+  public static final String BUILD_BRANCH_SYSTEM_PROPERTY_KEY = "teamcity.build.branch";
 }

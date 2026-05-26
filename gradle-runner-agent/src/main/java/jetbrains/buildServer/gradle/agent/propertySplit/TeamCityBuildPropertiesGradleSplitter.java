@@ -7,7 +7,7 @@ import jetbrains.buildServer.RunBuildException;
 import jetbrains.buildServer.gradle.agent.GradleRunnerFileUtil;
 import org.jetbrains.annotations.NotNull;
 
-import static jetbrains.buildServer.gradle.agent.propertySplit.InitScriptParametersConstants.*;
+import static jetbrains.buildServer.gradle.agent.propertySplit.ToolingApiInitScriptConstants.*;
 import static jetbrains.buildServer.gradle.agent.propertySplit.SplitPropertiesFilenameBuilder.buildStaticPropertiesFilename;
 import static jetbrains.buildServer.gradle.runtime.service.TeamCityBuildParametersResolver.getTcBuildParametersFile;
 
