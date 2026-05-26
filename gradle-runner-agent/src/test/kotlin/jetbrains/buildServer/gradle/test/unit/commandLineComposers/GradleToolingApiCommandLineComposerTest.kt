@@ -45,7 +45,7 @@ class GradleToolingApiCommandLineComposerTest {
             InitScriptParametersConstants.TEAMCITY_BUILD_TEMP_DIR_KEY to "/tmp/buildTemp"
         )
         val configParameters = mutableMapOf(
-            GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES to "true",
+            GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM to "true",
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_USE_TEST_RETRY_PLUGIN_KEY to "false",
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_TEST_NAME_FORMAT_KEY to "customFormat",
             InitScriptParametersConstants.TEAMCITY_CONFIGURATION_IGNORE_SUITE_FORMAT_KEY to "customIgnore"
@@ -57,7 +57,7 @@ class GradleToolingApiCommandLineComposerTest {
 
         // assert
         BDDAssertions.then(cmdLine.arguments).contains(
-            "-D${GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES}=true",
+            "-D${GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM}=true",
             "-D${InitScriptParametersConstants.TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY}=-Xmx512m",
             "-D${InitScriptParametersConstants.TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY}=/tmp/stacktrace",
             "-D${InitScriptParametersConstants.TEAMCITY_BUILD_CHANGED_FILES_KEY}=/tmp/changedFiles.txt",
@@ -72,7 +72,7 @@ class GradleToolingApiCommandLineComposerTest {
     fun `should populate system properties with default values when doNotPopulateGradleProperties flag is set and no explicit values are configured`() {
         // arrange: only the flag is set, no source parameters
         val configParameters = mutableMapOf(
-            GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES to "true"
+            GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM to "true"
         )
         val parameters = buildParameters(configParameters = configParameters)
 
@@ -81,7 +81,7 @@ class GradleToolingApiCommandLineComposerTest {
 
         // assert: defaults are used — empty strings for 6 properties, "true" for useTestRetryPlugin
         BDDAssertions.then(cmdLine.arguments).contains(
-            "-D${GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES}=true",
+            "-D${GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM}=true",
             "-D${InitScriptParametersConstants.TEAMCITY_BUILD_GRADLE_TEST_JVM_ARGS_KEY}=",
             "-D${InitScriptParametersConstants.TEAMCITY_BUILD_STACKTRACE_LOG_DIR_KEY}=",
             "-D${InitScriptParametersConstants.TEAMCITY_BUILD_CHANGED_FILES_KEY}=",
