@@ -1,4 +1,4 @@
-package jetbrains.buildServer.gradle.test.integration;
+package jetbrains.buildServer.gradle.test.toolingApiTests.integration;
 
 import java.util.List;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
@@ -10,7 +10,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertTrue;
 
-public class GradleRunnerJvmArgumentsTest extends GradleRunnerServiceMessageTest {
+public class GradleRunnerJvmArgumentsTestForToolingApi extends GradleRunnerServiceMessageTestForToolingApi {
 
   @BeforeMethod
   public void beforeTest() {
@@ -44,6 +44,7 @@ public class GradleRunnerJvmArgumentsTest extends GradleRunnerServiceMessageTest
 
     // assert
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
+    assertTrue(messages.stream().anyMatch(line -> line.contains("--add-opens java.base/jdk.internal.module=ALL-UNNAMED")), "Expected: --add-opens to be applied\nFull log:\n" + StringUtil.join("\n", messages));
     assertTrue(messages.stream().noneMatch(line -> line.contains("cannot access class jdk.internal.module.ModuleInfoWriter")), "Expected: --add-opens to be applied\nFull log:\n" + StringUtil.join("\n", messages));
     assertTrue(messages.stream().anyMatch(line -> line.contains("internal module access succeeded")), "Expected the internal module probe to run\nFull log:\n" + StringUtil.join("\n", messages));
   }

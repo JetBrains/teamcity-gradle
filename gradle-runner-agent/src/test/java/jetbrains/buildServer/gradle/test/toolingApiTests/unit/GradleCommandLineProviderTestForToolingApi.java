@@ -1,4 +1,4 @@
-package jetbrains.buildServer.gradle.test.unit;
+package jetbrains.buildServer.gradle.test.toolingApiTests.unit;
 
 import com.intellij.openapi.util.TCSystemInfo;
 import jetbrains.TCJMockUtils;
@@ -11,13 +11,12 @@ import jetbrains.buildServer.agent.BuildRunnerContext;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.*;
+import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
+import jetbrains.buildServer.gradle.agent.GradleRunnerContext;
+import jetbrains.buildServer.gradle.agent.GradleToolProvider;
+import jetbrains.buildServer.gradle.agent.GradleUserHomeManager;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliV2CommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.*;
 import jetbrains.buildServer.gradle.agent.gradleExecution.GradleCommandLineProvider;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
@@ -51,7 +50,7 @@ import static org.testng.Assert.*;
  * Author: Nikita.Skvortsov
  * Date: 11/1/10
  */
-public class GradleCommandLineProviderTest {
+public class GradleCommandLineProviderTestForToolingApi {
   private Mockery myContext;
 
   protected TempFiles myTempFiles = new TempFiles();
@@ -184,7 +183,6 @@ public class GradleCommandLineProviderTest {
   @DataProvider(name = "gradle-version-provider")
   public static String[][] getGradlePaths() {
     return new String[][]{
-      {"old"},
       {"8.2"},
       {"9.4.1"}
     };
@@ -196,11 +194,7 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-    }
+    validateCmdLineSince8(cmdLine, true);
 
     reportCmdLine(cmdLine);
   }
@@ -208,10 +202,8 @@ public class GradleCommandLineProviderTest {
   @DataProvider(name = "enable daemon")
   public static Object[][] enableDaemonParam() {
     return new Object[][]{
-      {"old", "--daemon"},
       {"8.2", "--daemon"},
       {"9.4.1", "--daemon"},
-      {"old", "-Dorg.gradle.daemon=true"},
       {"8.2", "-Dorg.gradle.daemon=true"},
       {"9.4.1", "-Dorg.gradle.daemon=true"}
     };
@@ -226,13 +218,8 @@ public class GradleCommandLineProviderTest {
 
     List<String> gradleArguments;
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleArguments = new ArrayList<>(toolingApiGradleArgs);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleArguments = cmdLine.getArguments();
-    }
+    validateCmdLineSince8(cmdLine, false);
+    gradleArguments = new ArrayList<>(toolingApiGradleArgs);
 
     assertTrue(gradleArguments.contains(param), Arrays.toString(cmdLine.getArguments().toArray()) + " must contain " + param);
     assertFalse(gradleArguments.contains("-Dorg.gradle.daemon=false"), Arrays.toString(cmdLine.getArguments().toArray()) + " must contain '-Dorg.gradle.daemon=false'");
@@ -249,13 +236,8 @@ public class GradleCommandLineProviderTest {
 
     List<String> gradleArguments;
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleArguments = new ArrayList<>(toolingApiGradleArgs);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleArguments = cmdLine.getArguments();
-    }
+    validateCmdLineSince8(cmdLine, false);
+    gradleArguments = new ArrayList<>(toolingApiGradleArgs);
 
     assertTrue(gradleArguments.contains("--no-daemon"), Arrays.toString(cmdLine.getArguments().toArray()) + " must contain '--no-daemon'");
     assertFalse(gradleArguments.contains("-Dorg.gradle.daemon=false"),
@@ -272,31 +254,12 @@ public class GradleCommandLineProviderTest {
 
     List<String> gradleArguments;
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleArguments = new ArrayList<>(toolingApiGradleArgs);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleArguments = cmdLine.getArguments();
-    }
+    validateCmdLineSince8(cmdLine, false);
+    gradleArguments = new ArrayList<>(toolingApiGradleArgs);
 
     assertEquals(Collections.frequency(gradleArguments, "-Dorg.gradle.daemon=false"), 1);
 
     reportCmdLine(cmdLine);
-  }
-
-  @Test
-  public void generateCLwithJavaHome() throws Exception {
-    String gradleVersion = "old";
-    final String expectedJavaHome = myTempFiles.createTempDir().getAbsolutePath();
-    myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, expectedJavaHome);
-
-    prepareGradleRequiredFiles(gradleVersion);
-    ProgramCommandLine cmdLine = getGradleCommandLine();
-    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-
-    String actualJavaHome = cmdLine.getEnvironment().get(JavaRunnerConstants.JAVA_HOME);
-    assertEquals(actualJavaHome, expectedJavaHome, "Wrong Java Home environment variable.");
   }
 
   @Test(dataProvider = "gradle-version-provider")
@@ -310,22 +273,13 @@ public class GradleCommandLineProviderTest {
     ProgramCommandLine cmdLine = getGradleCommandLine();
     String gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-      assertTrue(toolingApiJvmGradleArgs.contains(expectedRunnerGradleOpts), "Wrong Java arguments.");
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-      assertTrue(gradleOptsValue.contains(expectedRunnerGradleOpts), "Wrong Java arguments.");
-    }
+    validateCmdLineSince8(cmdLine, true);
+    assertTrue(toolingApiJvmGradleArgs.contains(expectedRunnerGradleOpts), "Wrong Java arguments.");
 
     myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, expectedRunnerJavaArgs);
     cmdLine = getGradleCommandLine();
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-    }
+    validateCmdLineSince8(cmdLine, true);
     gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
     then(gradleOptsValue.split(" ")).as("Should contain new temp dir").contains("\"-Djava.io.tmpdir=" + myTempDir.getCanonicalPath() + "\"")
@@ -341,14 +295,8 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    List<String> gradleTasks;
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleTasks = new ArrayList<>(toolingApiGradleTasks);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleTasks = cmdLine.getArguments();
-    }
+    validateCmdLineSince8(cmdLine, false);
+    List<String> gradleTasks = new ArrayList<>(toolingApiGradleTasks);
 
     then(gradleTasks).doesNotContain("-bar", "this\"", "this").contains("--args=\"foo -bar this\"");
 
@@ -374,14 +322,9 @@ public class GradleCommandLineProviderTest {
 
     List<String> args;
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-      args = new ArrayList<>(toolingApiGradleArgs);
-      args.addAll(toolingApiGradleTasks);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-      args = cmdLine.getArguments();
-    }
+    validateCmdLineSince8(cmdLine, true);
+    args = new ArrayList<>(toolingApiGradleArgs);
+    args.addAll(toolingApiGradleTasks);
 
     int paramsIndex = args.indexOf(argsArray[0]);
     int cmdIndex = args.indexOf(cmdsArray[0]);
@@ -428,11 +371,7 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-    } else {
-      validateCmdLine(cmdLine, gradlew.getAbsolutePath(), true);
-    }
+    validateCmdLineSince8(cmdLine, true);
   }
 
   private GradleCommandLineProvider createGradleCommandLineProvider(GradleRunnerContext gradleRunnerContext) {
@@ -494,29 +433,6 @@ public class GradleCommandLineProviderTest {
     Reporter.log("Working Directory : " + cmdLine.getWorkingDirectory(), true);
     Reporter.log("Args : " + cmdLine.getArguments(), true);
     Reporter.log("Env : " + cmdLine.getEnvironment(), true);
-  }
-
-  private void validateCmdLine(final ProgramCommandLine cmdLine, final String exePath, boolean isTestDaemon) throws Exception {
-    final String workDir = myWorkingDirectory.getAbsolutePath();
-    final String initScriptPath = myInitScript.getAbsolutePath();
-    final List<String> args = cmdLine.getArguments();
-
-    if (TCSystemInfo.isWindows) {
-      assertEquals(cmdLine.getExecutablePath(), exePath, "Wrong Gradle executable path.");
-    } else if (TCSystemInfo.isUnix) {
-      assertEquals(cmdLine.getExecutablePath(), "bash", "Gradle startup script must be executed by explicit bash call.");
-      assertEquals(args.get(0), exePath, "Wrong Gradle startup script path.");
-    } else {
-      fail("OS is not supported. This test must be started under Windows, Linux or *nix OS.");
-    }
-
-    assertEquals(cmdLine.getWorkingDirectory(), workDir, "Wrong working directory.");
-    int initScriptIndex = args.indexOf("--init-script");
-    assertTrue(initScriptIndex > -1, "--init-script argument not found!");
-    assertEquals(args.get(initScriptIndex + 1), initScriptPath, "Wrong init script path");
-    if (isTestDaemon) {
-      assertTrue(args.contains("-Dorg.gradle.daemon=false"), "Gradle daemon should be disabled");
-    }
   }
 
   private void validateCmdLineSince8(final ProgramCommandLine cmdLine, boolean isTestDaemon) throws Exception {
