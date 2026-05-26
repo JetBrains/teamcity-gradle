@@ -12,6 +12,60 @@ import org.gradle.tooling.events.OperationCompletionListener
 import org.gradle.tooling.events.task.TaskFinishEvent
 import org.gradle.tooling.events.task.TaskFailureResult
 
+class Constants {
+  // Environment variable which points to the TeamCity build properties file. Is set by the agent's core logic.
+  public static final String BUILD_PROPERTIES_FILE_ENV_VAR = "TEAMCITY_BUILD_PROPERTIES_FILE"
+
+  // region Environment variables which are set in the Gradle runner's agent logic and are used internally by the runner's init scripts.
+
+  // Points to the TeamCity build temporary directory. Is set based on the system property provided by the agent's core logic.
+  public static final String BUILD_TEMP_DIR_ENV_VAR = "TEAMCITY_BUILD_TEMP_DIR"
+  // Points to the file that lists changed files for dependency-based test runs. Is set based on the system property provided by the agent's core logic.
+  public static final String CHANGED_FILES_FILE_ENV_VAR = "TEAMCITY_CHANGED_FILES_FILE"
+  // Points to the artifact with tests selected for parallel execution. Is set based on the system property provided by the agent's core logic.
+  public static final String PARALLEL_TESTS_ARTIFACT_PATH_ENV_VAR = "TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"
+  // Points to the artifact with risk-based tests selected for execution. Is set based on the system property provided by the agent's core logic.
+  public static final String RISK_TESTS_ARTIFACT_PATH_ENV_VAR = "TEAMCITY_RISK_TESTS_ARTIFACT_PATH"
+  // Defines the incremental building mode. Is set based on the build step configuration.
+  public static final String GRADLE_INCREMENTAL_MODE_ENV_VAR = "TEAMCITY_GRADLE_INCREMENTAL_MODE"
+  // Indicates whether test retry is supported on the build configuration level. Is set based on the build configuration's test retry setup.
+  public static final String SUPPORT_TEST_RETRY_ENV_VAR = "TEAMCITY_SUPPORT_TEST_RETRY"
+  // Supplies extra JVM arguments for Gradle test tasks. Is set by the agent's test coverage logic.
+  public static final String GRADLE_TEST_COVERAGE_JVM_ARGS_ENV_VAR = "TEAMCITY_GRADLE_TEST_COVERAGE_JVM_ARGS"
+  // Disables adding TeamCity build properties to Gradle project extra properties. Is set from the configuration parameters.
+  public static final String DO_NOT_POPULATE_GRADLE_PROPERTIES_ENV_VAR = "TEAMCITY_DO_NOT_POPULATE_GRADLE_PROPERTIES"
+  // Controls whether explicit test retry integration should inspect Gradle retry plugins. Is set from the configuration parameters.
+  public static final String USE_TEST_RETRY_PLUGIN_ENV_VAR = "TEAMCITY_USE_TEST_RETRY_PLUGIN"
+  // Selects the format used for TeamCity test names. Is set from the configuration parameters.
+  public static final String TEST_NAME_FORMAT_ENV_VAR = "TEAMCITY_TEST_NAME_FORMAT"
+  // Selects the format used for ignored TeamCity test suites. Is set from the configuration parameters.
+  public static final String IGNORED_SUITE_FORMAT_ENV_VAR = "TEAMCITY_IGNORE_SUITE_FORMAT_FORMAT"
+  // Points to the directory where TeamCity stores stacktrace logs. Is set based on a system property, the origin of which is unknown. Left for backwards compatibility for now.
+  public static final String STACKTRACE_LOG_DIR_ENV_VAR = "TEAMCITY_STACKTRACE_LOG_DIR"
+
+  // endregion
+
+  // region System properties not documented or used anywhere outside the runner's init scripts. Left for backwards compatibility.
+
+  // Selects the parser used for TeamCity service messages in Gradle output.
+  public static final String MESSAGE_PARSER_TYPE_SYSTEM_PROP = "teamcity.gradle.message.parser.type"
+  // Limits the size of test stdout/stderr service messages.
+  public static final String MESSAGE_MAX_LENGTH_SYSTEM_PROP = "teamcity.gradle.message.maxLength"
+  // Limits the size of stacktraces reported in test failure messages.
+  public static final String STACKTRACE_MAX_LENGTH_SYSTEM_PROP = "teamcity.gradle.stacktrace.maxLength"
+  // Controls when large test exception details are attached as artifacts instead of inline messages.
+  public static final String MIN_ATTACHED_TEST_EXCEPTION_SYSTEM_PROP = "teamcity.gradle.minAttachedTestException"
+  // Suppresses forwarding test stdout to TeamCity when enabled.
+  public static final String IGNORE_TEST_STDOUT_SYSTEM_PROP = "teamcity.ignoreTestStdOut"
+  // Suppresses forwarding test stderr to TeamCity when enabled.
+  public static final String IGNORE_TEST_STDERR_SYSTEM_PROP = "teamcity.ignoreTestStdErr"
+
+  // endregion
+
+  // Gradle's isolated projects system property flag for Gradle versions where isolated projects is an incubating feature.
+  public static final String GRADLE_UNSAFE_ISOLATED_PROJECTS_SYSTEM_PROP = "org.gradle.unsafe.isolated-projects"
+}
+
 public class DependencyBasedTestRun {
 
   Logger logger
@@ -22,7 +76,7 @@ public class DependencyBasedTestRun {
 
   public def configureGradle(Gradle gradle) {
     def rootProject = gradle.rootProject
-    def incrementalOption = System.getenv("TEAMCITY_GRADLE_INCREMENTAL_MODE");
+    def incrementalOption = System.getenv(Constants.GRADLE_INCREMENTAL_MODE_ENV_VAR)
     logger.debug("Received following incremental setting: ${incrementalOption}")
 
     switch(incrementalOption) {
@@ -55,7 +109,7 @@ public class DependencyBasedTestRun {
 
 
   private def findAffectedProjects(Project project) {
-    String changedFilesFile = System.getenv("teamcity.build.changedFiles.file")
+    String changedFilesFile = System.getenv(Constants.CHANGED_FILES_FILE_ENV_VAR)
 
     if (changedFilesFile != null && !changedFilesFile.isEmpty()) {
       def changedFiles = readChangedFiles(changedFilesFile)
@@ -170,7 +224,7 @@ class ProjectExtraPropertiesExtender implements ProjectEvaluationListener {
   }
 
   private static boolean doNotPopulateGradleProperties() {
-    return Boolean.valueOf(System.getenv("TEAMCITY_DO_NOT_POPULATE_GRADLE_PROPERTIES"))
+    return Boolean.valueOf(System.getenv(Constants.DO_NOT_POPULATE_GRADLE_PROPERTIES_ENV_VAR))
   }
 
   private static Properties getPropertiesFromFile(Logger logger) {
@@ -189,7 +243,7 @@ class PropertiesFileReader {
   // We need this because the properties file changes every build and we want to avoid unnecessary cache invalidations.
   // This method is used in the non-configuration cache setup as well for uniformity.
   static Properties loadPropertiesFromFile() throws IOException {
-    String filePath = System.getenv("TEAMCITY_BUILD_PROPERTIES_FILE")
+    String filePath = System.getenv(Constants.BUILD_PROPERTIES_FILE_ENV_VAR)
     if (filePath == null) return new Properties()
 
     def debugServiceMessage = new ServiceMessage(name: "message", attributes: [text: "Reading the Teamcity build properties file '$filePath'", "tc:tags": "tc:internal"])
@@ -402,7 +456,7 @@ class BuildFeatures {
     try {
       return getBuildFeatures(gradle).isolatedProjects.active.getOrElse(false)
     } catch (ClassNotFoundException ignored) {
-      def value = System.getProperty("org.gradle.unsafe.isolated-projects")
+      def value = System.getProperty(Constants.GRADLE_UNSAFE_ISOLATED_PROJECTS_SYSTEM_PROP)
       return value != null && value.toBoolean()
     }
   }
@@ -711,11 +765,11 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
 
     // Check if test retries are supported on the build configuration level.
     // If yes, then we do not need to set up explicit test retry for the task.
-    String testRetryEnvVar = System.getenv("TEAMCITY_SUPPORT_TEST_RETRY")
+    String testRetryEnvVar = System.getenv(Constants.SUPPORT_TEST_RETRY_ENV_VAR)
     boolean isTeamCityTestRetryEnabled = testRetryEnvVar != null && testRetryEnvVar.toBoolean()
     if (isTeamCityTestRetryEnabled) return false
 
-    def useTestRetryPlugin = System.getenv("teamcity.internal.gradle.useTestRetryPlugin")
+    def useTestRetryPlugin = System.getenv(Constants.USE_TEST_RETRY_PLUGIN_ENV_VAR)
     if (useTestRetryPlugin == "false") return false
 
     def develocityPluginRetryCount = getDevelocityPluginRetryCountOrNull(task)
@@ -758,8 +812,8 @@ class BuildDirectoriesResolver {
   private final File buildDir
 
   BuildDirectoriesResolver(Project project) {
-    this.buildStacktraceLogDir = System.getenv("teamcity.build.stacktraceLogDir")
-    this.buildTempDir = System.getenv("teamcity.build.tempDir")
+    this.buildStacktraceLogDir = System.getenv(Constants.STACKTRACE_LOG_DIR_ENV_VAR)
+    this.buildTempDir = System.getenv(Constants.BUILD_TEMP_DIR_ENV_VAR)
     this.buildDir = project.getLayout().getBuildDirectory().getAsFile().get()
   }
 
@@ -886,8 +940,8 @@ public class SuiteDescriptorWrapper extends DescriptorWrapper {
 public class TestDescriptorWrapper extends DescriptorWrapper {
   private final TestNameDescriptor testNameDescriptor
   private final BuildDirectoriesResolver buildDirectoriesResolver
-  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.message.maxLength", 18 * 1024)
-  private static final String OUTPUT_PARSER = System.getProperty("teamcity.gradle.message.parser.type", "ServiceMessage")
+  private static final int MAX_MESSAGE_SIZE = Integer.getInteger(Constants.MESSAGE_MAX_LENGTH_SYSTEM_PROP, 18 * 1024)
+  private static final String OUTPUT_PARSER = System.getProperty(Constants.MESSAGE_PARSER_TYPE_SYSTEM_PROP, "ServiceMessage")
 
   TestDescriptorWrapper(TestDescriptor descriptor, TestNameDescriptor testNameDescriptor, FlowWrapper flow, BuildDirectoriesResolver buildDirectoriesResolver, Pattern ignoreSuite) {
     super(descriptor, flow, ignoreSuite)
@@ -1194,8 +1248,8 @@ abstract class TeamcityBuildProblemAction implements FlowAction<Parameters> {
  * Use WrappedException if you need to make a error message shorter
  */
 class WrappedException extends Exception {
-  private static final int MAX_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.stacktrace.maxLength", 18 * 1024)
-  private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger("teamcity.gradle.minAttachedTestException", MAX_MESSAGE_SIZE)
+  private static final int MAX_MESSAGE_SIZE = Integer.getInteger(Constants.STACKTRACE_MAX_LENGTH_SYSTEM_PROP, 18 * 1024)
+  private static final int MIN_ATTACHED_MESSAGE_SIZE = Integer.getInteger(Constants.MIN_ATTACHED_TEST_EXCEPTION_SYSTEM_PROP, MAX_MESSAGE_SIZE)
 
   final Throwable th
   private final int maxLength
@@ -1437,26 +1491,26 @@ gradle.addListener(new ProjectExtraPropertiesExtender(logger))
 final AtomicLong testCounter = new AtomicLong(0)
 gradle.addListener(new AfterEvaluateListener({ Project project ->
   // init jvm args
-  final String jvmargs = System.getenv("gradle.test.jvmargs")
+  final String jvmargs = System.getenv(Constants.GRADLE_TEST_COVERAGE_JVM_ARGS_ENV_VAR)
   final String[] arguments = jvmargs == null || jvmargs.isEmpty() ? new String[0] : jvmargs.split("\n")
   TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
-    def buildTempDirectory = System.getenv("teamcity.build.tempDir")
+    def buildTempDirectory = System.getenv(Constants.BUILD_TEMP_DIR_ENV_VAR)
     testTask.setTmpDirectory(buildTempDirectory).jvmArgs(arguments)
 
-    def testNameFormat = System.getenv("teamcity.internal.gradle.testNameFormat")
+    def testNameFormat = System.getenv(Constants.TEST_NAME_FORMAT_ENV_VAR)
     def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
-    def ignoredSuiteFormat = System.getenv("teamcity.internal.gradle.ignoredSuiteFormat")
+    def ignoredSuiteFormat = System.getenv(Constants.IGNORED_SUITE_FORMAT_ENV_VAR)
 
     def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
     testTask.addTestListener(testListener)
     testTask.addTestOutputListener(testListener)
-    testListener.skipStdOut = Boolean.valueOf(System.properties["teamcity.ignoreTestStdOut"])
-    testListener.skipStdErr = Boolean.valueOf(System.properties["teamcity.ignoreTestStdErr"])
+    testListener.skipStdOut = Boolean.valueOf(System.getProperty(Constants.IGNORE_TEST_STDOUT_SYSTEM_PROP))
+    testListener.skipStdErr = Boolean.valueOf(System.getProperty(Constants.IGNORE_TEST_STDERR_SYSTEM_PROP))
 
     // add executable tests
-    testTask.filter.updateFilters(System.getenv("TEAMCITY_PARALLEL_TESTS_ARTIFACT_PATH"), logger)
+    testTask.filter.updateFilters(System.getenv(Constants.PARALLEL_TESTS_ARTIFACT_PATH_ENV_VAR), logger)
     // will be empty if parallel tests enabled
-    testTask.filter.updateFilters(System.getenv("TEAMCITY_RISK_TESTS_ARTIFACT_PATH"), logger)
+    testTask.filter.updateFilters(System.getenv(Constants.RISK_TESTS_ARTIFACT_PATH_ENV_VAR), logger)
   }
 }))
 
