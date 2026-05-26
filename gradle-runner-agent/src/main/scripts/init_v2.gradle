@@ -51,7 +51,7 @@ public class DependencyBasedTestRun {
 
 
   private def findAffectedProjects(Project project) {
-    String changedFilesFile = System.getProperty("teamcity.build.changedFiles.file")
+    String changedFilesFile = System.getenv("teamcity.build.changedFiles.file")
 
     if (changedFilesFile != null && !changedFilesFile.isEmpty()) {
       def changedFiles = readChangedFiles(changedFilesFile)
@@ -155,7 +155,7 @@ public class TeamcityPropertiesListener implements ProjectEvaluationListener {
   }
 
   private void loadProps(Project p) {
-    String propsFilePath = System.getProperty("teamcity.build.properties.file");
+    String propsFilePath = System.getenv("teamcity.build.properties.file");
     if (null == propsFilePath) {
       propsFilePath = System.getenv("TEAMCITY_BUILD_PROPERTIES_FILE");
     }
@@ -541,7 +541,7 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
     boolean isTeamCityTestRetryEnabled = testRetryEnvVar != null && testRetryEnvVar.toBoolean()
     if (isTeamCityTestRetryEnabled) return false
 
-    def useTestRetryPlugin = System.getProperty("teamcity.internal.gradle.useTestRetryPlugin")
+    def useTestRetryPlugin = System.getenv("teamcity.internal.gradle.useTestRetryPlugin")
     if (useTestRetryPlugin == "false") return false
 
     def retryPlugin = task.getExtensions()?.findByName("retry")
@@ -575,8 +575,8 @@ class BuildDirectoriesResolver {
   private final File buildDir
 
   BuildDirectoriesResolver(Project project) {
-    this.buildStacktraceLogDir = System.getProperty("teamcity.build.stacktraceLogDir")
-    this.buildTempDir = System.getProperty("teamcity.build.tempDir")
+    this.buildStacktraceLogDir = System.getenv("teamcity.build.stacktraceLogDir")
+    this.buildTempDir = System.getenv("teamcity.build.tempDir")
     this.buildDir = project.getLayout().getBuildDirectory().getAsFile().get()
   }
 
@@ -1264,9 +1264,9 @@ gradle.projectsEvaluated { Gradle gradle ->
   new DependencyBasedTestRun(logger).configureGradle(gradle)
   gradle.rootProject.allprojects { Project project ->
     TestTaskWrapper.forAllTestTasks(project.tasks.withType(AbstractTestTask.class)) { TestTaskWrapper testTask ->
-      def testNameFormat = System.getProperty("teamcity.internal.gradle.testNameFormat")
+      def testNameFormat = System.getenv("teamcity.internal.gradle.testNameFormat")
       def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
-      def ignoredSuiteFormat = System.getProperty("teamcity.internal.gradle.ignoredSuiteFormat")
+      def ignoredSuiteFormat = System.getenv("teamcity.internal.gradle.ignoredSuiteFormat")
 
       def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
       testTask.addTestListener(testListener)
