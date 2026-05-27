@@ -11,19 +11,17 @@ import jetbrains.buildServer.agent.BuildRunnerContext;
 import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.ProgramCommandLine;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.*;
+import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
+import jetbrains.buildServer.gradle.agent.GradleRunnerContext;
+import jetbrains.buildServer.gradle.agent.GradleToolProvider;
+import jetbrains.buildServer.gradle.agent.GradleUserHomeManager;
 import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliV2CommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.*;
 import jetbrains.buildServer.gradle.agent.gradleExecution.GradleCommandLineProvider;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
 import jetbrains.buildServer.gradle.agent.obsolete.GradleConnectorProvider;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
-import jetbrains.buildServer.gradle.runtime.LauncherParameters;
 import jetbrains.buildServer.runner.JavaRunnerConstants;
 import jetbrains.buildServer.util.Option;
 import jetbrains.buildServer.util.TestFor;
@@ -40,7 +38,6 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
@@ -60,7 +57,6 @@ public class GradleCommandLineProviderTest {
   protected final Map<String, String> myEnvVars = new HashMap<>();
   protected final Map<String, String> mySystemProps = new HashMap<>();
   protected final Map<String, String> myConfigParameters = new HashMap<>();
-  private final Map<String, String> toolingApiLauncherFiles = new HashMap<>();
   protected BuildRunnerContext myRunnerContext;
   protected AgentRunningBuild myBuild;
   protected File myGradleExe;
@@ -69,9 +65,6 @@ public class GradleCommandLineProviderTest {
   private File myTempDir;
   private File myCoDir;
   private String javaHome;
-  private List<String> toolingApiGradleArgs = Collections.emptyList();
-  private List<String> toolingApiJvmGradleArgs = Collections.emptyList();
-  private List<String> toolingApiGradleTasks = Collections.emptyList();
   private GradleCommandLineComposerHolder myComposerHolder;
   private GradleTasksComposer myTasksComposer;
   private GradleLaunchModeSelector myLaunchModeSelector;
@@ -158,9 +151,6 @@ public class GradleCommandLineProviderTest {
     javaHome = JavaRunnerUtil.findJavaHome(jdk, propsAndVars, null);
     myRunnerParams.put(JavaRunnerConstants.TARGET_JDK_HOME, javaHome);
 
-    toolingApiLauncherFiles.put(GRADLE_PARAMS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_PARAMS_FILE);
-    toolingApiLauncherFiles.put(GRADLE_JVM_PARAMS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_JVM_PARAMS_FILE);
-    toolingApiLauncherFiles.put(GRADLE_TASKS_FILE_ENV_KEY, myTempDir.getAbsolutePath() + File.separator + GRADLE_TASKS_FILE);
   }
 
   @AfterMethod
@@ -170,9 +160,6 @@ public class GradleCommandLineProviderTest {
     myBuildParams.clear();
     myEnvVars.clear();
     mySystemProps.clear();
-    toolingApiGradleArgs.clear();
-    toolingApiJvmGradleArgs.clear();
-    toolingApiGradleTasks.clear();
   }
 
   private ProgramCommandLine getGradleCommandLine() {
@@ -185,7 +172,8 @@ public class GradleCommandLineProviderTest {
   public static String[][] getGradlePaths() {
     return new String[][]{
       {"old"},
-      {"8.2"},
+      {"8.0"},
+      {"8.1"},
       {"9.4.1"}
     };
   }
@@ -196,11 +184,7 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
 
     reportCmdLine(cmdLine);
   }
@@ -209,10 +193,12 @@ public class GradleCommandLineProviderTest {
   public static Object[][] enableDaemonParam() {
     return new Object[][]{
       {"old", "--daemon"},
-      {"8.2", "--daemon"},
+      {"8.0", "--daemon"},
+      {"8.1", "--daemon"},
       {"9.4.1", "--daemon"},
       {"old", "-Dorg.gradle.daemon=true"},
-      {"8.2", "-Dorg.gradle.daemon=true"},
+      {"8.0", "-Dorg.gradle.daemon=true"},
+      {"8.1", "-Dorg.gradle.daemon=true"},
       {"9.4.1", "-Dorg.gradle.daemon=true"}
     };
   }
@@ -224,15 +210,8 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    List<String> gradleArguments;
-
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleArguments = new ArrayList<>(toolingApiGradleArgs);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleArguments = cmdLine.getArguments();
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    List<String> gradleArguments = cmdLine.getArguments();
 
     assertTrue(gradleArguments.contains(param), Arrays.toString(cmdLine.getArguments().toArray()) + " must contain " + param);
     assertFalse(gradleArguments.contains("-Dorg.gradle.daemon=false"), Arrays.toString(cmdLine.getArguments().toArray()) + " must contain '-Dorg.gradle.daemon=false'");
@@ -247,15 +226,8 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    List<String> gradleArguments;
-
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleArguments = new ArrayList<>(toolingApiGradleArgs);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleArguments = cmdLine.getArguments();
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    List<String> gradleArguments = cmdLine.getArguments();
 
     assertTrue(gradleArguments.contains("--no-daemon"), Arrays.toString(cmdLine.getArguments().toArray()) + " must contain '--no-daemon'");
     assertFalse(gradleArguments.contains("-Dorg.gradle.daemon=false"),
@@ -270,15 +242,8 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    List<String> gradleArguments;
-
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleArguments = new ArrayList<>(toolingApiGradleArgs);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleArguments = cmdLine.getArguments();
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    List<String> gradleArguments = cmdLine.getArguments();
 
     assertEquals(Collections.frequency(gradleArguments, "-Dorg.gradle.daemon=false"), 1);
 
@@ -310,22 +275,13 @@ public class GradleCommandLineProviderTest {
     ProgramCommandLine cmdLine = getGradleCommandLine();
     String gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-      assertTrue(toolingApiJvmGradleArgs.contains(expectedRunnerGradleOpts), "Wrong Java arguments.");
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-      assertTrue(gradleOptsValue.contains(expectedRunnerGradleOpts), "Wrong Java arguments.");
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
+    assertTrue(gradleOptsValue.contains(expectedRunnerGradleOpts), "Wrong Java arguments.");
 
     myRunnerParams.put(JavaRunnerConstants.JVM_ARGS_KEY, expectedRunnerJavaArgs);
     cmdLine = getGradleCommandLine();
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
     gradleOptsValue = cmdLine.getEnvironment().get(GradleRunnerConstants.ENV_GRADLE_OPTS);
 
     then(gradleOptsValue.split(" ")).as("Should contain new temp dir").contains("\"-Djava.io.tmpdir=" + myTempDir.getCanonicalPath() + "\"")
@@ -341,14 +297,8 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    List<String> gradleTasks;
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, false);
-      gradleTasks = new ArrayList<>(toolingApiGradleTasks);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
-      gradleTasks = cmdLine.getArguments();
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), false);
+    List<String> gradleTasks = cmdLine.getArguments();
 
     then(gradleTasks).doesNotContain("-bar", "this\"", "this").contains("--args=\"foo -bar this\"");
 
@@ -372,16 +322,8 @@ public class GradleCommandLineProviderTest {
     prepareGradleRequiredFiles(gradleVersion);
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    List<String> args;
-
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-      args = new ArrayList<>(toolingApiGradleArgs);
-      args.addAll(toolingApiGradleTasks);
-    } else {
-      validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
-      args = cmdLine.getArguments();
-    }
+    validateCmdLine(cmdLine, myGradleExe.getAbsolutePath(), true);
+    List<String> args = cmdLine.getArguments();
 
     int paramsIndex = args.indexOf(argsArray[0]);
     int cmdIndex = args.indexOf(cmdsArray[0]);
@@ -428,11 +370,7 @@ public class GradleCommandLineProviderTest {
 
     ProgramCommandLine cmdLine = getGradleCommandLine();
 
-    if (VersionComparatorUtil.compare(gradleVersion, "8") >= 0) {
-      validateCmdLineSince8(cmdLine, true);
-    } else {
-      validateCmdLine(cmdLine, gradlew.getAbsolutePath(), true);
-    }
+    validateCmdLine(cmdLine, gradlew.getAbsolutePath(), true);
   }
 
   private GradleCommandLineProvider createGradleCommandLineProvider(GradleRunnerContext gradleRunnerContext) {
@@ -457,7 +395,7 @@ public class GradleCommandLineProviderTest {
                                             + "/" + getDefaultInitScriptName(gradleVersion));
 
     myConfigParameters.put(GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM,
-                           VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE : GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE);
+                           VersionComparatorUtil.compare(gradleVersion, "8.1") >= 0 ? GRADLE_RUNNER_COMMAND_LINE_V2_LAUNCH_MODE : GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE);
 
     myGradleExe = new File(gradleToolDir, GradleRunnerContext.WIN_GRADLE_EXE);
     if (TCSystemInfo.isUnix) {
@@ -486,7 +424,7 @@ public class GradleCommandLineProviderTest {
   }
 
   private static String getDefaultInitScriptName(String gradleVersion) {
-    return VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? INIT_SCRIPT_SINCE_8_NAME : INIT_SCRIPT_NAME;
+    return VersionComparatorUtil.compare(gradleVersion, "8.1") >= 0 ? INIT_SCRIPT_V2_NAME : INIT_SCRIPT_NAME;
   }
 
   private void reportCmdLine(final ProgramCommandLine cmdLine) throws RunBuildException {
@@ -519,37 +457,4 @@ public class GradleCommandLineProviderTest {
     }
   }
 
-  private void validateCmdLineSince8(final ProgramCommandLine cmdLine, boolean isTestDaemon) throws Exception {
-    final String workDir = myWorkingDirectory.getAbsolutePath();
-    final String initScriptPath = myInitScript.getAbsolutePath();
-    StringBuilder javaHomeBuilder = new StringBuilder();
-    javaHomeBuilder.append(javaHome).append(File.separator)
-                   .append("bin").append(File.separator)
-                   .append("java");
-
-    if (TCSystemInfo.isWindows) {
-      javaHomeBuilder.append(".exe");
-    }
-
-    assertEquals(cmdLine.getExecutablePath(), javaHomeBuilder.toString(), "Gradle Tooling API startup script must be executed by separate Java process");
-    assertEquals(cmdLine.getWorkingDirectory(), workDir, "Wrong working directory.");
-
-    File gradleParamsFile = new File(myTempDir, GRADLE_PARAMS_FILE);
-    File gradleJvmParamsFile = new File(myTempDir, GRADLE_JVM_PARAMS_FILE);
-    File gradleTasksFile = new File(myTempDir, GRADLE_TASKS_FILE);
-    assertTrue(gradleParamsFile.exists(), "Gradle Tooling API gradle params file must exist");
-    assertTrue(gradleJvmParamsFile.exists(), "Gradle Tooling API JVM params file must exist");
-    assertTrue(gradleTasksFile.exists(), "Gradle Tooling API gradle tasks file must exist");
-
-    toolingApiGradleArgs = LauncherParameters.fromFile(Paths.get(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_PARAMS_FILE_ENV_KEY))).get();
-    int initScriptIndex = toolingApiGradleArgs.indexOf("--init-script");
-    assertTrue(initScriptIndex > -1, "--init-script argument not found!");
-    assertEquals(toolingApiGradleArgs.get(initScriptIndex + 1), initScriptPath, "Wrong init script path");
-    if (isTestDaemon) {
-      assertTrue(toolingApiGradleArgs.contains("-Dorg.gradle.daemon=false"), "Gradle daemon should be disabled");
-    }
-
-    toolingApiJvmGradleArgs = LauncherParameters.fromFile(Paths.get(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_JVM_PARAMS_FILE_ENV_KEY))).get();
-    toolingApiGradleTasks = LauncherParameters.fromFile(Paths.get(toolingApiLauncherFiles.get(GradleRunnerConstants.GRADLE_TASKS_FILE_ENV_KEY))).get();
-  }
 }
