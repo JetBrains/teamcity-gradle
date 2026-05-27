@@ -17,7 +17,7 @@ if (!JavaVersion.current().isJava8Compatible()) return
 
 initscript {
   dependencies {
-    def teamCityInitLib = System.getenv("TEAMCITY_BUILD_INIT_PATH")
+    def teamCityInitLib = System.getenv("TEAMCITY_INIT_SCRIPT_CLASSPATH")
     logger.info "Init lib: ${teamCityInitLib}"
     def classPathFiles = teamCityInitLib.split(File.pathSeparator)
     classpath files(classPathFiles)
@@ -977,13 +977,13 @@ public class Util {
 
 List<String> gradleDaemonEnhancementClassNames = initGradleDaemonEnhancementClassNames()
 
-def initGradleDaemonEnhancementClassNames() {
+List<String> initGradleDaemonEnhancementClassNames() {
   try {
-    def classNamesAsString = System.getenv(GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY)
-    if (classNamesAsString == null) {
+    def classNames = System.getenv(GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_KEY)
+    if (classNames == null) {
       return []
     } else {
-      return evaluate(classNamesAsString)
+      return classNames.split(File.pathSeparator).toList()
     }
   } catch (Throwable t) {
     logger.debug("Error while trying to initialize class names for Gradle daemon classpath enhancing", t)

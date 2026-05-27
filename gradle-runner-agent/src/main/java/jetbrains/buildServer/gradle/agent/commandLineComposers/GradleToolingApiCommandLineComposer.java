@@ -210,7 +210,7 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
 
   private void configureInitScriptClasspath(@NotNull Map<String, String> env, @NotNull BuildProgressLogger logger) {
     try {
-      env.put(TEAMCITY_BUILD_INIT_PATH, GradleBuildConfigurator.getInitScriptClasspath());
+      env.put(TEAMCITY_INIT_SCRIPT_CLASSPATH_ENV_VAR, GradleBuildConfigurator.getInitScriptClasspath());
     } catch (IOException e) {
       logger.message("Couldn't launch Gradle via Tooling API: error while trying to build init script classpath");
     }
