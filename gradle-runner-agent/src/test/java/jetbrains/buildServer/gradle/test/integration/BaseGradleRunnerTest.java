@@ -97,6 +97,7 @@ public class BaseGradleRunnerTest {
   protected static final String PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN = "projectWithObsoleteJUnitPlugin";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
   private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
+  private static final String INIT_SCRIPT_V2_MINIMAL_GRADLE_VERSION = "8.1";
 
   static {
     TestInternalProperties.init();
@@ -317,7 +318,7 @@ public class BaseGradleRunnerTest {
 
   @NotNull
   private static String getDefaultInitScriptName(@NotNull String gradleVersion) {
-    return VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? INIT_SCRIPT_SINCE_8_NAME : INIT_SCRIPT_NAME;
+    return VersionComparatorUtil.compare(gradleVersion, INIT_SCRIPT_V2_MINIMAL_GRADLE_VERSION) >= 0 ? INIT_SCRIPT_SINCE_8_NAME : INIT_SCRIPT_NAME;
   }
 
   @BeforeMethod
@@ -423,7 +424,7 @@ public class BaseGradleRunnerTest {
     }
 
     String gradleVersionNum = getGradleVersion(gradleVersion);
-    if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") < 0) {
+    if (VersionComparatorUtil.compare(gradleVersionNum, INIT_SCRIPT_V2_MINIMAL_GRADLE_VERSION) < 0) {
       // Older Gradle versions cannot run on newer JDKs
       myRunnerParams.put("target.jdk.home", System.getenv("JDK_1_8"));
     }
@@ -432,8 +433,7 @@ public class BaseGradleRunnerTest {
       myRunnerParams.put("target.jdk.home", System.getenv("JDK_21_0"));
     }
 
-
-    if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
+    if (VersionComparatorUtil.compare(gradleVersionNum, INIT_SCRIPT_V2_MINIMAL_GRADLE_VERSION) >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
       myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_V2_LAUNCH_MODE);
     }
 
