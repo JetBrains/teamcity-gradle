@@ -331,6 +331,8 @@ public class BaseGradleRunnerTest {
   private void createProjectsWorkingCopy(final File curDir) throws IOException {
     myTempDir = new File(myTempFiles.createTempDir(), "Name With Spaces");
     myTempDir.mkdir();
+    // Parallel test forks must not share Gradle's daemon registry.
+    myBuildEnvVars.put("GRADLE_USER_HOME", new File(myTempDir, "gradle-user-home").getAbsolutePath());
     myCoDir = myTempFiles.createTempDir();
     FileUtil.copyDir(new File(curDir, "src/test/resources/testProjects"), myCoDir, true);
     assertTrue(new File(myCoDir, INIT_SCRIPT_NAME + "/" + PROJECT_A_NAME + "/build.gradle").canRead(), "Failed to copy test projects.");
