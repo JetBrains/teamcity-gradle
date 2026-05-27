@@ -1,13 +1,6 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
@@ -16,15 +9,13 @@ import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.MultiCommandBuildSession;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.*;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliV2CommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
+import jetbrains.buildServer.gradle.agent.GradleRunnerBuildSessionFactory;
+import jetbrains.buildServer.gradle.agent.GradleUserHomeManager;
+import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.*;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
-import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
@@ -45,8 +36,15 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_NAME;
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -350,8 +348,10 @@ public class BaseGradleRunnerTest {
     FileUtil.copyDir(sourceScriptsDir, targetScriptsDir);
 
     File consoleInitScript = new File(targetScriptsDir, INIT_SCRIPT_NAME);
+    File consoleInitScriptV2 = new File(targetScriptsDir, INIT_SCRIPT_V2_NAME);
     File tapiInitScript = new File(targetScriptsDir, INIT_SCRIPT_SINCE_8_NAME);
     assertTrue(consoleInitScript.canRead(), "The command-line-gradle init script must be an existing readable file.");
+    assertTrue(consoleInitScriptV2.canRead(), "The command-line-gradle init script version 2 must be an existing readable file.");
     assertTrue(tapiInitScript.canRead(), "The tooling-api-gradle init script must be an existing readable file.");
   }
 
