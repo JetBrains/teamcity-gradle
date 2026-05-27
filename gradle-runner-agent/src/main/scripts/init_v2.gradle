@@ -15,6 +15,16 @@ import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.regex.Pattern
 
+initscript {
+  dependencies {
+    def initScriptClasspath = System.getenv("TEAMCITY_INIT_SCRIPT_CLASSPATH")
+    if (initScriptClasspath != null && !initScriptClasspath.trim().isEmpty()) {
+      logger.info "Init script classpath: ${initScriptClasspath}"
+      classpath files(initScriptClasspath.split(File.pathSeparator))
+    }
+  }
+}
+
 class Constants {
   // Environment variable which points to the TeamCity build properties file. Is set by the agent's core logic.
   public static final String BUILD_PROPERTIES_FILE_ENV_VAR = "TEAMCITY_BUILD_PROPERTIES_FILE"
@@ -33,12 +43,16 @@ class Constants {
   public static final String GRADLE_INCREMENTAL_MODE_ENV_VAR = "TEAMCITY_GRADLE_INCREMENTAL_MODE"
   // Indicates whether test retry is supported on the build configuration level. Is set based on the build configuration's test retry setup.
   public static final String SUPPORT_TEST_RETRY_ENV_VAR = "TEAMCITY_SUPPORT_TEST_RETRY"
+  // Lists classes to add from test classpath into Gradle daemon classloader. Is defined by the Gradle runner's agent logic.
+  public static final String GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_VAR = "TEAMCITY_GRADLE_DAEMON_ENHANCEMENT_CLASSES"
   // Supplies extra JVM arguments for Gradle test tasks. Is set by the agent's test coverage logic.
   public static final String GRADLE_TEST_COVERAGE_JVM_ARGS_ENV_VAR = "TEAMCITY_GRADLE_TEST_COVERAGE_JVM_ARGS"
   // Disables adding TeamCity build properties to Gradle project extra properties. Is set from the configuration parameters.
   public static final String DO_NOT_POPULATE_GRADLE_PROPERTIES_ENV_VAR = "TEAMCITY_DO_NOT_POPULATE_GRADLE_PROPERTIES"
   // Controls whether explicit test retry integration should inspect Gradle retry plugins. Is set from the configuration parameters.
   public static final String USE_TEST_RETRY_PLUGIN_ENV_VAR = "TEAMCITY_USE_TEST_RETRY_PLUGIN"
+  // Disables adding TeamCity test JVM arguments through a command line argument provider. Is set from the configuration parameters.
+  public static final String TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_VAR = "TEAMCITY_TEST_TASK_JVM_ARGUMENTS_PROVIDER_DISABLED"
   // Selects the format used for TeamCity test names. Is set from the configuration parameters.
   public static final String TEST_NAME_FORMAT_ENV_VAR = "TEAMCITY_TEST_NAME_FORMAT"
   // Selects the format used for ignored TeamCity test suites. Is set from the configuration parameters.
@@ -100,7 +114,11 @@ public class DependencyBasedTestRun {
           logger.debug("No affected projects found. Running full build.")
           gradle.startParameter.taskNames = ["build"]
         } else {
-          gradle.startParameter.taskNames = modifiedProjects.collect { it + ":buildDependents" }
+          gradle.startParameter.taskNames = modifiedProjects.collect {
+            def taskName = it as String
+            if (!taskName.endsWith(":")) taskName += ":"
+            return taskName + "buildDependents"
+          }
           logger.debug("Will start with following tasks: ${gradle.startParameter.taskNames}")
         }
         break;
@@ -1312,14 +1330,16 @@ class WrappedException extends Exception {
                                                                  message : message,
                                                                  details : stacktrace,
                                                                  actual  : trim(cfd.key, maxLength),
-                                                                 expected: trim(cfd.value, maxLength),
-                                                                 type    : "comparisonFailure"])
+                                                                 expected: trim(cfd.value, maxLength)])
     } else {
       return new ServiceMessage(name: "testFailed", attributes: [name: testName, message: message, details: stacktrace])
     }
   }
 
   private Map.Entry<String, String> extractComparisonFailure(Throwable th) {
+    Map.Entry<String, String> comparisonFailure = extractComparisonFailureWithComparisonFailureUtil(th)
+    if (comparisonFailure != null) return comparisonFailure
+
     String actual = th.metaClass.respondsTo(th, 'fActual') ? th.fActual : null
     String expected = th.metaClass.respondsTo(th, 'fExpected') ? th.fExpected : null
     if (actual != null && expected != null) return new AbstractMap.SimpleEntry<String, String>(actual, expected)
@@ -1329,6 +1349,18 @@ class WrappedException extends Exception {
 
     return parseComparison(message, "expected:<", "> but was:<", ">") ?:
            parseComparison(message, "expected [", "] but found [", "]")
+  }
+
+  private Map.Entry<String, String> extractComparisonFailureWithComparisonFailureUtil(Throwable th) {
+    try {
+      def utilClass = Class.forName('jetbrains.buildServer.ComparisonFailureUtil')
+      def cfd = utilClass.extractComparisonFailure(th)
+      return cfd
+              ? new AbstractMap.SimpleEntry<String, String>(cfd.actual, cfd.expected)
+              : null
+    } catch (Exception ignored) {
+      return null
+    }
   }
 
   private Map.Entry<String, String> parseComparison(String msg, String start, String separator, String end) {
@@ -1392,12 +1424,27 @@ class TestTaskWrapper {
    * Use {@link TestTaskWrapper#forAllTestTasks} to instantiate this object correctly.
    */
   private TestTaskWrapper(def testTask) { this.testTask = testTask }
+
   void addTestListener(def listener) { testTask.addTestListener(listener) }
+
   void addTestOutputListener(def listener) { testTask.addTestOutputListener(listener) }
+
   String getTaskPath() { testTask.path }
-  TestTaskWrapper jvmArgs(Object... arguments) {
+
+  void enhanceGradleDaemonClasspath(Logger logger, List<String> classNames) {
+    if (!classNames.isEmpty() && testTask instanceof Test) {
+      testTask.doFirst(new GradleDaemonClasspathEnhancer(logger, classNames))
+    }
+  }
+
+  TestTaskWrapper jvmArgs(String[] arguments) {
     if (testTask instanceof Test) {
-      testTask.jvmArgs(arguments)
+      Boolean jvmArgsProviderDisabled = Boolean.valueOf(System.getenv(Constants.TEST_TASK_JVM_ARG_PROVIDER_DISABLED_ENV_VAR))
+      if (jvmArgsProviderDisabled) {
+        testTask.jvmArgs(arguments)
+      } else {
+        testTask.jvmArgumentProviders.add(new TestTaskJvmArgumentsProvider(arguments))
+      }
     }
     return this
   }
@@ -1436,6 +1483,105 @@ class TestTaskWrapper {
         TestTaskWrapper wrapper = new TestTaskWrapper(task)
         action(wrapper)
       }
+    }
+  }
+}
+
+class TestTaskJvmArgumentsProvider implements org.gradle.process.CommandLineArgumentProvider {
+  private final List<String> arguments
+
+  TestTaskJvmArgumentsProvider(String[] arguments) {
+    this.arguments = Arrays.asList(arguments)
+  }
+
+  @Override
+  Iterable<String> asArguments() {
+    return arguments
+  }
+}
+
+class GradleDaemonClasspathEnhancer implements Action<Test> {
+
+  private final Logger logger
+  private final List<String> classNames
+
+  GradleDaemonClasspathEnhancer(Logger logger, List<String> classNames) {
+    this.logger = logger
+    this.classNames = classNames
+  }
+
+  @Override
+  void execute(Test task) {
+    enhanceGradleDaemonClasspath(logger, task, classNames)
+  }
+
+  private static void enhanceGradleDaemonClasspath(Logger logger, Test task, List<String> classNames) {
+    try {
+      def testClasspath = getTestClasspath(task)
+      def classpath = findJarsForClasses(testClasspath, classNames)
+      logger.debug("Test classpath:")
+      for (def url : testClasspath) {
+        logger.debug(url.toString())
+      }
+      logger.debug("Reduced classpath:")
+      for (def url : classpath) {
+        logger.debug(url.toString())
+      }
+      logger.debug("End of classpath")
+      if (!classpath.isEmpty()) {
+        def classLoader = getDaemonClassLoader()
+        addClasspath(classLoader, classpath)
+      }
+    } catch (Throwable t) {
+      logger.error("Unable to enhance Gradle Daemon by $classNames", t)
+    }
+  }
+
+  private static URLClassLoader getDaemonClassLoader() {
+    try {
+      def daemonMainClass = Class.forName("org.gradle.launcher.daemon.bootstrap.DaemonMain")
+      def classLoader = daemonMainClass.getClassLoader()
+      if (classLoader instanceof URLClassLoader) {
+        return classLoader
+      }
+      throw new IllegalStateException("Unsupported Gradle daemon class loader: $classLoader")
+    } catch (ClassNotFoundException exception) {
+      throw new IllegalStateException("Daemon class loader not found.", exception)
+    }
+  }
+
+  private static List<URL> getTestClasspath(Test task) {
+    return task.classpath.files.collect { it.toURI().toURL() }
+  }
+
+  private static List<URL> findJarsForClasses(List<URL> classpath, List<String> classNames) {
+    def foundClassNames = new HashSet<String>()
+    def reducedClasspath = new ArrayList<URL>()
+    for (def url : classpath) {
+      new URLClassLoader([url] as URL[]).withCloseable { classLoader ->
+        for (def className : classNames) {
+          if (hasClass(classLoader, className)) {
+            foundClassNames.add(className)
+            reducedClasspath.add(url)
+            break
+          }
+        }
+      }
+    }
+    if (foundClassNames.size() != classNames.size()) {
+      return []
+    }
+    return reducedClasspath
+  }
+
+  private static boolean hasClass(URLClassLoader classLoader, String className) {
+    def classFile = className.replace(".", "/") + ".class"
+    return classLoader.findResource(classFile) != null
+  }
+
+  private static void addClasspath(URLClassLoader classLoader, Iterable<URL> classpath) {
+    for (def url : classpath) {
+      classLoader.addURL(url)
     }
   }
 }
@@ -1484,6 +1630,20 @@ class TestFilterWrapper {
   }
 }
 
+List<String> getGradleDaemonEnhancementClassNames() {
+  try {
+    def classNames = System.getenv(Constants.GRADLE_DAEMON_ENHANCEMENT_CLASSES_ENV_VAR)
+    if (classNames == null) {
+      return []
+    } else {
+      return classNames.split(File.pathSeparator).toList()
+    }
+  } catch (Throwable t) {
+    logger.debug("Error while trying to initialize class names for Gradle daemon classpath enhancing", t)
+    return []
+  }
+}
+
 apply plugin: CompileTaskErrorOutputPlugin
 apply plugin: TestTaskBuildLogSetupPlugin
 apply plugin: TeamcityBuildProblemReportingPlugin
@@ -1492,6 +1652,7 @@ ProjectExtraPropertiesExtender.logBuildPropertiesUsageWarningMessageIfNeeded(gra
 gradle.addListener(new ProjectExtraPropertiesExtender(logger))
 
 final AtomicLong testCounter = new AtomicLong(0)
+final List<String> gradleDaemonEnhancementClassNames = getGradleDaemonEnhancementClassNames()
 gradle.addListener(new AfterEvaluateListener({ Project project ->
   // init jvm args
   final String jvmargs = System.getenv(Constants.GRADLE_TEST_COVERAGE_JVM_ARGS_ENV_VAR)
@@ -1514,6 +1675,8 @@ gradle.addListener(new AfterEvaluateListener({ Project project ->
     testTask.filter.updateFilters(System.getenv(Constants.PARALLEL_TESTS_ARTIFACT_PATH_ENV_VAR), logger)
     // will be empty if parallel tests enabled
     testTask.filter.updateFilters(System.getenv(Constants.RISK_TESTS_ARTIFACT_PATH_ENV_VAR), logger)
+
+    testTask.enhanceGradleDaemonClasspath(logger, gradleDaemonEnhancementClassNames)
   }
 }))
 
