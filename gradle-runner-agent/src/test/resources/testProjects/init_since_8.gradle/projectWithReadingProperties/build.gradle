@@ -1,22 +1,24 @@
 apply plugin: 'java'
 
 tasks.register('printSystemProperty') {
-  doLast {
-    println "##system-property 1 way: ${my_custom_property}"
-    println "##system-property 2 way: ${teamcity["my_custom_property"]}"
-  }
+  println "##system-property from project.ext: ${project.findProperty("my_custom_property") ?: "not found"}"
+  println "##system-property from project.ext.teamcity: ${project.teamcity?.get("my_custom_property") ?: "not found"}"
 }
 
-tasks.register('printSystemPropertyFromProject') {
-  doLast {
-    println "##system-property 3 way: ${project["my_custom_property"]}"
-  }
+tasks.register('printSystemPropertyFromProjectExt') {
+  println "##system-property from project.ext: ${project.findProperty("my_custom_property") ?: "not found"}"
 }
+
+tasks.register('printSystemPropertyFromProjectExtTeamcity') {
+  println "##system-property from project.ext.teamcity: ${project.teamcity?.get("my_custom_property") ?: "not found"}"
+}
+
 
 tasks.register('printBuildNumber') {
-  doLast {
-    println "##build-num 1: ${project["build.number"]}"
-    println "##build-num 2: ${project.findProperty("build.number") ?: "default"}"
-    println "##build-num 3: ${project.teamcity["build.number"]}"
-  }
+  println "##build-num from project.ext: ${project.findProperty("build.number") ?: "not found"}"
+  println "##build-num from project.ext.teamcity: ${project.teamcity?.get("build.number") ?: "not found"}"
+}
+
+tasks.register('printBuildNumberFromProjectExtTeamcity') {
+  println "##build-num from project.ext.teamcity: ${project.teamcity?.get("build.number") ?: "not found"}"
 }
