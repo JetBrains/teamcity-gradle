@@ -24,6 +24,7 @@ public class GradleRunnerConstants {
   public static final String GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM = "teamcity.internal.gradle.runner.launch.mode";
   public static final String GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE = "gradle-tooling-api";
   public static final String GRADLE_RUNNER_COMMAND_LINE_LAUNCH_MODE = "gradle";
+  public static final String GRADLE_RUNNER_COMMAND_LINE_V2_LAUNCH_MODE = "gradle_v2";
   /**
    * This param defaults to true. But if Gradle's configuration-cache feature is enabled, it switches to false.
    * That means, we won't read all the data from teamcity.build.parameters file.
@@ -78,6 +79,7 @@ public class GradleRunnerConstants {
 
   public static final String INIT_SCRIPT_DIR = "scripts";
   public static final String INIT_SCRIPT_NAME = "init.gradle";
+  public static final String INIT_SCRIPT_V2_NAME = "init_v2.gradle";
   public static final String INIT_SCRIPT_SINCE_8_NAME = "init_since_8.gradle";
   public static final String GRADLE_BUILD_PROBLEM_TYPE = "gradleBuildProblem";
 
