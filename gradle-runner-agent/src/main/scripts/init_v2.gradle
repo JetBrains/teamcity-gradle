@@ -1502,6 +1502,11 @@ class TestTaskJvmArgumentsProvider implements org.gradle.process.CommandLineArgu
   }
 }
 
+/**
+ * Adds jars from a Gradle test task classpath to the Gradle daemon classloader.
+ * The enhancer searches the task classpath for jars that contain all requested class names,
+ * then adds only those jars to the daemon classloader before the test task starts.
+ */
 class GradleDaemonClasspathEnhancer implements Action<Test> {
 
   private final Logger logger

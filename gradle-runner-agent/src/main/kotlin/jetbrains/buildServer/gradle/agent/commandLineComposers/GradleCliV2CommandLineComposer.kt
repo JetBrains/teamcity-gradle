@@ -54,6 +54,10 @@ class GradleCliV2CommandLineComposer(tasksComposer: GradleTasksComposer) : Gradl
         }
     }
 
+    /**
+     * Provides an env variable name-and-value pair that contains class names to be added to the Gradle daemon classloader.
+     * This is used to make the Gradle daemon aware of third-party libraries (see TW-88698 for an example).
+     */
     private fun getDaemonEnhancementClassesEnvVariable(parameters: GradleCommandLineComposerParameters): Sequence<Pair<String, String>> = sequence {
         val isGradleDaemonClasspathEnhancementEnabled =
             parameters.configParameters[GRADLE_RUNNER_ENHANCE_GRADLE_DAEMON_CLASSPATH]?.toBooleanStrictOrNull() ?: true
@@ -63,6 +67,10 @@ class GradleCliV2CommandLineComposer(tasksComposer: GradleTasksComposer) : Gradl
         }
     }
 
+    /**
+     * Provides an env variable name-and-value pair that contains classpath entries to be added to the init script classpath.
+     * This allows using these classes in the init script.
+     */
     private fun getInitScriptClassPathEnvVariable(parameters: GradleCommandLineComposerParameters): Pair<String, String> =
         TEAMCITY_INIT_SCRIPT_CLASSPATH_ENV_VAR to getInitScriptClasspath(parameters.logger)
 
