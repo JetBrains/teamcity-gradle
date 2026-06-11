@@ -1,9 +1,9 @@
 package jetbrains.buildServer.gradle.agent;
 
+import java.io.File;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -21,15 +21,6 @@ public class GradleDaemonEnhancementClassesProvider {
 
   @NotNull
   public static String provide() {
-    return mapToGroovyLiteral(ENHANCEMENT_CLASS_NAMES);
-  }
-
-  @NotNull
-  public static String mapToGroovyLiteral(@NotNull Collection<String> collection) {
-    return "["
-           + collection.stream()
-                       .map(it -> "'" + it + "'")
-                       .collect(Collectors.joining(","))
-           + "]";
+    return String.join(File.pathSeparator, ENHANCEMENT_CLASS_NAMES);
   }
 }
