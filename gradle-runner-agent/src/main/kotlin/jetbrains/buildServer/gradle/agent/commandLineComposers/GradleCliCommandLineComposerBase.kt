@@ -20,10 +20,12 @@ abstract class GradleCliCommandLineComposerBase(private val tasksComposer: Gradl
         }
 
         return SimpleProgramCommandLine(
-            parameters.env,
+            getEnvironmentVariables(parameters),
             parameters.workingDir.toString(),
             parameters.exePath,
             gradleParameters
         )
     }
+
+    protected open fun getEnvironmentVariables(parameters: GradleCommandLineComposerParameters): Map<String, String> = HashMap(parameters.env)
 }
