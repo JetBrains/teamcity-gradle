@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 import jetbrains.buildServer.util.StringUtil;
 import org.testng.annotations.Test;
 
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES;
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM;
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM;
 import static org.testng.Assert.assertTrue;
 
@@ -276,7 +276,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     // given
     myTeamCitySystemProps.put("build.number", String.valueOf(1));
     myTeamCitySystemProps.put("foo", String.valueOf(1));
-    myTeamCityConfigParameters.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, "true");
+    myTeamCityConfigParameters.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM, "true");
     GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_E_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
     config.setGradleVersion(gradleVersion);
 

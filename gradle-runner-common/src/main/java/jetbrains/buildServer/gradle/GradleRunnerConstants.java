@@ -35,7 +35,7 @@ public class GradleRunnerConstants {
    * This param defaults to false. If set to true, properties from the 'teamcity.build.properties' file will no longer be provided as Gradle properties.
    * The 'project.teamcity' Gradle properties extension will not be provided as well.
    */
-  public static final String GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES = "teamcity.internal.gradle.runner.doNotPopulateGradleProperties";
+  public static final String GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM = "teamcity.internal.gradle.runner.doNotPopulateGradleProperties";
   public static final String GRADLE_RUNNER_ALLOW_JVM_ARGS_OVERRIDING_CONFIG_PARAM = "teamcity.internal.gradle.runner.allow.jvm.args.overriding";
   /**
    * A relative path to the gradle-wrapper.properties without a filename.
@@ -113,4 +113,14 @@ public class GradleRunnerConstants {
   public static final String TC_BUILD_PROPERTIES_SYSTEM_ENV_KEY = "TEAMCITY_BUILD_PROPERTIES_FILE";
 
   public static final String BUILD_TEMP_DIR_TASK_OUTPUT_SUBDIR = "task-output";
+
+  public static final String GRADLE_TEST_COVERAGE_JVM_ARGS_SYSTEM_PROPERTY_KEY = "gradle.test.jvmargs";
+  public static final String STACKTRACE_LOG_DIR_SYSTEM_PROPERTY_KEY = "teamcity.build.stacktraceLogDir";
+  public static final String CHANGED_FILES_FILE_SYSTEM_PROPERTY_KEY = "teamcity.build.changedFiles.file";
+  public static final String BUILD_TEMP_DIR_SYSTEM_PROPERTY_KEY = "teamcity.build.tempDir";
+
+  public static final String TEST_NAME_FORMAT_CONFIG_PARAM = "teamcity.internal.gradle.testNameFormat";
+  public static final String IGNORED_SUITE_FORMAT_CONFIG_PARAM = "teamcity.internal.gradle.ignoredSuiteFormat";
+  public static final String USE_TEST_RETRY_PLUGIN_CONFIG_PARAM = "teamcity.internal.gradle.useTestRetryPlugin";
+  public static final String BUILD_BRANCH_SYSTEM_PROPERTY_KEY = "teamcity.build.branch";
 }

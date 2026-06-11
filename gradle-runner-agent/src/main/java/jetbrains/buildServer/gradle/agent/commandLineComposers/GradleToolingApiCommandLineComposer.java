@@ -103,10 +103,10 @@ public class GradleToolingApiCommandLineComposer implements GradleCommandLineCom
       .ifPresent(it -> props.put(TC_BUILD_PROPERTIES_SYSTEM_PROPERTY_KEY, it));
 
     Optional<Boolean> doNotPopulateGradleProperties = Optional
-            .ofNullable(parameters.getConfigParameters().get(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES))
-            .map(Boolean::valueOf);
+      .ofNullable(parameters.getConfigParameters().get(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM))
+      .map(Boolean::valueOf);
     if (doNotPopulateGradleProperties.isPresent()) {
-      props.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES, doNotPopulateGradleProperties.get().toString());
+      props.put(GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM, doNotPopulateGradleProperties.get().toString());
       // Set up the system properties needed for the init script when Gradle properties are not available
       if (doNotPopulateGradleProperties.get()) {
         Map<String, String> systemPropertiesForInitScript = getSystemPropertiesRequiredByInitScript(parameters);

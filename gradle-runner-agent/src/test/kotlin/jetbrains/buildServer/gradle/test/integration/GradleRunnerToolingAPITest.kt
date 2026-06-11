@@ -1,6 +1,6 @@
 package jetbrains.buildServer.gradle.test.integration
 
-import jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES
+import jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM
 import jetbrains.buildServer.util.StringUtil
 import org.testng.Assert.assertTrue
 import org.testng.annotations.Test
@@ -10,7 +10,7 @@ class GradleRunnerToolingAPITest : GradleRunnerServiceMessageTest() {
     @Test(dataProvider = "gradle-version-provider>=8")
     fun `should execute happy path when doNotPopulateGradleProperties flag is set`(gradleVersion: String) {
         // arrange
-        myTeamCityConfigParameters[GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES] = "true"
+        myTeamCityConfigParameters[GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM] = "true"
         val config = GradleRunConfiguration(PROJECT_E_NAME, "clean build", null)
         config.setGradleVersion(gradleVersion)
 
