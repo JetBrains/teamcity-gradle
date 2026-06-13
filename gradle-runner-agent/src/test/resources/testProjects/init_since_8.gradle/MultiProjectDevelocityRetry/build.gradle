@@ -1,0 +1,48 @@
+import org.gradle.api.Action
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.testing.Test
+
+class FakeDevelocityTestRetry {
+  private final Property<Integer> maxRetries
+
+  FakeDevelocityTestRetry(ObjectFactory objects) {
+    maxRetries = objects.property(Integer)
+  }
+
+  Property<Integer> getMaxRetries() {
+    return maxRetries
+  }
+
+  boolean shouldTestRetryPluginBeDeactivated() {
+    return false
+  }
+}
+
+class FakeDevelocityTestTaskExtension {
+  private final FakeDevelocityTestRetry testRetry
+
+  FakeDevelocityTestTaskExtension(ObjectFactory objects) {
+    testRetry = new FakeDevelocityTestRetry(objects)
+  }
+
+  FakeDevelocityTestRetry getTestRetry() {
+    return testRetry
+  }
+
+  void testRetry(Action<? super FakeDevelocityTestRetry> action) {
+    action.execute(testRetry)
+  }
+}
+
+subprojects {
+  apply plugin: "java"
+
+  dependencies {
+    testImplementation files(rootProject.file("../../lib/junit-4.8.1.jar"))
+  }
+
+  tasks.withType(Test).configureEach {
+    extensions.create("develocity", FakeDevelocityTestTaskExtension, objects)
+  }
+}

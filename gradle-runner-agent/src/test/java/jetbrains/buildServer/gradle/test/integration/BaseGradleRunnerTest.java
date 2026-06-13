@@ -89,6 +89,7 @@ public class BaseGradleRunnerTest {
   protected static final String MULTI_PROJECT_B_NAME = "MultiProjectB";
   protected static final String MULTI_PROJECT_C_NAME = "MultiProjectC";
   protected static final String MULTI_PROJECT_E_NAME = "MultiProjectE";
+  protected static final String MULTI_PROJECT_DEVELOCITY_RETRY_NAME = "MultiProjectDevelocityRetry";
   protected static final String DEMAND_MULTI_PROJECT_A_NAME = "demandMultiProjectA";
   protected static final String DEMAND_MULTI_PROJECT_B_NAME = "demandMultiProjectB";
   protected static final String WRAPPED_PROJECT_A_NAME = "wrappedProjectA";
