@@ -105,6 +105,47 @@ class TestTaskLogBlocksAndRetryMessagesTest : GradleRunnerServiceMessageTest() {
         """)
     }
 
+    @Test(dataProvider = "gradle-version-provider>=8")
+    fun `should emit test retry support messages when develocity has no configured retries but test retry plugin does`(gradleVersion: String) {
+        // arrange
+        val config = GradleRunConfiguration(
+            MULTI_PROJECT_DEVELOCITY_RETRY_NAME,
+            ":retrying-tests:clean :retrying-tests:test -PmaxRetriesProperty=2",
+            null
+        ).also {
+            it.gradleVersion = gradleVersion
+            it.patternStr = TEST_TASK_BLOCK_AND_RETRY_PATTERN
+        }
+
+        // act
+        val messages = run(config)
+
+        // assert
+        runAndCheckServiceMessages(messages.messages, """
+            ##teamcity[blockOpened name='Tests of task :retrying-tests:test' flowId='flow_1']
+            ##teamcity[testRetrySupport enabled='true' flowId='flow_1']
+            ##teamcity[flowStarted flowId='flow_2' parent='flow_1']
+            ##teamcity[testSuiteStarted name='test.FlakyTest' flowId='flow_2']
+            ##teamcity[flowStarted flowId='flow_3' parent='flow_2']
+            ##teamcity[testStarted name='test.FlakyTest.test' flowId='flow_3']
+            ##teamcity[testFailed name='test.FlakyTest.test' message='java.lang.AssertionError: ' details='##Assert_Stacktrace##' flowId='flow_3']
+            ##teamcity[testFinished name='test.FlakyTest.test' duration='##Duration##' flowId='flow_3']
+            ##teamcity[flowFinished flowId='flow_3']
+            ##teamcity[testSuiteFinished name='test.FlakyTest' flowId='flow_2']
+            ##teamcity[flowFinished flowId='flow_2']
+            ##teamcity[flowStarted flowId='flow_4' parent='flow_1']
+            ##teamcity[testSuiteStarted name='test.FlakyTest' flowId='flow_4']
+            ##teamcity[flowStarted flowId='flow_5' parent='flow_4']
+            ##teamcity[testStarted name='test.FlakyTest.test' flowId='flow_5']
+            ##teamcity[testFinished name='test.FlakyTest.test' duration='##Duration##' flowId='flow_5']
+            ##teamcity[flowFinished flowId='flow_5']
+            ##teamcity[testSuiteFinished name='test.FlakyTest' flowId='flow_4']
+            ##teamcity[flowFinished flowId='flow_4']
+            ##teamcity[testRetrySupport enabled='false' flowId='flow_1']
+            ##teamcity[blockClosed name='Tests of task :retrying-tests:test' flowId='flow_1']
+        """)
+    }
+
     private fun runAndCheckServiceMessages(actualMessages: List<String>, expectedMessages: String) {
         val normalizedActualMessages = normalizeServiceMessages(actualMessages)
         val expectedMessageLines = expectedMessages.trimIndent().lines()
