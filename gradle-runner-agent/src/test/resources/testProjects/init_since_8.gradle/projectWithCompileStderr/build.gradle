@@ -1,0 +1,16 @@
+plugins {
+  id 'java'
+}
+
+tasks.register("writeToStdErr") {
+  doLast {
+    System.err.println("non-compile stderr marker")
+  }
+}
+
+tasks.named("compileJava") {
+  doFirst {
+    System.err.println("compile stderr marker one")
+    System.err.println("compile stderr marker two")
+  }
+}
