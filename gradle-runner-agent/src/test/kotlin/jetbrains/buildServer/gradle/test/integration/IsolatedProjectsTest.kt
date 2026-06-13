@@ -69,7 +69,7 @@ class IsolatedProjectsTest : GradleRunnerServiceMessageTest() {
 
     private fun isolatedProjectsConfig(tasks: String, gradleVersion: String): GradleRunConfiguration {
         return GradleRunConfiguration(
-            ISOLATED_PROJECTS_COMPATIBLE_PROJECT,
+            ISOLATED_PROJECTS_COMPATIBLE_PROJECT_NAME,
             "-Dorg.gradle.unsafe.isolated-projects=true --configuration-cache $tasks",
             null
         ).also { it.gradleVersion = gradleVersion }

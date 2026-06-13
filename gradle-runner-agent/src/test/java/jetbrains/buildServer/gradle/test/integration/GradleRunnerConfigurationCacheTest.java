@@ -2,13 +2,11 @@ package jetbrains.buildServer.gradle.test.integration;
 
 import java.util.List;
 import java.util.Random;
-import java.util.function.Predicate;
 
 import jetbrains.buildServer.util.StringUtil;
 import org.testng.annotations.Test;
 
 import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_DO_NOT_POPULATE_GRADLE_PROPERTIES_CONFIG_PARAM;
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.GRADLE_RUNNER_READ_ALL_CONFIG_PARAM;
 import static org.testng.Assert.assertTrue;
 
 public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessageTest {
@@ -263,7 +261,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
   @Test(dataProvider = "gradle-version-provider=8.x")
   public void shouldRunJupiterTestsWithConfigurationCache(final String gradleVersion) throws Exception {
     // given
-    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
+    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, null);
     config.setGradleVersion(gradleVersion);
 
     // when: first run
@@ -273,7 +271,7 @@ public class GradleRunnerConfigurationCacheTest extends GradleRunnerServiceMessa
     assertTrue(messages.stream().anyMatch(line -> line.startsWith("BUILD SUCCESSFUL")), "Expected: BUILD SUCCESSFUL\nFull log:\n" + StringUtil.join("\n", messages));
 
     // when: second run / then: tests ran with configuration cache reused
-    config = new GradleRunConfiguration(PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCacheJupiter.txt");
+    config = new GradleRunConfiguration(PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN_NAME, "clean build" + " " + CONFIGURATION_CACHE_CMD, "testsWithConfigurationCacheJupiter.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr("(##teamcity\\[importData (.*?)(?<!\\|)\\])|(Reusing configuration cache)");
     runAndCheckServiceMessages(config);

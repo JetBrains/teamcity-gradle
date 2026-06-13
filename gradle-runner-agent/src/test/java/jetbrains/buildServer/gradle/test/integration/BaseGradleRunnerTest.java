@@ -92,8 +92,9 @@ public class BaseGradleRunnerTest {
   protected static final String DEMAND_MULTI_PROJECT_B_NAME = "demandMultiProjectB";
   protected static final String WRAPPED_PROJECT_A_NAME = "wrappedProjectA";
   protected static final String OPENTEST4J_PROJECT = "opentest4jProject";
-  protected static final String PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN = "projectWithObsoleteJUnitPlugin";
-  protected static final String ISOLATED_PROJECTS_COMPATIBLE_PROJECT = "isolatedProjectsCompatible";
+  protected static final String PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN_NAME = "projectWithObsoleteJUnitPlugin";
+  protected static final String ISOLATED_PROJECTS_COMPATIBLE_PROJECT_NAME = "isolatedProjectsCompatible";
+  protected static final String PROJECT_WITH_BROKEN_TASKS_NAME = "projectWithBrokenTasks";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
   private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
 
