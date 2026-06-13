@@ -1,0 +1,8 @@
+plugins {
+  id 'java'
+}
+
+dependencies {
+  implementation project(':lib')
+  testImplementation files('../../../lib/junit-4.8.1.jar')
+}
