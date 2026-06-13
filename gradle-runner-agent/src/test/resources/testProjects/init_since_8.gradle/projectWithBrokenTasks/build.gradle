@@ -1,0 +1,25 @@
+abstract class BrokenTask extends DefaultTask {
+  @Input
+  abstract Property<String> getFailureMessage()
+
+  @TaskAction
+  void run() {
+    throw new IllegalStateException(failureMessage.get())
+  }
+}
+
+abstract class MaybeBrokenTask extends DefaultTask {
+  @TaskAction
+  void run() {
+    if ("true" == System.getenv("TEAMCITY_FAIL_CACHED_BUILD_PROBLEM_TASK")) {
+      throw new IllegalStateException("cached failure marker")
+    }
+    logger.lifecycle("maybeBroken completed")
+  }
+}
+
+tasks.register("brokenTask", BrokenTask) {
+  failureMessage.set("custom failure marker")
+}
+
+tasks.register("maybeBroken", MaybeBrokenTask)
