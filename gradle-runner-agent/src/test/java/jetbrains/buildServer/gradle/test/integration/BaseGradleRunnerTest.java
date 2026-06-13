@@ -80,6 +80,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_WITH_READING_PROPERTIES_NAME = "projectWithReadingProperties";
   public static final String PROJECT_WITH_READING_DYNAMIC_PROPERTIES_NAME = "projectWithReadingDynamicProperties";
   public static final String PROJECT_WITH_STATIC_PROPERTY_NAME = "projectWithStaticProperty";
+  protected static final String PROJECT_WITH_COMPILE_STDERR_NAME = "projectWithCompileStderr";
   public static final String PROJECT_WITH_GENERATED_TASKS_A_NAME = "projectWithGeneratedTasksA";
   public static final String PROJECT_WITH_GENERATED_TASKS_B_NAME = "projectWithGeneratedTasksB";
   public static final String PROJECT_WITH_JDK_INTERNAL_MODULE_NAME = "projectWithJdkInternalModule";
