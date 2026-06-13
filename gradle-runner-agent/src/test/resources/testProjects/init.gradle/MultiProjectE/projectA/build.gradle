@@ -10,3 +10,17 @@ test {
     failOnPassedAfterRetry = false
   }
 }
+
+task retryTest(type: Test) {
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = sourceSets.test.runtimeClasspath
+  shouldRunAfter test
+  doFirst {
+    file("a-flaky.file").mkdir()
+  }
+  retry {
+    maxRetries = maxRetriesProperty.toInteger()
+    maxFailures = 20
+    failOnPassedAfterRetry = false
+  }
+}
