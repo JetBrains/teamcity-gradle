@@ -97,8 +97,8 @@ public class BaseGradleRunnerTest {
   protected static final String ISOLATED_PROJECTS_COMPATIBLE_PROJECT_NAME = "isolatedProjectsCompatible";
   protected static final String PROJECT_WITH_BROKEN_TASKS_NAME = "projectWithBrokenTasks";
   protected static final String PROJECT_TEST_TASK_LOG_BLOCKS_NAME = "projectTestTaskLogBlocks";
-  protected static final String MULTI_PROJECT_TEST_TASK_LOG_BLOCKS_NAME = "MultiProjectTestTaskLogBlocks";
-  protected static final String MULTI_PROJECT_DEVELOCITY_RETRY_NAME = "MultiProjectDevelocityRetry";
+  protected static final String MULTI_PROJECT_TEST_TASK_LOG_BLOCKS_NAME = "multiProjectTestTaskLogBlocks";
+  protected static final String MULTI_PROJECT_DEVELOCITY_RETRY_NAME = "multiProjectDevelocityRetry";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
   private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
 
