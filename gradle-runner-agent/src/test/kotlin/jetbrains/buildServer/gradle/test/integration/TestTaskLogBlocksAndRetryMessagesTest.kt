@@ -14,7 +14,7 @@ class TestTaskLogBlocksAndRetryMessagesTest : GradleRunnerServiceMessageTest() {
     @Test(dataProvider = "gradle-version-provider>=8")
     fun `should wrap test task service messages in a test task log block`(gradleVersion: String) {
         // arrange
-        val config = GradleRunConfiguration(PROJECT_E_NAME, "clean test", null).also {
+        val config = GradleRunConfiguration(PROJECT_TEST_TASK_LOG_BLOCKS_NAME, "clean test", null).also {
             it.gradleVersion = gradleVersion
             it.patternStr = TEST_TASK_BLOCK_PATTERN
         }
@@ -47,7 +47,7 @@ class TestTaskLogBlocksAndRetryMessagesTest : GradleRunnerServiceMessageTest() {
     fun `should emit test retry support messages in the test task log block when retries are enabled`(gradleVersion: String) {
         // arrange
         val config = GradleRunConfiguration(
-            MULTI_PROJECT_E_NAME,
+            MULTI_PROJECT_TEST_TASK_LOG_BLOCKS_NAME,
             ":projectA:clean :projectA:test :projectA:retryTest -PmaxRetriesProperty=2",
             null
         ).also {
