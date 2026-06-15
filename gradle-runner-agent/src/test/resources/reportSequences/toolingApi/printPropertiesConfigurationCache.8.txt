@@ -1,0 +1,2 @@
+##system-property from project.ext: My Custom Property Value
+##system-property from project.ext.teamcity: My Custom Property Value

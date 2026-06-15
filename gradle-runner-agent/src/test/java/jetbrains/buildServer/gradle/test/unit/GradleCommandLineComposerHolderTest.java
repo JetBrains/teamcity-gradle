@@ -8,6 +8,7 @@ import jetbrains.buildServer.gradle.agent.GradleLaunchMode;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliV2CommandLineComposer;
 import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
 import org.testng.annotations.DataProvider;
@@ -31,7 +32,9 @@ public class GradleCommandLineComposerHolderTest {
     // arrange
     GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
-      new GradleCliCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
+      new GradleCliCommandLineComposer(tasksComposer),
+      new GradleCliV2CommandLineComposer(tasksComposer),
+      new GradleToolingApiCommandLineComposer(Collections.emptyList(), tasksComposer)
     );
     GradleCommandLineComposerHolder holder = new GradleCommandLineComposerHolder(composers);
 
@@ -42,6 +45,9 @@ public class GradleCommandLineComposerHolderTest {
     switch (launchMode) {
       case COMMAND_LINE:
         assertTrue(result instanceof GradleCliCommandLineComposer);
+        break;
+      case COMMAND_LINE_V2:
+        assertTrue(result instanceof GradleCliV2CommandLineComposer);
         break;
       case TOOLING_API:
         assertTrue(result instanceof GradleToolingApiCommandLineComposer);

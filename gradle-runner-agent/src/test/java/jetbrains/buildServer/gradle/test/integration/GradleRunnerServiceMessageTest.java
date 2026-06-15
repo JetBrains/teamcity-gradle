@@ -30,20 +30,18 @@ import static org.testng.Assert.*;
  * Date: Sep 20, 2010
  */
 public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTest {
-  protected static final String SEQENCE_FILES_ENCODING = "utf-8";
+  protected static final String SEQUENCE_FILES_ENCODING = "utf-8";
   protected static final String DEFAULT_MSG_PATTERN = "##teamcity\\[(.*?)(?<!\\|)\\]";
 
   protected void assertServiceMessages(ServiceMessageReceiver message, final String[] expected) {
-    final String[] actual = message.getMessages().toArray(new String[0]);
-    if (actual.length != expected.length) {
-      assertEquals(actual, expected, "Sequences differ in size.\n" +
-                                     "Sequences differ in size. " + getAsString(Arrays.asList(actual), expected) + "\n" +
+    List<String> processedActual = preprocessMessages(message.getMessages());
+    if (processedActual.size() != expected.length) {
+      assertEquals(processedActual, Arrays.asList(expected), "Sequences differ in size.\n" + getAsString(processedActual, expected) + "\n" +
                                      "Full log:\n" + StringUtil.join("\n", message.getAllMessages()));
     }
-    List<String> processedActual = preprocessMessages(Arrays.asList(actual));
     for (String expectedMsg : expected) {
       if (!processedActual.remove(expectedMsg)) {
-        assertEquals(processedActual, Arrays.asList(expected), "Could not find " + expectedMsg + " in actual sequence: "
+        assertEquals(processedActual, Arrays.asList(expected), "Could not find " + expectedMsg + " in actual sequence:\n"
                                                                + getAsString(processedActual, expected) + "\n" +
                                                                "Full log:\n" + StringUtil.join("\n", message.getAllMessages()));
       }
@@ -53,6 +51,9 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
   private List<String> preprocessMessages(List<String> messages) {
     List<String> result = new ArrayList<String>(messages.size());
     for (final String message : messages) {
+      if (shouldIgnoreMessage(message)) {
+        continue;
+      }
       String resultMessage = message.replaceAll("flowId='[^']+'", "flowId='##Flow_ID##'"); // drop flow id
       resultMessage = resultMessage.replaceAll("parent='[^']+'", "parent='##ParentFlow_ID##'"); // drop flow id
       resultMessage = resultMessage.replaceAll("(name|compiler)='(.*?)( UP-TO-DATE)?'", "$1='$2'"); // drop up-to-date marks
@@ -85,6 +86,11 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     return result;
   }
 
+  protected Boolean shouldIgnoreMessage(String message) {
+    // Build properties file read debug log
+    return message.contains("tc:tags='tc:internal' text='Reading the Teamcity build properties file");
+  }
+
   protected String getAsString(final Collection<String> actual, final String[] expected) {
     return "\nActual messages:\n" + StringUtil.join("\n", actual)
            + "\n\nExpected messages: " + StringUtil.join(expected, "\n");
@@ -94,7 +100,7 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
     final File sequenceFile = new File (ourProjectRoot, REPORT_SEQ_DIR + File.separator + sequenceName);
     String expected;
     try {
-      expected = new String(FileUtil.loadFileText(sequenceFile, SEQENCE_FILES_ENCODING));
+      expected = new String(FileUtil.loadFileText(sequenceFile, SEQUENCE_FILES_ENCODING));
     } catch (IOException e) {
       throw new RunBuildException(e);
     }
@@ -155,10 +161,6 @@ public abstract class GradleRunnerServiceMessageTest extends BaseGradleRunnerTes
                    .findFirst().ifPresent(error -> fail(error));
 
       String[] sequence = readReportSequence(sequenceName);
-      if (sequence.length != gatherMessage.getMessages().size()) {
-        System.out.println("Process output:");
-        for (String line: gatherMessage.getAllMessages()) System.out.println(line);
-      }
       assertServiceMessages(gatherMessage, sequence);
     } else {
       final Expectations gatherServiceMessage = new Expectations() {{

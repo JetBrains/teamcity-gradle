@@ -14,8 +14,6 @@ import static org.testng.Assert.fail;
 public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
 
   public static final String BUILD_CMD = "clean compileJava compileTest";
-  private static final boolean isJre8 = System.getProperty("java.specification.version").contains("1.8");
-  private static final boolean isJre7 = System.getProperty("java.specification.version").contains("1.7");
   private static final boolean isJre6 = System.getProperty("java.specification.version").contains("1.6");
   private static final boolean isJre5 = System.getProperty("java.specification.version").contains("1.5");
   private static final String COMPILATION_BLOCK_PROPS_MSGS_PATTERN = "##teamcity\\[(message|compilation|block)(.*?)(?<!\\|)\\]|##tc-property.*";
@@ -80,17 +78,6 @@ public class GradleRunnerCompileTest extends GradleRunnerServiceMessageTest {
     GradleRunConfiguration config = new GradleRunConfiguration("projectKotlinBroken", "clean build", "failedKotlinCompilation.txt");
     config.setGradleVersion(gradleVersion);
     config.setPatternStr(COMPILATION_MSGS_PATTERN);
-    runAndCheckServiceMessages(config);
-  }
-
-  @Test(dataProvider = "gradle-version-provider>=8")
-  public void shouldDetectCompilationErrorsWithHugeAmountOfTasksAndStdErrOutput(final String gradleVersion) throws Exception {
-    // given
-    GradleRunConfiguration config = new GradleRunConfiguration(PROJECT_WITH_GENERATED_TASKS_A_NAME, "clean build --continue", "testsWithHugeAmountOfTasksAndStdErrOutput.txt");
-    config.setGradleVersion(gradleVersion);
-    config.setPatternStr("##tc-error-output.*|##teamcity\\[(message|compilation)(.*?)(?<!\\|)\\]");
-
-    // when / then
     runAndCheckServiceMessages(config);
   }
 

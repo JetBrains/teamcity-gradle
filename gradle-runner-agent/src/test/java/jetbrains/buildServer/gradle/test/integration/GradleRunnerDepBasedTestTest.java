@@ -22,6 +22,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void setUp() throws Exception {
     super.setUp();
     myRunnerParams.put(GradleRunnerConstants.IS_INCREMENTAL, Boolean.TRUE.toString());
+    System.clearProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM);
   }
 
   @Override
@@ -29,6 +30,7 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   public void tearDown() throws Exception {
     super.tearDown();
     myRunnerParams.clear();
+    System.clearProperty(IncrementalBuild.TEAMCITY_INCREMENTAL_MODE_PARAM);
   }
 
   @Test(dataProvider = "gradle-version-provider")
@@ -126,19 +128,5 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
   private String createFileWithChanges(final String changesList) throws IOException {
     File changedFilesFile = myTempFiles.createTempFile(changesList);
     return changedFilesFile.getAbsolutePath().replaceAll("\\\\", "/");
-  }
-
-  private File addChangedFilesToRuntimeProps(final String changedFilesPath, final File runtimePropsFile) throws IOException {
-
-    final List<String> properties = FileUtil.readFile(runtimePropsFile);
-    for (int i = 0; i < properties.size(); i++) {
-      String property = properties.get(i);
-      if (property.contains("__changedFiles_file__")) {
-        final String changedFilesProperty = property.replaceFirst("__changedFiles_file__",
-                                                                  changedFilesPath);
-        properties.set(i, changedFilesProperty);
-      }
-    }
-    return myTempFiles.createTempFile(StringUtil.join("\n", properties));
   }
 }

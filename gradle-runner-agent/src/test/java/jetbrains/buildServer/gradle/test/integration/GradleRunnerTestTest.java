@@ -192,18 +192,18 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
              "##teamcity\\[(test|message|testRetrySupport)(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-last-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=8")
   public void testIgnoreDefaultDistributionSuiteNames(final String gradleVersion) throws Exception {
     testTest(PROJECT_Q_NAME, "clean test", "testIgnoreDefaultDistributionSuiteNames.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-last-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=8")
   public void testIgnoreCustomSuiteNames(final String gradleVersion) throws Exception {
     myTeamCityConfigParameters.put("teamcity.internal.gradle.ignoredSuiteFormat", "(ignored)|(42)");
     testTest(PROJECT_Q_NAME, "clean test", "testIgnoreCustomSuiteNames.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }
 
-  @Test(dataProvider = "gradle-last-version-provider")
+  @Test(dataProvider = "gradle-version-provider>=8")
   public void testEscapingServiceMessage(final String gradleVersion) throws Exception {
     final String test = SystemInfo.isWindows ? "my.SimpleTest" : "my.PrintTest";
     final String expected = SystemInfo.isWindows ? "testEscapingServiceMessage.win.txt" : "testEscapingServiceMessage.unix.txt";
@@ -224,7 +224,7 @@ public class GradleRunnerTestTest extends GradleRunnerServiceMessageTest {
     }
   }
 
-  @Test(dataProvider = "gradle-version-provider>=8")
+  @Test(dataProvider = "gradle-version-provider>=4.7")
   public void testComparisonServiceMessage(final String gradleVersion) throws Exception {
     testTest(PROJECT_PRINT_NAME, "clean test --tests my.ComparisonTest", "testComparisonServiceMessage.txt", gradleVersion, "##teamcity\\[test(.*?)(?<!\\|)\\]");
   }

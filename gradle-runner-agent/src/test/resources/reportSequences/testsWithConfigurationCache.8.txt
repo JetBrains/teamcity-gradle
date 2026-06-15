@@ -1,4 +1,5 @@
 Reusing configuration cache
+##teamcity[blockOpened name='Tests of task :test' flowId='##Flow_ID##']
 ##teamcity[flowStarted flowId='##Flow_ID##' parent='##ParentFlow_ID##']
 ##teamcity[testSuiteStarted name='test.TestClass' flowId='##Flow_ID##']
 ##teamcity[flowStarted flowId='##Flow_ID##' parent='##ParentFlow_ID##']
@@ -13,3 +14,4 @@ Reusing configuration cache
 ##teamcity[flowFinished flowId='##Flow_ID##']
 ##teamcity[testSuiteFinished name='test.TestClass' flowId='##Flow_ID##']
 ##teamcity[flowFinished flowId='##Flow_ID##']
+##teamcity[blockClosed name='Tests of task :test' flowId='##Flow_ID##']

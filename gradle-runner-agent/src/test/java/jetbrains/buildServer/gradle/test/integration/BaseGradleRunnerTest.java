@@ -1,13 +1,6 @@
 package jetbrains.buildServer.gradle.test.integration;
 
 import com.intellij.openapi.util.SystemInfo;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import jetbrains.TCJMockUtils;
 import jetbrains.buildServer.*;
 import jetbrains.buildServer.agent.*;
@@ -16,14 +9,13 @@ import jetbrains.buildServer.agent.runner.JavaRunnerUtil;
 import jetbrains.buildServer.agent.runner.MultiCommandBuildSession;
 import jetbrains.buildServer.agent.runner2.GenericCommandLineBuildProcess;
 import jetbrains.buildServer.gradle.GradleRunnerConstants;
-import jetbrains.buildServer.gradle.agent.*;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCommandLineComposerHolder;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleCliCommandLineComposer;
-import jetbrains.buildServer.gradle.agent.commandLineComposers.GradleToolingApiCommandLineComposer;
+import jetbrains.buildServer.gradle.agent.GradleLaunchModeSelector;
+import jetbrains.buildServer.gradle.agent.GradleRunnerBuildSessionFactory;
+import jetbrains.buildServer.gradle.agent.GradleUserHomeManager;
+import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
+import jetbrains.buildServer.gradle.agent.commandLineComposers.*;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleConfigurationCacheDetector;
 import jetbrains.buildServer.gradle.agent.gradleOptions.GradleOptionValueFetcher;
-import jetbrains.buildServer.gradle.agent.commandLine.CommandLineParametersProcessor;
 import jetbrains.buildServer.gradle.agent.propertySplit.GradleBuildPropertiesSplitter;
 import jetbrains.buildServer.gradle.agent.propertySplit.TeamCityBuildPropertiesGradleSplitter;
 import jetbrains.buildServer.gradle.agent.tasks.GradleTasksComposer;
@@ -44,8 +36,15 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_NAME;
-import static jetbrains.buildServer.gradle.GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+import static jetbrains.buildServer.gradle.GradleRunnerConstants.*;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
@@ -81,6 +80,7 @@ public class BaseGradleRunnerTest {
   public static final String PROJECT_WITH_READING_PROPERTIES_NAME = "projectWithReadingProperties";
   public static final String PROJECT_WITH_READING_DYNAMIC_PROPERTIES_NAME = "projectWithReadingDynamicProperties";
   public static final String PROJECT_WITH_STATIC_PROPERTY_NAME = "projectWithStaticProperty";
+  protected static final String PROJECT_WITH_COMPILE_STDERR_NAME = "projectWithCompileStderr";
   public static final String PROJECT_WITH_GENERATED_TASKS_A_NAME = "projectWithGeneratedTasksA";
   public static final String PROJECT_WITH_GENERATED_TASKS_B_NAME = "projectWithGeneratedTasksB";
   public static final String PROJECT_WITH_JDK_INTERNAL_MODULE_NAME = "projectWithJdkInternalModule";
@@ -93,7 +93,12 @@ public class BaseGradleRunnerTest {
   protected static final String DEMAND_MULTI_PROJECT_B_NAME = "demandMultiProjectB";
   protected static final String WRAPPED_PROJECT_A_NAME = "wrappedProjectA";
   protected static final String OPENTEST4J_PROJECT = "opentest4jProject";
-  protected static final String PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN = "projectWithObsoleteJUnitPlugin";
+  protected static final String PROJECT_WITH_OBSOLETE_JUNIT_PLUGIN_NAME = "projectWithObsoleteJUnitPlugin";
+  protected static final String ISOLATED_PROJECTS_COMPATIBLE_PROJECT_NAME = "isolatedProjectsCompatible";
+  protected static final String PROJECT_WITH_BROKEN_TASKS_NAME = "projectWithBrokenTasks";
+  protected static final String PROJECT_TEST_TASK_LOG_BLOCKS_NAME = "projectTestTaskLogBlocks";
+  protected static final String MULTI_PROJECT_TEST_TASK_LOG_BLOCKS_NAME = "multiProjectTestTaskLogBlocks";
+  protected static final String MULTI_PROJECT_DEVELOCITY_RETRY_NAME = "multiProjectDevelocityRetry";
   private static final String TOOLS_GRADLE_PATH = "../../../tools/gradle";
   private static final String TOOLS_GRADLE_PATH_LOCAL = "../.tools/gradle";
 
@@ -103,7 +108,7 @@ public class BaseGradleRunnerTest {
 
   protected final TempFiles myTempFiles = new TempFiles();
 
-  final static Action reportMessage = new CustomAction("Echoes test output") {
+  protected static final Action reportMessage = new CustomAction("Echoes test output") {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
@@ -115,7 +120,7 @@ public class BaseGradleRunnerTest {
     }
   };
 
-  final static Action reportWarning = new CustomAction("Echoes test output") {
+  protected static final Action reportWarning = new CustomAction("Echoes test output") {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
@@ -127,7 +132,7 @@ public class BaseGradleRunnerTest {
     }
   };
 
-    final static Action reportError = new CustomAction("Echoes test output") {
+  protected static final Action reportError = new CustomAction("Echoes test output") {
     public Object invoke(final Invocation invocation) throws Throwable {
       if (invocation.getParameterCount() > 0) {
         for(Object param : invocation.getParametersAsArray()) {
@@ -241,14 +246,6 @@ public class BaseGradleRunnerTest {
             .iterator();
   }
 
-  @DataProvider(name = "gradle-last-version-provider")
-  public static Iterator<String[]> getPathForLatestAvailableGradleVersion() {
-    return generateGradlePaths().stream()
-            .max((a, b) -> VersionComparatorUtil.compare(getGradleVersionFromPath(a[0]), getGradleVersionFromPath(b[0])))
-            .map(path -> Collections.singletonList(path).iterator())
-            .orElseGet(Collections::emptyIterator);
-  }
-
   public static List<String[]> generateGradlePaths() {
     if (ourProjectRoot == null) {
       ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
@@ -319,7 +316,12 @@ public class BaseGradleRunnerTest {
 
   protected File getWorkingDir(String gradleVersionNum,
                                String projectName) {
-    return new File(new File(myCoDir, ConfigurationParamsUtil.getGradleInitScript(gradleVersionNum)), projectName);
+    return new File(new File(myCoDir, getDefaultInitScriptName(gradleVersionNum)), projectName);
+  }
+
+  @NotNull
+  private static String getDefaultInitScriptName(@NotNull String gradleVersion) {
+    return VersionComparatorUtil.compare(gradleVersion, "8") >= 0 ? INIT_SCRIPT_SINCE_8_NAME : INIT_SCRIPT_NAME;
   }
 
   @BeforeMethod
@@ -352,8 +354,10 @@ public class BaseGradleRunnerTest {
     FileUtil.copyDir(sourceScriptsDir, targetScriptsDir);
 
     File consoleInitScript = new File(targetScriptsDir, INIT_SCRIPT_NAME);
+    File consoleInitScriptV2 = new File(targetScriptsDir, INIT_SCRIPT_V2_NAME);
     File tapiInitScript = new File(targetScriptsDir, INIT_SCRIPT_SINCE_8_NAME);
     assertTrue(consoleInitScript.canRead(), "The command-line-gradle init script must be an existing readable file.");
+    assertTrue(consoleInitScriptV2.canRead(), "The command-line-gradle init script version 2 must be an existing readable file.");
     assertTrue(tapiInitScript.canRead(), "The tooling-api-gradle init script must be an existing readable file.");
   }
 
@@ -368,7 +372,9 @@ public class BaseGradleRunnerTest {
     List<GradleBuildPropertiesSplitter> splitters = Arrays.asList(new TeamCityBuildPropertiesGradleSplitter());
     GradleTasksComposer tasksComposer = new GradleTasksComposer(Collections.emptyList());
     List<GradleCommandLineComposer> composers = Arrays.asList(
-      new GradleCliCommandLineComposer(tasksComposer), new GradleToolingApiCommandLineComposer(splitters, tasksComposer)
+      new GradleCliCommandLineComposer(tasksComposer),
+      new GradleCliV2CommandLineComposer(tasksComposer),
+      new GradleToolingApiCommandLineComposer(splitters, tasksComposer)
     );
     GradleCommandLineComposerHolder composerHolder = new GradleCommandLineComposerHolder(composers);
 
@@ -434,7 +440,7 @@ public class BaseGradleRunnerTest {
 
 
     if (VersionComparatorUtil.compare(gradleVersionNum, "8.0") >= 0 && !myTeamCityConfigParameters.containsKey(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM)) {
-      myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
+      myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_COMMAND_LINE_V2_LAUNCH_MODE);
     }
 
     myRunnerParams.put(GradleRunnerConstants.GRADLE_PARAMS, gradleParams);
