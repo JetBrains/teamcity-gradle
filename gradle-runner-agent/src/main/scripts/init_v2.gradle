@@ -1,6 +1,8 @@
 import org.gradle.api.flow.*
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
+import org.gradle.api.provider.Property
+import org.gradle.api.initialization.Settings
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
@@ -714,7 +716,11 @@ class TeamcityTestListener implements TestListener, TestOutputListener {
   }
 }
 
-abstract class TestTaskBuildLogSetupService implements BuildService<BuildServiceParameters.None>, OperationCompletionListener {
+abstract class TestTaskBuildLogSetupService implements BuildService<TestTaskBuildLogSetupService.Params>, OperationCompletionListener {
+  interface Params extends BuildServiceParameters {
+    Property<Boolean> getUseFlowIdForBlock()
+  }
+
   private static final Logger logger = Logging.getLogger(TestTaskBuildLogSetupService)
 
   private final Set<String> testTaskPaths = ConcurrentHashMap.newKeySet()
@@ -734,7 +740,12 @@ abstract class TestTaskBuildLogSetupService implements BuildService<BuildService
 
     def flowId = Util.getFlowIdForTask(taskPath)
 
-    logger.lifecycle(new ServiceMessage(name: "blockOpened", attributes: [name: getTestBlockName(taskPath)]).withFlowId(flowId).asString())
+    def blockOpened = new ServiceMessage(name: "blockOpened", attributes: [name: getTestBlockName(taskPath)])
+    if (parameters.getUseFlowIdForBlock().get()) {
+      blockOpened = blockOpened.withFlowId(flowId)
+    }
+
+    logger.lifecycle(blockOpened.asString())
 
     if (enableTestRetryForTask) {
       testRetryTaskPaths.add(taskPath)
@@ -751,7 +762,12 @@ abstract class TestTaskBuildLogSetupService implements BuildService<BuildService
       logger.lifecycle(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: "false"]).withFlowId(flowId).asString())
     }
 
-    logger.lifecycle(new ServiceMessage(name: "blockClosed", attributes: [name: getTestBlockName(taskPath)]).withFlowId(flowId).asString())
+    def blockClosed = new ServiceMessage(name: "blockClosed", attributes: [name: getTestBlockName(taskPath)])
+    if (parameters.getUseFlowIdForBlock().get()) {
+      blockClosed = blockClosed.withFlowId(flowId)
+    }
+
+    logger.lifecycle(blockClosed.asString())
   }
 
   static String getTestBlockName(String taskPath) {
@@ -769,18 +785,38 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
 
   @Override
   void apply(Gradle gradle) {
-    def testTaskBuildLogSetupServiceProvider =
-            gradle.sharedServices.registerIfAbsent("testTaskBuildLogSetupService", TestTaskBuildLogSetupService) {}
+    gradle.settingsEvaluated { Settings settings ->
+      boolean useFlowId = shouldUseFlowId(settings, gradle)
+      def testTaskBuildLogSetupServiceProvider =
+              gradle.sharedServices.registerIfAbsent("testTaskBuildLogSetupService", TestTaskBuildLogSetupService) { spec ->
+                spec.parameters.useFlowIdForBlock.set(useFlowId)
+              }
 
-    gradle.addListener(new AfterEvaluateListener({ Project project ->
-      project.tasks.configureEach { Task task ->
-        def enableTestRetryForTask = doesTaskNeedExplicitTestRetrySupport(task)
-        task.doFirst {
-          testTaskBuildLogSetupServiceProvider.get().openLogBlockForTestTask(it, enableTestRetryForTask)
+      gradle.addListener(new AfterEvaluateListener({ Project project ->
+        project.tasks.configureEach { Task task ->
+          def enableTestRetryForTask = doesTaskNeedExplicitTestRetrySupport(task)
+          task.doFirst {
+            testTaskBuildLogSetupServiceProvider.get().openLogBlockForTestTask(it, enableTestRetryForTask)
+          }
         }
-      }
-    }))
-    buildEventsListenerRegistry.onTaskCompletion(testTaskBuildLogSetupServiceProvider)
+      }))
+
+      buildEventsListenerRegistry.onTaskCompletion(testTaskBuildLogSetupServiceProvider)
+    }
+  }
+
+  /**
+   * Returns true whenever there is a possibility that Gradle might run something in parallel, as flowId prevents mixing of concurent output.
+   * Also, returns true whenever the build uses configuration cache as change of gradle.startParameter won't invalidate configuration cache.
+   * Therefore, we can't reliably determine if --parallel property changed between builds.
+   */
+  static boolean shouldUseFlowId(Settings settings, Gradle gradle) {
+    boolean isConfigurationCacheEnabled = BuildFeatures.isConfigurationCacheRequested(gradle)
+    boolean isIsolatedProjects = BuildFeatures.areIsolatedProjectsEnabled(gradle)
+    boolean isParallel = gradle.startParameter.isParallelProjectExecutionEnabled()
+    boolean isComposite = !settings.includedBuilds.isEmpty()
+
+    return isConfigurationCacheEnabled || isIsolatedProjects || isParallel || isComposite
   }
 
   static boolean doesTaskNeedExplicitTestRetrySupport(Task task) {
