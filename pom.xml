@@ -44,6 +44,7 @@
     <module>gradle-runner-runtime</module>
     <module>gradle-runner-test-runtimes</module>
     <module>gradle-runner-agent</module>
+    <module>gradle-runner-agent-test</module>
     <module>gradle-runner-server</module>
   </modules>
 

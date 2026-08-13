@@ -11,13 +11,6 @@
   </parent>
   <artifactId>gradle-runner-agent</artifactId>
 
-  <properties>
-    <gradle.test.runtimes.dir>${project.basedir}/../gradle-runner-test-runtimes/target/gradle-runtime</gradle.test.runtimes.dir>
-    <gradle.runtime>${gradle.test.runtimes.dir}</gradle.runtime>
-    <gradle.wrapper.test.runtime.version>8.2</gradle.wrapper.test.runtime.version>
-    <gradle.wrapper.test.distribution.zip>${gradle.test.runtimes.dir}/gradle-${gradle.wrapper.test.runtime.version}-bin.zip</gradle.wrapper.test.distribution.zip>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.jetbrains.teamcity.plugins</groupId>
@@ -26,12 +19,6 @@
     <dependency>
       <groupId>org.jetbrains.teamcity.plugins</groupId>
       <artifactId>gradle-runner-runtime</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jetbrains.teamcity.plugins</groupId>
-      <artifactId>gradle-runner-test-runtimes</artifactId>
-      <type>pom</type>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.gradle</groupId>
@@ -69,35 +56,5 @@
       <artifactId>common-api</artifactId>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.jetbrains.teamcity</groupId>
-      <artifactId>tests-support</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.mockk</groupId>
-      <artifactId>mockk-jvm</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jetbrains.kotlinx</groupId>
-      <artifactId>kotlinx-coroutines-test-jvm</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <systemPropertyVariables>
-            <gradle.runtime>${gradle.runtime}</gradle.runtime>
-            <gradle.wrapper.test.distribution.zip>${gradle.wrapper.test.distribution.zip}</gradle.wrapper.test.distribution.zip>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
