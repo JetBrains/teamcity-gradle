@@ -10,6 +10,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>gradle-runner-server</artifactId>
+  <name>Gradle Runner</name>
 
   <dependencies>
     <dependency>
@@ -41,52 +42,12 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>prepare-teamcity-plugin-descriptor</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <echo file="${project.build.directory}/teamcity-plugin.xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-<teamcity-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                 xsi:noNamespaceSchemaLocation="urn:shemas-jetbrains-com:teamcity-plugin-v1-xml">
-  <info>
-    <name>gradle-runner</name>
-    <display-name>Gradle Runner</display-name>
-    <version>@Plugin_Version@</version>
-    <vendor>
-      <name>@Plugin_Vendor@</name>
-      <url>@Plugin_Vendor_Url@</url>
-    </vendor>
-  </info>
-  <deployment use-separate-classloader="true" node-responsibilities-aware="true" allow-runtime-reload="true"/>
-</teamcity-plugin>]]></echo>
-                <replace file="${project.build.directory}/teamcity-plugin.xml" token="@Plugin_Version@" value="${revision}"/>
-                <echo file="${project.build.directory}/teamcity-agent-plugin.xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?><teamcity-agent-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-agent-plugin-v1-xml">
-
-  <plugin-deployment/>
-
-</teamcity-agent-plugin>]]></echo>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.jetbrains.teamcity</groupId>
         <artifactId>teamcity-maven-plugin</artifactId>
         <configuration>
           <agent>
             <spec>:gradle-runner-agent</spec>
             <pluginName>gradle-runner</pluginName>
-            <descriptor>
-              <path>${project.build.directory}/teamcity-agent-plugin.xml</path>
-            </descriptor>
             <extras>
               <extra>
                 <source>${project.parent.basedir}/gradle-runner-agent/src/main/scripts</source>
@@ -98,7 +59,9 @@
             <spec>.</spec>
             <pluginName>Gradle</pluginName>
             <descriptor>
-              <path>${project.build.directory}/teamcity-plugin.xml</path>
+              <nodeResponsibilitiesAware>true</nodeResponsibilitiesAware>
+              <useSeparateClassloader>true</useSeparateClassloader>
+              <allowRuntimeReload>true</allowRuntimeReload>
             </descriptor>
             <extras>
               <extra>
