@@ -37,10 +37,7 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     myExtension = new GradleRunnerDiscoveryExtension();
-    myRoot = new File("../gradle-runner-agent/src/test/resources/testProjects", GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME);
-    if (!myRoot.exists()) {
-      myRoot = new File("external-repos/gradle-runner/gradle-runner-agent/src/test/resources/testProjects", GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME);
-    }
+    myRoot = findTestProjectsRoot();
 
     assertTrue("Can not find test data. Please check if test projects exist", myRoot.exists());
     myContext = new Mockery();
@@ -48,6 +45,26 @@ public class GradleRunnerDiscoveryExtensionTest extends BaseTestCase {
     myContext.checking(new Expectations() {{
       allowing(mySettings).getBuildRunners();  will(returnValue(Collections.emptyList()));
     }});
+  }
+
+  private File findTestProjectsRoot() {
+    final String relativePath = "gradle-runner-agent-test/src/test/resources/testProjects";
+    File dir = new File(".").getAbsoluteFile();
+    while (dir != null) {
+      File root = new File(new File(dir, relativePath), GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME);
+      if (root.exists()) {
+        return root;
+      }
+
+      root = new File(new File(new File(dir, "external-repos/gradle-runner"), relativePath), GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME);
+      if (root.exists()) {
+        return root;
+      }
+
+      dir = dir.getParentFile();
+    }
+
+    return new File("../" + relativePath, GradleRunnerConstants.INIT_SCRIPT_SINCE_8_NAME);
   }
 
   @Test

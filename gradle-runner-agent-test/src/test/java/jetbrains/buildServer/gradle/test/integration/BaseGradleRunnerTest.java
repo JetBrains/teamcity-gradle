@@ -161,6 +161,7 @@ public class BaseGradleRunnerTest {
   protected BuildRunnerContext myMockRunner;
   protected FlowLogger myMockLogger;
   protected static File ourProjectRoot;
+  protected static File ourAgentProjectRoot;
   protected Map<String, String> myRunnerParams = new ConcurrentHashMap<String,String>();
   protected Map<String, String> myBuildEnvVars = new ConcurrentHashMap<String,String>(System.getenv());
   protected Map<String, String> myTeamCitySystemProps = new ConcurrentHashMap<String,String>();
@@ -258,11 +259,9 @@ public class BaseGradleRunnerTest {
   }
 
   public static List<String[]> generateGradlePaths() {
-    if (ourProjectRoot == null) {
-      ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
-    }
-    File gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH);
-    if(!gradleDir.exists()) gradleDir = new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL);
+    File projectRoot = getProjectRoot();
+    File gradleDir = new File(projectRoot, TOOLS_GRADLE_PATH);
+    if(!gradleDir.exists()) gradleDir = new File(projectRoot, TOOLS_GRADLE_PATH_LOCAL);
     Reporter.log(gradleDir.getAbsolutePath());
     if (gradleDir.exists() && gradleDir.isDirectory()) {
       return listAvailableVersions(gradleDir);
@@ -348,12 +347,13 @@ public class BaseGradleRunnerTest {
     if (gradleHome.isAbsolute()) {
       return gradleHome.getCanonicalPath();
     }
-    gradleHome = new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH), gradleVersion);
+    File projectRoot = getProjectRoot();
+    gradleHome = new File(new File(projectRoot, TOOLS_GRADLE_PATH), gradleVersion);
     if (gradleHome.exists()) {
       return gradleHome.getCanonicalPath();
     }
 
-    gradleHome = new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL), gradleVersion);
+    gradleHome = new File(new File(projectRoot, TOOLS_GRADLE_PATH_LOCAL), gradleVersion);
     if (gradleHome.exists()) {
       return gradleHome.getCanonicalPath();
     }
@@ -366,7 +366,7 @@ public class BaseGradleRunnerTest {
       }
     }
 
-    return new File(new File(ourProjectRoot, TOOLS_GRADLE_PATH_LOCAL), gradleVersion).getCanonicalPath();
+    return new File(new File(projectRoot, TOOLS_GRADLE_PATH_LOCAL), gradleVersion).getCanonicalPath();
   }
 
   protected String getGradleVersion(String gradleVersion) {
@@ -385,10 +385,8 @@ public class BaseGradleRunnerTest {
 
   @BeforeMethod
   public void checkEnvironment() throws IOException {
-    if (ourProjectRoot == null) {
-      ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
-    }
-    createProjectsWorkingCopy(ourProjectRoot);
+    createProjectsWorkingCopy(getProjectRoot());
+    getAgentProjectRoot();
     myTestLogger.onSuiteStart();
   }
 
@@ -637,9 +635,23 @@ public class BaseGradleRunnerTest {
 
     context.checking(initMockingCtx);
 
-    setupInitScripts(ourProjectRoot);
+    setupInitScripts(getAgentProjectRoot());
 
     return context;
+  }
+
+  protected static File getProjectRoot() {
+    if (ourProjectRoot == null) {
+      ourProjectRoot = GradleTestUtil.setProjectRoot(new File("."));
+    }
+    return ourProjectRoot;
+  }
+
+  protected static File getAgentProjectRoot() {
+    if (ourAgentProjectRoot == null) {
+      ourAgentProjectRoot = GradleTestUtil.setAgentProjectRoot(new File("."));
+    }
+    return ourAgentProjectRoot;
   }
 
   protected static String getGradleVersionFromPath(@NotNull final String path) {

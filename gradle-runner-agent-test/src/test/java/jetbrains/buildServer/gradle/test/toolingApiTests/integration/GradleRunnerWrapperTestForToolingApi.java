@@ -41,7 +41,7 @@ public class GradleRunnerWrapperTestForToolingApi extends GradleRunnerServiceMes
     config.setGradleVersion(gradleVersion);
     Mockery ctx = initContext(config.getProject(), config.getCommand(), config.getGradleVersion());
     myTeamCityConfigParameters.put(GradleRunnerConstants.GRADLE_RUNNER_LAUNCH_MODE_CONFIG_PARAM, GradleRunnerConstants.GRADLE_RUNNER_TOOLING_API_LAUNCH_MODE);
-    File initScript = new File(ourProjectRoot, GradleTestUtil.REL_SCRIPT_DIR + "/" + GradleRunnerConstants.INIT_SCRIPT_NAME);
+    File initScript = new File(getAgentProjectRoot(), GradleTestUtil.REL_SCRIPT_DIR + "/" + GradleRunnerConstants.INIT_SCRIPT_NAME);
     myRunnerParams.put(GradleRunnerConstants.GRADLE_INIT_SCRIPT, initScript.getAbsolutePath());
 
     // act
