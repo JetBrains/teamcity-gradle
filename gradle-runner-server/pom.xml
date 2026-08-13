@@ -57,7 +57,7 @@
           </agent>
           <server>
             <spec>.</spec>
-            <pluginName>Gradle</pluginName>
+            <pluginName>gradle-runner</pluginName>
             <descriptor>
               <nodeResponsibilitiesAware>true</nodeResponsibilitiesAware>
               <useSeparateClassloader>true</useSeparateClassloader>
