@@ -283,15 +283,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestFile>${project.parent.basedir}/build-support/MANIFEST.MF</manifestFile>
-            <manifest>
-              <addDefaultEntries>false</addDefaultEntries>
-            </manifest>
-            <addMavenDescriptor>false</addMavenDescriptor>
-          </archive>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

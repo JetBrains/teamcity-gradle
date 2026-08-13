@@ -52,8 +52,26 @@
             </goals>
             <configuration>
               <target>
-                <copy file="${project.basedir}/../teamcity-plugin.xml" tofile="${project.build.directory}/teamcity-plugin.xml"/>
+                <echo file="${project.build.directory}/teamcity-plugin.xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<teamcity-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:noNamespaceSchemaLocation="urn:shemas-jetbrains-com:teamcity-plugin-v1-xml">
+  <info>
+    <name>gradle-runner</name>
+    <display-name>Gradle Runner</display-name>
+    <version>@Plugin_Version@</version>
+    <vendor>
+      <name>@Plugin_Vendor@</name>
+      <url>@Plugin_Vendor_Url@</url>
+    </vendor>
+  </info>
+  <deployment use-separate-classloader="true" node-responsibilities-aware="true" allow-runtime-reload="true"/>
+</teamcity-plugin>]]></echo>
                 <replace file="${project.build.directory}/teamcity-plugin.xml" token="@Plugin_Version@" value="${revision}"/>
+                <echo file="${project.build.directory}/teamcity-agent-plugin.xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?><teamcity-agent-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:schemas-jetbrains-com:teamcity-agent-plugin-v1-xml">
+
+  <plugin-deployment/>
+
+</teamcity-agent-plugin>]]></echo>
               </target>
             </configuration>
           </execution>
@@ -67,7 +85,7 @@
             <spec>:gradle-runner-agent</spec>
             <pluginName>gradle-runner</pluginName>
             <descriptor>
-              <path>${project.parent.basedir}/build-support/teamcity-agent-plugin.xml</path>
+              <path>${project.build.directory}/teamcity-agent-plugin.xml</path>
             </descriptor>
             <extras>
               <extra>
