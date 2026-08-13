@@ -23,7 +23,7 @@
     <slf4j.version>1.7.36</slf4j.version>
     <commons-cli.version>1.4</commons-cli.version>
     <jetbrains-annotations.version>23.0.0</jetbrains-annotations.version>
-    <teamcity-maven-plugin.version>1.6.36</teamcity-maven-plugin.version>
+    <teamcity-maven-plugin.version>1.6.46</teamcity-maven-plugin.version>
     <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     <license-maven-plugin.version>2.7.1</license-maven-plugin.version>
 
