@@ -630,13 +630,17 @@ class TeamcityTestListener implements TestListener, TestOutputListener {
   private final FlowWrapper flowWrapper
   private final ConcurrentMap<TestDescriptorWrapper, List> testOutputs = new ConcurrentHashMap()
 
-  TeamcityTestListener(Logger logger, TestTaskWrapper testTaskWrapper, Project project, AtomicLong testCounter, TestNameDescriptor testNameDescriptor, String ignoredSuiteFormat) {
+  TeamcityTestListener(Logger logger, TestTaskWrapper testTaskWrapper, Project project, AtomicLong testCounter,
+                       TestNameDescriptor testNameDescriptor, String ignoredSuiteFormat, boolean useFlowIdForBlock) {
     this.logger = logger
     this.buildDirectoriesResolver = new BuildDirectoriesResolver(project)
     this.testCounter = testCounter
     this.testNameDescriptor = testNameDescriptor
     this.ignoredSuiteFormat = ignoredSuiteFormat?.trim() ? Pattern.compile(ignoredSuiteFormat) : null
-    flowWrapper = new FlowWrapper(Util.getFlowIdForTask(testTaskWrapper.getTaskPath()))
+
+    def taskFlowId = Util.getFlowIdForTask(testTaskWrapper.getTaskPath())
+    def topLevelParentId = useFlowIdForBlock ? taskFlowId : null
+    flowWrapper = new FlowWrapper(taskFlowId, topLevelParentId)
   }
 
   @Override
@@ -943,16 +947,30 @@ public enum TestNameDescriptor {
 }
 
 public class FlowWrapper {
-  private final String project
+  private final String taskFlowId
+  private final String topLevelParentId
   private Set<String> started = Collections.newSetFromMap(new ConcurrentHashMap());
 
-  FlowWrapper(String projectFlowId) {
-    this.project = projectFlowId
+  FlowWrapper(String taskFlowId, String topLevelParentId) {
+    this.taskFlowId = taskFlowId
+    this.topLevelParentId = topLevelParentId
   }
 
-  ServiceMessage start(DescriptorWrapper descriptor, SuiteDescriptorWrapper suite) {
-    return started.add(descriptor.flowId) ? new ServiceMessage(name: "flowStarted",
-                                                               attributes: [flowId: descriptor.flowId, parent: suite?.flowId ?: id]) : null
+  ServiceMessage start(DescriptorWrapper descriptor, SuiteDescriptorWrapper parentDescriptor) {
+    if (!started.add(descriptor.flowId)) {
+      return null
+    }
+
+    def thisFolowId = descriptor.flowId
+    def attrs = [flowId: thisFolowId]
+
+    // if parent exists take its flowId, otherwise take task's flowId as parent (if it exists)
+    def parentId = parentDescriptor?.flowId ?: topLevelParentId
+    if (parentId != null) {
+      attrs.parent = parentId
+    }
+
+    return new ServiceMessage(name: "flowStarted", attributes: attrs)
   }
 
   ServiceMessage finish(DescriptorWrapper descriptor) {
@@ -961,7 +979,7 @@ public class FlowWrapper {
   }
 
   String getId() {
-    return project
+    return taskFlowId
   }
 }
 
@@ -1708,7 +1726,13 @@ gradle.addListener(new AfterEvaluateListener({ Project project ->
     def testNameDescriptor = TestNameDescriptor.of(testNameFormat)
     def ignoredSuiteFormat = System.getenv(Constants.IGNORED_SUITE_FORMAT_ENV_VAR)
 
-    def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat)
+    def useFlowIdForBlock = project.gradle.sharedServices.registrations
+                                    .findByName("testTaskBuildLogSetupService")
+                                    ?.parameters
+                                    ?.useFlowIdForBlock
+                                    ?.getOrElse(false) ?: false
+
+    def testListener = new TeamcityTestListener(logger, testTask, project, testCounter, testNameDescriptor, ignoredSuiteFormat, useFlowIdForBlock)
     testTask.addTestListener(testListener)
     testTask.addTestOutputListener(testListener)
     testListener.skipStdOut = Boolean.valueOf(System.getProperty(Constants.IGNORE_TEST_STDOUT_SYSTEM_PROP))
