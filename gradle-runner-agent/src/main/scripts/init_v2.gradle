@@ -737,13 +737,16 @@ abstract class TestTaskBuildLogSetupService implements BuildService<TestTaskBuil
   }
 
   void openLogBlockForTestTask(Task task, boolean enableTestRetryForTask = false) {
-    if (!AbstractTestTask.isAssignableFrom(task.class)) return
+    if (!AbstractTestTask.isAssignableFrom(task.class)) {
+      return
+    }
 
     def taskPath = task.path
-    testTaskPaths.add(taskPath)
+    if (!testTaskPaths.add(taskPath)) {
+      return
+    }
 
     def flowId = Util.getFlowIdForTask(taskPath)
-
     def blockOpened = new ServiceMessage(name: "blockOpened", attributes: [name: getTestBlockName(taskPath)])
     if (parameters.getUseFlowIdForBlock().get()) {
       blockOpened = blockOpened.withFlowId(flowId)
@@ -753,7 +756,11 @@ abstract class TestTaskBuildLogSetupService implements BuildService<TestTaskBuil
 
     if (enableTestRetryForTask) {
       testRetryTaskPaths.add(taskPath)
-      logger.lifecycle(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: "true"]).withFlowId(flowId).asString())
+      def retrySupportMsg = new ServiceMessage(name: "testRetrySupport", attributes: [enabled: "true"])
+      if (parameters.getUseFlowIdForBlock().get()) {
+        retrySupportMsg = retrySupportMsg.withFlowId(flowId)
+      }
+      logger.lifecycle(retrySupportMsg.asString())
     }
   }
 
@@ -763,7 +770,11 @@ abstract class TestTaskBuildLogSetupService implements BuildService<TestTaskBuil
     def flowId = Util.getFlowIdForTask(taskPath)
 
     if (testRetryTaskPaths.remove(taskPath)) {
-      logger.lifecycle(new ServiceMessage(name: "testRetrySupport", attributes: [enabled: "false"]).withFlowId(flowId).asString())
+      def retrySupportMsg = new ServiceMessage(name: "testRetrySupport", attributes: [enabled: "false"])
+      if (parameters.getUseFlowIdForBlock().get()) {
+        retrySupportMsg = retrySupportMsg.withFlowId(flowId)
+      }
+      logger.lifecycle(retrySupportMsg.asString())
     }
 
     def blockClosed = new ServiceMessage(name: "blockClosed", attributes: [name: getTestBlockName(taskPath)])
@@ -819,8 +830,9 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
     boolean isIsolatedProjects = BuildFeatures.areIsolatedProjectsEnabled(gradle)
     boolean isParallel = gradle.startParameter.isParallelProjectExecutionEnabled()
     boolean isComposite = !settings.includedBuilds.isEmpty()
+    boolean isCompositeParticipant = gradle.parent != null
 
-    return isConfigurationCacheEnabled || isIsolatedProjects || isParallel || isComposite
+    return isConfigurationCacheEnabled || isIsolatedProjects || isParallel || isComposite || isCompositeParticipant
   }
 
   static boolean doesTaskNeedExplicitTestRetrySupport(Task task) {
