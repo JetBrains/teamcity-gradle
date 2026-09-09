@@ -637,7 +637,7 @@ public class BaseGradleRunnerTest {
 
     context.checking(initMockingCtx);
 
-    setupInitScripts(ourProjectRoot);
+    setupInitScripts(GradleTestUtil.setAgentProjectRoot(new File(".")));
 
     return context;
   }
