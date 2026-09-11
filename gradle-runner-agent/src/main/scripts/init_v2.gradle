@@ -821,7 +821,7 @@ abstract class TestTaskBuildLogSetupPlugin implements Plugin<Gradle> {
   }
 
   /**
-   * Returns true whenever there is a possibility that Gradle might run something in parallel, as flowId prevents mixing of concurent output.
+   * Returns true whenever there is a possibility that Gradle might run something in parallel, as flowId prevents mixing of concurrent output.
    * Also, returns true whenever the build uses configuration cache as change of gradle.startParameter won't invalidate configuration cache.
    * Therefore, we can't reliably determine if --parallel property changed between builds.
    */
@@ -973,8 +973,8 @@ public class FlowWrapper {
       return null
     }
 
-    def thisFolowId = descriptor.flowId
-    def attrs = [flowId: thisFolowId]
+    def thisFlowId = descriptor.flowId
+    def attrs = [flowId: thisFlowId]
 
     // if parent exists take its flowId, otherwise take task's flowId as parent (if it exists)
     def parentId = parentDescriptor?.flowId ?: topLevelParentId

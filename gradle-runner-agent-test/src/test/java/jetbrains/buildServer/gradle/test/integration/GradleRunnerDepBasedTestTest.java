@@ -125,6 +125,18 @@ public class GradleRunnerDepBasedTestTest extends GradleRunnerServiceMessageTest
     runAndCheckServiceMessages(gradleRunConfiguration);
   }
 
+  @Test(dataProvider = "gradle-version-provider>=8")
+  public void testChangeNotInSourceSetParallel(String gradleVersion) throws Exception {
+    final String changedFilesPath = createFileWithChanges("projectA/build.gradle:ADD:1");
+    myTeamCitySystemProps.put("teamcity.build.changedFiles.file", changedFilesPath);
+
+    final GradleRunConfiguration gradleRunConfiguration = new GradleRunConfiguration(MULTI_PROJECT_B_NAME,
+                                                                                     "clean --parallel",
+                                                                                     "DepBasedTestFullBuildParallel.txt");
+    gradleRunConfiguration.setGradleVersion(gradleVersion);
+    runAndCheckServiceMessages(gradleRunConfiguration);
+  }
+
   private String createFileWithChanges(final String changesList) throws IOException {
     File changedFilesFile = myTempFiles.createTempFile(changesList);
     return changedFilesFile.getAbsolutePath().replaceAll("\\\\", "/");
