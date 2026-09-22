@@ -547,15 +547,14 @@ abstract class CompileTaskErrorOutputService implements BuildService<BuildServic
   @Override
   void onFinish(FinishEvent finishEvent) {
     if (!(finishEvent instanceof TaskFinishEvent)) return
-    if (!(finishEvent.result instanceof TaskFailureResult)) return
 
     def taskPath = finishEvent.descriptor.taskPath
-
     def errorOutputListener = errorOutputListeners.remove(taskPath)
     if (errorOutputListener == null) return
 
-    def flowId = Util.getFlowIdForTask(taskPath)
+    if (!(finishEvent.result instanceof TaskFailureResult)) return
 
+    def flowId = Util.getFlowIdForTask(taskPath)
     logger.lifecycle(new ServiceMessage(name: "compilationStarted", attributes: [compiler: taskPath]).withFlowId(flowId).asString())
     errorOutputListener.getMessages().each { msg ->
       logger.lifecycle(new ServiceMessage(name: "message", attributes: [text: msg, status: "ERROR"]).withFlowId(flowId).asString())
