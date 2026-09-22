@@ -79,6 +79,9 @@ class Constants {
 
   // endregion
 
+  // Limits the size of internal String buffer that captures a compile task's stderr
+  public static final String COMPILE_ERROR_MAX_LENGTH_SYSTEM_PROP = "teamcity.gradle.compileError.maxLength"
+
   // Gradle's isolated projects system property flag for Gradle versions where isolated projects is an incubating feature.
   public static final String GRADLE_UNSAFE_ISOLATED_PROJECTS_SYSTEM_PROP = "org.gradle.unsafe.isolated-projects"
 }
@@ -552,22 +555,41 @@ abstract class CompileTaskErrorOutputService implements BuildService<BuildServic
     def errorOutputListener = errorOutputListeners.remove(taskPath)
     if (errorOutputListener == null) return
 
-    if (!(finishEvent.result instanceof TaskFailureResult)) return
+    try {
+      if (!(finishEvent.result instanceof TaskFailureResult)) return
 
-    def flowId = Util.getFlowIdForTask(taskPath)
-    logger.lifecycle(new ServiceMessage(name: "compilationStarted", attributes: [compiler: taskPath]).withFlowId(flowId).asString())
-    errorOutputListener.getMessages().each { msg ->
-      logger.lifecycle(new ServiceMessage(name: "message", attributes: [text: msg, status: "ERROR"]).withFlowId(flowId).asString())
+      def flowId = Util.getFlowIdForTask(taskPath)
+      logger.lifecycle(new ServiceMessage(name: "compilationStarted", attributes: [compiler: taskPath]).withFlowId(flowId).asString())
+      errorOutputListener.getMessages().each { msg ->
+        logger.lifecycle(new ServiceMessage(name: "message", attributes: [text: msg, status: "ERROR"]).withFlowId(flowId).asString())
+      }
+      logger.lifecycle(new ServiceMessage(name: "compilationFinished", attributes: [compiler: taskPath]).withFlowId(flowId).asString())
+    } finally {
+      errorOutputListener.clear()
     }
-    logger.lifecycle(new ServiceMessage(name: "compilationFinished", attributes: [compiler: taskPath]).withFlowId(flowId).asString())
   }
 
   private static class ErrorOutputListener implements StandardOutputListener {
+    private static final int MAX_BUFFER_SIZE = Integer.getInteger(Constants.COMPILE_ERROR_MAX_LENGTH_SYSTEM_PROP, 5 * 1024 * 1024) // default 5MB
     private final StringBuffer stringBuffer = new StringBuffer()
+    private volatile boolean truncated = false
 
     @Override
     void onOutput(CharSequence chars) {
-      stringBuffer.append(chars)
+      synchronized (stringBuffer) {
+        // output already exceeds max buffer size
+        if (truncated) {
+          return
+        }
+
+        // new output will exceed max buffer size
+        if (stringBuffer.length() + chars.length() > MAX_BUFFER_SIZE) {
+          truncated = true
+          return
+        }
+
+        stringBuffer.append(chars)
+      }
     }
 
     Collection<String> getMessages() {
@@ -579,7 +601,20 @@ abstract class CompileTaskErrorOutputService implements BuildService<BuildServic
           messages.add(line)
         }
       }
+
+      if (truncated) {
+        messages.add("TeamCity truncated compile error output, because it is too large. See raw build log for full stderr.")
+      }
+
       return messages
+    }
+
+    void clear() {
+      synchronized (stringBuffer) {
+        stringBuffer.setLength(0)
+        stringBuffer.trimToSize()
+        truncated = false
+      }
     }
   }
 }
