@@ -1,0 +1,16 @@
+plugins {
+  id 'java'
+}
+
+tasks.named("compileJava") {
+  doFirst {
+    // make one error message that will always be visible
+    System.err.println("Stderr marker that should be visible")
+
+    // add more lines to exceed error buffer limit
+    (1..500).each {line -> System.err.println("Compile stderr line number $line")}
+
+    // make one more error message that won't be visible because it comes after we exceeded error buffer limit
+    System.err.println("Stderr marker that should NOT be visible")
+  }
+}

@@ -58,6 +58,26 @@ class CompileTaskStderrBuildLogBlocksTest : GradleRunnerServiceMessageTest() {
         )
     }
 
+    @Test(dataProvider = "gradle-version-provider>=8")
+    fun `should truncate compile stderr and emit truncation notice when it exceeds maximal error buffer size`(gradleVersion: String) {
+        // lower the compile-error buffer cap (default is 5MB) to verify its truncation gets triggered
+        val config = GradleRunConfiguration(PROJECT_WITH_LARGE_COMPILE_STDERR_NAME, "-Dteamcity.gradle.compileError.maxLength=1024 compileJava", null).also {
+            it.gradleVersion = gradleVersion
+            it.patternStr = COMPILE_BLOCK_PATTERN
+        }
+
+        val messages = run(config)
+
+        assertBuildFailed(messages.allMessages)
+        assertCompileErrorBlock(messages.messages)
+        assertErrorMessageReported(messages.messages, VISIBLE_STDERR_MARKER)
+        assertErrorMessageReported(messages.messages, TRUNCATION_NOTICE_FRAGMENT)
+        assertFalse(
+            messages.messages.any { it.startsWith("##teamcity[message ") && it.contains(NOT_VISIBLE_STDERR_MARKER) },
+            "Stderr past the cap should have been truncated.\n${fullServiceMessages(messages.messages)}"
+        )
+    }
+
     private fun compileStderrConfig(command: String, gradleVersion: String): GradleRunConfiguration {
         return GradleRunConfiguration(PROJECT_WITH_COMPILE_STDERR_NAME, command, null).also {
             it.gradleVersion = gradleVersion
@@ -114,6 +134,9 @@ class CompileTaskStderrBuildLogBlocksTest : GradleRunnerServiceMessageTest() {
         const val COMPILE_STDERR_MARKER_1 = "compile stderr marker one"
         const val COMPILE_STDERR_MARKER_2 = "compile stderr marker two"
         const val NON_COMPILE_STDERR_MARKER = "non-compile stderr marker"
+        const val VISIBLE_STDERR_MARKER = "Stderr marker that should be visible"
+        const val NOT_VISIBLE_STDERR_MARKER = "Stderr marker that should NOT be visible"
+        const val TRUNCATION_NOTICE_FRAGMENT = "TeamCity truncated compile error output, because it is too large. See raw build log for full stderr."
         const val COMPILE_BLOCK_PATTERN = "##teamcity\\[(message|compilation)(.*?)(?<!\\|)\\]"
         val FLOW_ID_REGEX = Regex("flowId='([^']+)'")
     }
