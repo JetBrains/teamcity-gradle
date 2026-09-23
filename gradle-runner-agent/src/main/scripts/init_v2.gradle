@@ -1498,22 +1498,14 @@ class TestTaskWrapper {
 
   /**
    * Creates an instance of the {@link TestTaskWrapper} for every instance of the Test in the TaskCollection.
-   * Attempts to lazily evaluate the Closure action against all instances lazily if the version of Gradle supports it.
+   * The Closure action is applied lazily via configureEach
    */
   static void forAllTestTasks(TaskCollection taskCollection, Closure action) {
-    if (taskCollection.metaClass.respondsTo(taskCollection, 'configureEach')) {
-      // Use lazy task configuration:
-      // https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
-      taskCollection.configureEach { task ->
-        TestTaskWrapper wrapper = new TestTaskWrapper(task)
-        action(wrapper)
-      }
-    } else {
-      // Fallback
-      taskCollection.configureEach { task ->
-        TestTaskWrapper wrapper = new TestTaskWrapper(task)
-        action(wrapper)
-      }
+    // Use lazy task configuration:
+    // https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
+    taskCollection.configureEach { task ->
+      TestTaskWrapper wrapper = new TestTaskWrapper(task)
+      action(wrapper)
     }
   }
 }
